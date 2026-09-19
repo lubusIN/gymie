@@ -16,6 +16,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
@@ -23,7 +24,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
  * @property-read Schema $form
@@ -78,7 +78,7 @@ class Settings extends Page implements HasForms
     /**
      * Defines the form schema with multiple tabs.
      *
-     * @return array<int, \Filament\Schemas\Components\Component>
+     * @return array<int, Component>
      */
     protected function getFormSchema(): array
     {
@@ -118,18 +118,20 @@ class Settings extends Page implements HasForms
                                     ->label(__('app.settings.fields.gym_logo'))
                                     ->disk('public')
                                     ->directory('images')
-                                    ->preserveFilenames()
                                     ->imageEditor()
                                     ->deletable()
                                     ->visibility('public')
                                     ->image()
-                                    ->afterStateUpdated(fn ($state, callable $set) => $this->handleFileUpload($state, 'gym_logo', $set))
+                                    ->acceptedFileTypes([
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp',
+                                    ])
+                                    ->maxSize(2048)
                                     ->columnSpanFull(),
                                 DatePicker::make('general.financial_year_start')
                                     ->native(false)
                                     ->label(__('app.settings.fields.financial_year_start'))
-                                    ->suffixIcon('heroicon-o-calendar-days')
-                                    ->displayFormat('d/m/Y')
                                     ->helperText('Rounded to the first day of that month.')
                                     ->reactive()
                                     ->afterStateUpdated(function (?string $state, callable $set): void {
@@ -148,8 +150,6 @@ class Settings extends Page implements HasForms
                                 DatePicker::make('general.financial_year_end')
                                     ->native(false)
                                     ->label(__('app.settings.fields.financial_year_end'))
-                                    ->suffixIcon('heroicon-o-calendar-days')
-                                    ->displayFormat('d/m/Y')
                                     ->helperText('Auto calculated based on the start month.')
                                     ->readOnly(),
                             ]),
@@ -171,18 +171,18 @@ class Settings extends Page implements HasForms
                                     ->options(Helpers::getCountries())
                                     ->searchable()
                                     ->reactive()
-                                    ->afterStateUpdated(fn ($state, callable $set) => [
+                                    ->afterStateUpdated(fn($state, callable $set) => [
                                         $set('general.state', null),
                                         $set('general.city', null),
                                     ]),
                                 Select::make('general.state')
                                     ->label(__('app.settings.fields.state'))
-                                    ->options(fn ($get) => Helpers::getStates($get('general.country')))
+                                    ->options(fn($get) => Helpers::getStates($get('general.country')))
                                     ->searchable()
                                     ->reactive(),
                                 Select::make('general.city')
                                     ->label(__('app.settings.fields.city'))
-                                    ->options(fn ($get) => Helpers::getCities($get('general.state')))
+                                    ->options(fn($get) => Helpers::getCities($get('general.state')))
                                     ->searchable()
                                     ->reactive(),
                                 TextInput::make('general.zip')
@@ -217,57 +217,57 @@ class Settings extends Page implements HasForms
     {
         return
             Tab::make(__('app.settings.tabs.invoice'))->icon('heroicon-m-document-text')
-                ->schema([
-                    Grid::make(3)
-                        ->schema([
-                            TextInput::make('invoice.prefix')
-                                ->placeholder(__('app.settings.placeholders.prefix'))
-                                ->label(__('app.settings.fields.prefix')),
-                            TextInput::make('invoice.last_number')
-                                ->numeric()
-                                ->label(__('app.settings.fields.last_number'))
-                                ->maxLength(10),
-                            Select::make('invoice.name_type')
-                                ->native(false)
-                                ->label(__('app.settings.fields.name_type'))
-                                ->options([
-                                    'gym_name' => __('app.settings.options.name_type.gym_name'),
-                                    'gym_logo' => __('app.settings.options.name_type.gym_logo'),
-                                ]),
-                        ]),
-                    Fieldset::make(__('app.settings.sections.email'))
-                        ->columns(['default' => 1, 'md' => 5])
-                        ->schema([
-                            Group::make()
-                                ->schema([
-                                    TextInput::make('notifications.email.invoice_subject_template')
-                                        ->label(__('app.settings.fields.email_invoice_subject'))
-                                        ->placeholder(__('app.settings.placeholders.invoice_email_subject'))
-                                        ->helperText(__('app.settings.hints.tokens_invoice')),
-                                    TextInput::make('notifications.email.receipt_subject_template')
-                                        ->label(__('app.settings.fields.email_receipt_subject'))
-                                        ->placeholder(__('app.settings.placeholders.receipt_email_subject'))
-                                        ->helperText(__('app.settings.hints.tokens_receipt')),
-                                ])->columnSpan(['default' => 1, 'md' => 3]),
-                            Group::make()
-                                ->schema([
-                                    Toggle::make('notifications.email.enabled')
-                                        ->label(__('app.settings.fields.email_enabled'))
-                                        ->default(false)
-                                        ->inlineLabel(),
-                                    Toggle::make('notifications.email.auto_send_invoice_issued')
-                                        ->label(__('app.settings.fields.auto_send_invoice_issued'))
-                                        ->default(false)
-                                        ->inlineLabel(),
-                                    Toggle::make('notifications.email.auto_send_payment_receipt')
-                                        ->label(__('app.settings.fields.auto_send_payment_receipt'))
-                                        ->default(false)
-                                        ->inlineLabel(),
-                                ])
-                                ->columns(1)
-                                ->columnSpan(['default' => 1, 'md' => 2]),
-                        ]),
-                ]);
+            ->schema([
+                Grid::make(3)
+                    ->schema([
+                        TextInput::make('invoice.prefix')
+                            ->placeholder(__('app.settings.placeholders.prefix'))
+                            ->label(__('app.settings.fields.prefix')),
+                        TextInput::make('invoice.last_number')
+                            ->numeric()
+                            ->label(__('app.settings.fields.last_number'))
+                            ->maxLength(10),
+                        Select::make('invoice.name_type')
+                            ->native(false)
+                            ->label(__('app.settings.fields.name_type'))
+                            ->options([
+                                'gym_name' => __('app.settings.options.name_type.gym_name'),
+                                'gym_logo' => __('app.settings.options.name_type.gym_logo'),
+                            ]),
+                    ]),
+                Fieldset::make(__('app.settings.sections.email'))
+                    ->columns(['default' => 1, 'md' => 5])
+                    ->schema([
+                        Group::make()
+                            ->schema([
+                                TextInput::make('notifications.email.invoice_subject_template')
+                                    ->label(__('app.settings.fields.email_invoice_subject'))
+                                    ->placeholder(__('app.settings.placeholders.invoice_email_subject'))
+                                    ->helperText(__('app.settings.hints.tokens_invoice')),
+                                TextInput::make('notifications.email.receipt_subject_template')
+                                    ->label(__('app.settings.fields.email_receipt_subject'))
+                                    ->placeholder(__('app.settings.placeholders.receipt_email_subject'))
+                                    ->helperText(__('app.settings.hints.tokens_receipt')),
+                            ])->columnSpan(['default' => 1, 'md' => 3]),
+                        Group::make()
+                            ->schema([
+                                Toggle::make('notifications.email.enabled')
+                                    ->label(__('app.settings.fields.email_enabled'))
+                                    ->default(false)
+                                    ->inlineLabel(),
+                                Toggle::make('notifications.email.auto_send_invoice_issued')
+                                    ->label(__('app.settings.fields.auto_send_invoice_issued'))
+                                    ->default(false)
+                                    ->inlineLabel(),
+                                Toggle::make('notifications.email.auto_send_payment_receipt')
+                                    ->label(__('app.settings.fields.auto_send_payment_receipt'))
+                                    ->default(false)
+                                    ->inlineLabel(),
+                            ])
+                            ->columns(1)
+                            ->columnSpan(['default' => 1, 'md' => 2]),
+                    ]),
+            ]);
     }
 
     /**
@@ -277,18 +277,18 @@ class Settings extends Page implements HasForms
     {
         return
             Tab::make(__('app.settings.tabs.member'))->icon('heroicon-m-user-group')
-                ->schema([
-                    Grid::make(2)
-                        ->schema([
-                            TextInput::make('member.prefix')
-                                ->placeholder(__('app.settings.placeholders.prefix'))
-                                ->label(__('app.settings.fields.prefix')),
-                            TextInput::make('member.last_number')
-                                ->numeric()
-                                ->label(__('app.settings.fields.last_number'))
-                                ->maxLength(10),
-                        ]),
-                ]);
+            ->schema([
+                Grid::make(2)
+                    ->schema([
+                        TextInput::make('member.prefix')
+                            ->placeholder(__('app.settings.placeholders.prefix'))
+                            ->label(__('app.settings.fields.prefix')),
+                        TextInput::make('member.last_number')
+                            ->numeric()
+                            ->label(__('app.settings.fields.last_number'))
+                            ->maxLength(10),
+                    ]),
+            ]);
     }
 
     /**
@@ -298,23 +298,23 @@ class Settings extends Page implements HasForms
     {
         return
             Tab::make(__('app.settings.tabs.charges'))->icon('heroicon-m-currency-rupee')
-                ->schema([
-                    Grid::make(3)
-                        ->schema([
-                            TextInput::make('charges.admission_fee')
-                                ->numeric()
-                                ->label(__('app.settings.fields.admission_fee')),
-                            TextInput::make('charges.taxes')
-                                ->numeric()
-                                ->label(__('app.settings.fields.taxes'))
-                                ->suffix('%'),
-                            TagsInput::make('charges.discounts')
-                                ->label(__('app.settings.fields.discount_percent_available'))
-                                ->hint(__('app.settings.hints.press_enter_to_add'))
-                                ->placeholder(__('app.settings.hints.type_discount'))
-                                ->separator(','),
-                        ]),
-                ]);
+            ->schema([
+                Grid::make(3)
+                    ->schema([
+                        TextInput::make('charges.admission_fee')
+                            ->numeric()
+                            ->label(__('app.settings.fields.admission_fee')),
+                        TextInput::make('charges.taxes')
+                            ->numeric()
+                            ->label(__('app.settings.fields.taxes'))
+                            ->suffix('%'),
+                        TagsInput::make('charges.discounts')
+                            ->label(__('app.settings.fields.discount_percent_available'))
+                            ->hint(__('app.settings.hints.press_enter_to_add'))
+                            ->placeholder(__('app.settings.hints.type_discount'))
+                            ->separator(','),
+                    ]),
+            ]);
     }
 
     /**
@@ -324,13 +324,13 @@ class Settings extends Page implements HasForms
     {
         return
             Tab::make(__('app.settings.tabs.expenses'))->icon('heroicon-m-banknotes')
-                ->schema([
-                    TagsInput::make('expenses.categories')
-                        ->label(__('app.settings.fields.categories'))
-                        ->hint(__('app.settings.hints.press_enter_to_add'))
-                        ->placeholder(__('app.settings.hints.type_category'))
-                        ->separator(','),
-                ]);
+            ->schema([
+                TagsInput::make('expenses.categories')
+                    ->label(__('app.settings.fields.categories'))
+                    ->hint(__('app.settings.hints.press_enter_to_add'))
+                    ->placeholder(__('app.settings.hints.type_category'))
+                    ->separator(','),
+            ]);
     }
 
     /**
@@ -340,14 +340,14 @@ class Settings extends Page implements HasForms
     {
         return
             Tab::make(__('app.settings.tabs.subscriptions'))->icon('heroicon-m-ticket')
-                ->schema([
-                    TextInput::make('subscriptions.expiring_days')
-                        ->label(__('app.settings.fields.expiring_days'))
-                        ->numeric()
-                        ->minValue(1)
-                        ->default(7)
-                        ->required(),
-                ]);
+            ->schema([
+                TextInput::make('subscriptions.expiring_days')
+                    ->label(__('app.settings.fields.expiring_days'))
+                    ->numeric()
+                    ->minValue(1)
+                    ->default(7)
+                    ->required(),
+            ]);
     }
 
     /**
@@ -368,7 +368,7 @@ class Settings extends Page implements HasForms
      */
     public function save(): void
     {
-        $settings = $this->data ?? [];
+        $settings = $this->form->getState();
         $general = is_array($settings['general'] ?? null) ? $settings['general'] : [];
 
         if (! empty($general['financial_year_start']) && is_string($general['financial_year_start'])) {
@@ -382,7 +382,7 @@ class Settings extends Page implements HasForms
         if (! empty($general['financial_year_end']) && is_string($general['financial_year_end'])) {
             $general['financial_year_end'] =
                 Carbon::parse($general['financial_year_end'])
-                    ->toDateString();
+                ->toDateString();
         }
 
         foreach (['gym_logo'] as $logoKey) {
@@ -396,7 +396,7 @@ class Settings extends Page implements HasForms
 
         try {
             app(SettingsRepository::class)->put($settings);
-            $this->data = $settings;
+            $this->form->fill($settings);
         } catch (\Throwable $exception) {
             report($exception);
 
@@ -414,32 +414,5 @@ class Settings extends Page implements HasForms
             ->body(__('app.notifications.success_settings_save'))
             ->success()
             ->send();
-    }
-
-    /**
-     * Handles the file upload process and updates the settings data.
-     *
-     * @param  TemporaryUploadedFile|string|null  $state  The uploaded file state.
-     * @param  string  $key  The key to store the uploaded file path in the settings.
-     * @param  callable  $set  The callback to update the form state.
-     */
-    private function handleFileUpload(mixed $state, string $key, callable $set): void
-    {
-        if (! $state instanceof TemporaryUploadedFile) {
-            return;
-        }
-
-        $path = $state->storeAs('images', $state->getClientOriginalName(), 'public');
-        $repository = app(SettingsRepository::class);
-        $settings = $repository->get();
-        $general = is_array($settings['general'] ?? null) ? $settings['general'] : [];
-
-        $general[$key] = $path;
-        $settings['general'] = $general;
-
-        $repository->put($settings);
-
-        // Update the form state
-        $set("general.$key", [$path]);
     }
 }

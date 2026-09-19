@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\SettingsRepository;
+use Illuminate\Support\Facades\File;
 
 /**
  * JSON-backed settings repository (OSS default).
@@ -83,13 +84,10 @@ class JsonSettingsRepository implements SettingsRepository
 
         $filePath = storage_path(self::SETTINGS_PATH);
 
-        if (! file_exists(dirname($filePath))) {
-            mkdir(dirname($filePath), 0755, true);
-        }
-
-        file_put_contents(
+        File::ensureDirectoryExists(dirname($filePath));
+        File::replace(
             $filePath,
-            json_encode($normalized, JSON_PRETTY_PRINT),
+            json_encode($normalized, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR),
         );
 
         $this->cachedSettings = $normalized;
@@ -149,6 +147,28 @@ class JsonSettingsRepository implements SettingsRepository
             $general['locale'] = null;
         }
         $settings['general'] = $general;
+
+        /** @var array<string, mixed> $charges */
+        $charges = $settings['charges'];
+        if (! isset($charges['discounts']) || ! is_array($charges['discounts'])) {
+            $charges['discounts'] = [];
+        }
+        $settings['charges'] = $charges;
+
+        /** @var array<string, mixed> $expenses */
+        $expenses = $settings['expenses'];
+        if (! isset($expenses['categories']) || ! is_array($expenses['categories'])) {
+            $expenses['categories'] = [];
+        }
+        $settings['expenses'] = $expenses;
+
+        /** @var array<string, mixed> $subscriptions */
+        $subscriptions = $settings['subscriptions'];
+        $expiringDays = $subscriptions['expiring_days'] ?? null;
+        $subscriptions['expiring_days'] = is_numeric($expiringDays) && (int) $expiringDays >= 1
+            ? (int) $expiringDays
+            : 7;
+        $settings['subscriptions'] = $subscriptions;
 
         /** @var array<string, mixed> $notifications */
         $notifications = $settings['notifications'];

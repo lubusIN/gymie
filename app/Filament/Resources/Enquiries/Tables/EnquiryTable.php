@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\Enquiries\Tables;
 
+use App\Enums\Status;
 use App\Filament\Resources\Members\MemberResource;
 use App\Models\Enquiry;
+use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -127,15 +129,13 @@ class EnquiryTable
                             ->label(__('app.actions.convert_to_member'))
                             ->icon('heroicon-m-arrows-right-left')
                             ->color('success')
-                            ->requiresConfirmation()
                             ->visible(fn (Enquiry $record): bool => $record->status?->value === 'lead')
                             ->url(fn (Enquiry $record) => MemberResource::getUrl(
                                 'create',
                                 ['enquiry_id' => $record->id],
                             )),
-                        Action::make('mark_as_lost')
+                        StatusAction::make('mark_as_lost', Status::Lost)
                             ->label(__('app.actions.mark_as_lost'))
-                            ->icon('heroicon-m-x-circle')
                             ->color('danger')
                             ->requiresConfirmation()
                             ->action(fn (Enquiry $record) => tap($record, function ($record) {
@@ -143,7 +143,7 @@ class EnquiryTable
                                 Notification::make()
                                     ->title(__('app.notifications.enquiry_marked_as_lost'))
                                     ->success()
-                                    ->icon('heroicon-m-no-symbol')
+                                    ->icon('heroicon-o-x-circle')
                                     ->iconColor('danger')
                                     ->send();
                             }))

@@ -22,9 +22,7 @@ class ListExpenses extends ListRecords
                 ->label(__('app.actions.add_expense'))
                 ->icon('heroicon-m-plus')
                 ->modalHeading(__('app.actions.add_expense'))
-                ->modalSubmitActionLabel(__('app.actions.save'))
-                ->createAnother()
-                ->createAnotherAction(fn ($action) => $action->label(__('app.actions.save_add_another')))
+                ->createAnother(false)
                 ->modalWidth(Width::ScreenLarge)
                 ->closeModalByClickingAway(false)
                 ->hidden(! Expense::exists()),

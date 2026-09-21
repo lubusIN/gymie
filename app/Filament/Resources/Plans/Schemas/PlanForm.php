@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\HtmlString;
@@ -61,14 +62,17 @@ class PlanForm
                             ->placeholder(__('app.placeholders.select_service'))
                             ->required()
                             ->createOptionModalHeading(__('app.actions.new', ['resource' => __('app.resources.services.singular')]))
-                            ->createOptionForm(fn (Schema $schema): Schema => ServiceForm::configure($schema))
-                            ->createOptionAction(fn (Action $action): Action => $action
-                                ->authorize(fn (): bool => Gate::allows('create', Service::class)))
+                            ->createOptionForm(fn(Schema $schema): Schema => ServiceForm::configure($schema))
+                            ->createOptionAction(fn(Action $action): Action => $action
+                                ->authorize(fn(): bool => Gate::allows('create', Service::class)))
                             ->createOptionUsing(function (array $data): int {
                                 Gate::authorize('create', Service::class);
 
                                 return Data::int(Service::query()->create($data)->getKey());
                             })
+                            ->createOptionAction(
+                                fn(Action $action): Action => $action->modalWidth(Width::Small),
+                            )
                             ->columnSpan(2),
                         TextInput::make('days')
                             ->required()

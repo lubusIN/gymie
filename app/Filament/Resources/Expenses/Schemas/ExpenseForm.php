@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Expenses\Schemas;
 
 use App\Enums\Status;
 use App\Helpers\Helpers;
+use App\Support\AppConfig;
+use App\Support\Filament\ExpenseCategorySelect;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -52,10 +54,7 @@ class ExpenseForm
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpan(3),
-                                Select::make('category')
-                                    ->label(__('app.fields.category'))
-                                    ->options(fn (): array => Helpers::getExpenseCategoryOptions())
-                                    ->searchable()
+                                ExpenseCategorySelect::make('category')
                                     ->required()
                                     ->columnSpan(3),
                                 TextInput::make('amount')
@@ -69,7 +68,7 @@ class ExpenseForm
                                     ->columnSpan(2),
                                 DatePicker::make('date')
                                     ->label(__('app.fields.date'))
-                                    ->default(fn (): string => now()->timezone(\App\Support\AppConfig::timezone())->toDateString())
+                                    ->default(fn (): string => now()->timezone(AppConfig::timezone())->toDateString())
                                     ->required()
                                     ->columnSpan(2),
                                 DatePicker::make('due_date')
@@ -88,7 +87,7 @@ class ExpenseForm
                                     ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
                                         if ($state === Status::Paid->value) {
                                             if (blank($get('paid_at'))) {
-                                                $set('paid_at', now()->timezone(\App\Support\AppConfig::timezone())->format('Y-m-d H:i:s'));
+                                                $set('paid_at', now()->timezone(AppConfig::timezone())->format('Y-m-d H:i:s'));
                                             }
 
                                             return;
@@ -101,7 +100,7 @@ class ExpenseForm
                                 DateTimePicker::make('paid_at')
                                     ->label(__('app.fields.paid_at'))
                                     ->seconds(false)
-                                    ->timezone(\App\Support\AppConfig::timezone())
+                                    ->timezone(AppConfig::timezone())
                                     ->visible(fn (Get $get): bool => $get('status') === Status::Paid->value)
                                     ->required(fn (Get $get): bool => $get('status') === Status::Paid->value)
                                     ->columnSpan(2),

@@ -2,14 +2,17 @@
 
 namespace App\Filament\Resources\Invoices\Tables;
 
+use App\Enums\Status;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Helpers\Helpers;
 use App\Models\Invoice;
 use App\Models\InvoiceTransaction;
 use App\Models\Subscription;
 use App\Services\Email\InvoiceEmailService;
+use App\Support\AppConfig;
 use App\Support\Billing\PaymentMethod;
 use App\Support\Data;
+use App\Support\Filament\StatusAction;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
@@ -19,12 +22,14 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceTable
 {
@@ -194,8 +199,8 @@ class InvoiceTable
                                 DateTimePicker::make('occurred_at')
                                     ->label(__('app.fields.paid_at'))
                                     ->seconds(false)
-                                    ->timezone(\App\Support\AppConfig::timezone())
-                                    ->default(fn (): string => now()->timezone(\App\Support\AppConfig::timezone())->format('Y-m-d H:i:s'))
+                                    ->timezone(AppConfig::timezone())
+                                    ->default(fn (): string => now()->timezone(AppConfig::timezone())->format('Y-m-d H:i:s'))
                                     ->required(),
                                 Select::make('payment_method')
                                     ->label(__('app.fields.payment_method'))
@@ -223,7 +228,7 @@ class InvoiceTable
                                 $record->transactions()->create([
                                     'type' => 'payment',
                                     'amount' => $amount,
-                                    'occurred_at' => $data['occurred_at'] ?? now()->timezone(\App\Support\AppConfig::timezone()),
+                                    'occurred_at' => $data['occurred_at'] ?? now()->timezone(AppConfig::timezone()),
                                     'payment_method' => $data['payment_method'] ?? null,
                                     'note' => $data['note'] ?? null,
                                     'created_by' => auth()->id(),
@@ -244,25 +249,17 @@ class InvoiceTable
                             ->label(__('app.actions.refund'))
                             ->color('warning')
                             ->icon('heroicon-s-arrow-path')
+                            ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
                             ->modalWidth('md')
                             ->schema([
-                                TextInput::make('amount')
+                                TextEntry::make('refund_amount')
                                     ->label(__('app.fields.refund_amount_with_currency', ['currency' => Helpers::getCurrencyCode()]))
-                                    ->required()
-                                    ->numeric()
-                                    ->reactive()
-                                    ->placeholder(__('app.placeholders.enter_amount'))
-                                    ->helperText(fn (Invoice $record): string => __('app.help.refundable_amount', ['amount' => Helpers::formatCurrency($record->paid_amount)]))
-                                    ->maxValue(fn (Invoice $record): float => max((float) $record->paid_amount, 0))
-                                    ->minValue(0.01)
-                                    ->afterStateUpdated(function ($livewire, TextInput $component) {
-                                        $livewire->validateOnly($component->getStatePath());
-                                    }),
+                                    ->state(fn (Invoice $record): string => Helpers::formatCurrency((float) $record->paid_amount)),
                                 DateTimePicker::make('occurred_at')
                                     ->label(__('app.fields.refunded_at'))
                                     ->seconds(false)
-                                    ->timezone(\App\Support\AppConfig::timezone())
-                                    ->default(fn (): string => now()->timezone(\App\Support\AppConfig::timezone())->format('Y-m-d H:i:s'))
+                                    ->timezone(AppConfig::timezone())
+                                    ->default(fn (): string => now()->timezone(AppConfig::timezone())->format('Y-m-d H:i:s'))
                                     ->required(),
                                 Textarea::make('note')
                                     ->label(__('app.fields.note'))
@@ -270,10 +267,33 @@ class InvoiceTable
                                     ->placeholder(__('app.placeholders.optional_note')),
                             ])
                             ->action(function (Invoice $record, array $data) {
-                                $amount = (float) ($data['amount'] ?? 0);
-                                $amount = min(max($amount, 0), (float) ($record->paid_amount ?? 0));
+                                $refunded = DB::transaction(function () use ($record, $data): bool {
+                                    $invoice = Invoice::query()
+                                        ->lockForUpdate()
+                                        ->find($record->getKey());
 
-                                if ($amount <= 0) {
+                                    if (! $invoice || in_array($invoice->status?->value, ['refund', 'cancelled'], true)) {
+                                        return false;
+                                    }
+
+                                    $amount = max((float) ($invoice->paid_amount ?? 0), 0);
+
+                                    if ($amount <= 0) {
+                                        return false;
+                                    }
+
+                                    $invoice->transactions()->create([
+                                        'type' => 'refund',
+                                        'amount' => $amount,
+                                        'occurred_at' => $data['occurred_at'] ?? now()->timezone(AppConfig::timezone()),
+                                        'note' => $data['note'] ?? null,
+                                        'created_by' => auth()->id(),
+                                    ]);
+
+                                    return true;
+                                });
+
+                                if (! $refunded) {
                                     Notification::make()
                                         ->title(__('app.notifications.invalid_refund_amount'))
                                         ->danger()
@@ -281,14 +301,6 @@ class InvoiceTable
 
                                     return;
                                 }
-
-                                $record->transactions()->create([
-                                    'type' => 'refund',
-                                    'amount' => $amount,
-                                    'occurred_at' => $data['occurred_at'] ?? now()->timezone(\App\Support\AppConfig::timezone()),
-                                    'note' => $data['note'] ?? null,
-                                    'created_by' => auth()->id(),
-                                ]);
 
                                 $record->refresh();
 
@@ -299,10 +311,9 @@ class InvoiceTable
                                     ->send();
                             })
                             ->visible(fn (Invoice $record): bool => (float) $record->paid_amount > 0 && ! in_array($record->status?->value, ['refund', 'cancelled'], true)),
-                        Action::make('cancel_invoice')
+                        StatusAction::make('cancel_invoice', Status::Cancelled)
                             ->label(__('app.actions.cancel'))
                             ->color('danger')
-                            ->icon('heroicon-s-x-circle')
                             ->action(fn (Invoice $record) => tap($record, function ($record) {
                                 if ($record->transactions()->where('type', 'payment')->exists()) {
                                     Notification::make()
@@ -401,7 +412,7 @@ class InvoiceTable
                                             ->limit(5)
                                             ->get()
                                             ->mapWithKeys(function (InvoiceTransaction $transaction): array {
-                                                $occurredAt = $transaction->occurred_at?->timezone(\App\Support\AppConfig::timezone())->format('d/m/Y H:i') ?? '—';
+                                                $occurredAt = $transaction->occurred_at?->timezone(AppConfig::timezone())->format('d/m/Y H:i') ?? '—';
 
                                                 return [
                                                     Data::int($transaction->getKey()) => "{$occurredAt} - ".Helpers::formatCurrency((float) ($transaction->amount ?? 0)),

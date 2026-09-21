@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Members\Tables;
 
+use App\Enums\Status;
 use App\Models\Member;
+use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -155,7 +157,7 @@ class MemberTable
                             ->label(__('app.fields.status'))
                             ->disabled()
                             ->color('gray'),
-                        Action::make('mark_as_active')
+                        StatusAction::make('mark_as_active', Status::Active)
                             ->color('success')
                             ->label(__('app.actions.mark_as_active'))
                             ->requiresConfirmation()
@@ -167,7 +169,7 @@ class MemberTable
                                     ->send();
                             }))
                             ->visible(fn ($record) => $record->status->value === 'inactive'),
-                        Action::make('mark_as_inactive')
+                        StatusAction::make('mark_as_inactive', Status::Inactive)
                             ->color('danger')
                             ->label(__('app.actions.mark_as_inactive'))
                             ->requiresConfirmation()

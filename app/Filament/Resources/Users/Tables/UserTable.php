@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Enums\Status;
 use App\Models\User;
+use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -150,11 +152,10 @@ class UserTable
                             ->label(__('app.fields.status'))
                             ->disabled()
                             ->color('gray'),
-                        Action::make('inactive')
+                        StatusAction::make('inactive', Status::Inactive)
                             ->label(__('app.actions.mark_as_inactive'))
                             ->color('danger')
                             ->requiresConfirmation()
-                            ->icon('heroicon-s-x-circle')
                             ->action(fn (User $record) => tap($record, function ($record) {
                                 $record->update(['status' => 'inactive']);
                                 Notification::make()
@@ -164,11 +165,10 @@ class UserTable
                                     ->send();
                             }))
                             ->visible(fn ($record) => $record->status->value === 'active'),
-                        Action::make('active')
+                        StatusAction::make('active', Status::Active)
                             ->label(__('app.actions.mark_as_active'))
                             ->color('success')
                             ->requiresConfirmation()
-                            ->icon('heroicon-s-check-circle')
                             ->action(fn (User $record) => tap($record, function ($record) {
                                 $record->update(['status' => 'active']);
                                 Notification::make()

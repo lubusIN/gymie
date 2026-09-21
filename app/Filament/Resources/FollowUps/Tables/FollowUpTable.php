@@ -2,10 +2,13 @@
 
 namespace App\Filament\Resources\FollowUps\Tables;
 
+use App\Enums\Status;
 use App\Filament\Resources\FollowUps\FollowUpResource;
 use App\Models\Enquiry;
 use App\Models\FollowUp;
 use App\Models\User;
+use App\Support\Data;
+use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -20,6 +23,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -35,7 +39,7 @@ class FollowUpTable
      * This is used by both the Follow Ups index table and any relation managers
      * that want to reuse the same column set.
      *
-     * @return array<int, \Filament\Tables\Columns\Column>
+     * @return array<int, Column>
      */
     public static function getColumns(): array
     {
@@ -68,7 +72,7 @@ class FollowUpTable
                 ->placeholder(__('app.placeholders.na'))
                 ->limit(40)
                 ->tooltip(function (TextColumn $column): ?string {
-                    $state = \App\Support\Data::nullableString($column->getState());
+                    $state = Data::nullableString($column->getState());
 
                     if ($state === null || strlen($state) <= $column->getCharacterLimit()) {
                         return null;
@@ -213,7 +217,7 @@ class FollowUpTable
                         ->visible(fn ($record) => in_array($record->status->value, ['pending']))
                         ->disabled()
                         ->color('gray'),
-                    Action::make('mark_as_done')
+                    StatusAction::make('mark_as_done', Status::Done)
                         ->color('success')
                         ->label(__('app.actions.mark_as_done'))
                         ->modalWidth('sm')

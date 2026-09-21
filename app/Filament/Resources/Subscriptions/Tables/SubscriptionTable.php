@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\Subscriptions\Tables;
 
+use App\Enums\Status;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Support\AppConfig;
+use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -179,7 +182,7 @@ class SubscriptionTable
                             ->disabled()
                             ->color('gray')
                             ->hidden(fn ($record): bool => in_array($record->status?->value, ['expired', 'upcoming', 'renewed'], true)),
-                        Action::make('mark_expiring')
+                        StatusAction::make('mark_expiring', Status::Expiring)
                             ->label(__('app.actions.mark_as_expiring'))
                             ->color('warning')
                             ->requiresConfirmation()
@@ -191,7 +194,7 @@ class SubscriptionTable
                                     ->send();
                             }))
                             ->visible(fn ($record): bool => $record->status?->value === 'ongoing'),
-                        Action::make('mark_expired')
+                        StatusAction::make('mark_expired', Status::Expired)
                             ->label(__('app.actions.mark_as_expired'))
                             ->color('danger')
                             ->requiresConfirmation()
@@ -226,7 +229,7 @@ class SubscriptionTable
                                     return false;
                                 }
 
-                                $today = Carbon::today(\App\Support\AppConfig::timezone());
+                                $today = Carbon::today(AppConfig::timezone());
 
                                 return ! Subscription::query()
                                     ->where('member_id', $record->member_id)

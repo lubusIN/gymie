@@ -8,6 +8,8 @@ use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Support\Billing\InvoiceCalculator;
 use App\Support\Billing\PaymentMethod;
+use App\Support\Data;
+use App\Support\Filament\DiscountSelect;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
@@ -45,7 +47,7 @@ class InvoiceForm
                                     ->readOnly()
                                     ->disabled()
                                     ->dehydrated()
-                                    ->default(fn (Get $get) => Helpers::generateLastNumber(
+                                    ->default(fn(Get $get) => Helpers::generateLastNumber(
                                         'invoice',
                                         Invoice::class,
                                         self::stringState($get, 'date')
@@ -56,12 +58,12 @@ class InvoiceForm
                                     ->relationship(
                                         name: 'subscription',
                                         titleAttribute: 'id',
-                                        modifyQueryUsing: fn (Builder $query) => $query
+                                        modifyQueryUsing: fn(Builder $query) => $query
                                             ->with(['member', 'plan'])
                                             ->orderByDesc('start_date'),
                                     )
                                     ->hiddenOn(InvoicesRelationManager::class)
-                                    ->getOptionLabelFromRecordUsing(fn (Subscription $record): string => self::formatSubscriptionOptionLabel($record))
+                                    ->getOptionLabelFromRecordUsing(fn(Subscription $record): string => self::formatSubscriptionOptionLabel($record))
                                     ->searchable()
                                     ->afterStateUpdated(
                                         function (Get $get, Set $set) {
@@ -107,13 +109,9 @@ class InvoiceForm
                                     ->label(__('app.fields.due_date'))
                                     ->required()
                                     ->reactive(),
-                                Select::make('discount')
-                                    ->label(__('app.fields.discount'))
-                                    ->options(Helpers::getDiscounts())
+                                DiscountSelect::make('discount')
                                     ->native(false)
-                                    ->live()
                                     ->reactive()
-                                    ->placeholder(__('app.placeholders.select_discount'))
                                     ->afterStateUpdated(
                                         function (Get $get, Set $set) {
                                             $fee = self::floatState($get, 'subscription_fee');
@@ -142,7 +140,7 @@ class InvoiceForm
                                     ->debounce(300)
                                     ->default(0)
                                     ->prefix(Helpers::getCurrencySymbol())
-                                    ->maxValue(fn (Get $get): float => self::floatState($get, 'subscription_fee'))
+                                    ->maxValue(fn(Get $get): float => self::floatState($get, 'subscription_fee'))
                                     ->afterStateUpdated(
                                         function (Get $get, Set $set, $livewire, TextInput $component) {
                                             $livewire->validateOnly($component->getStatePath());
@@ -192,7 +190,7 @@ class InvoiceForm
                                     ->prefix(Helpers::getCurrencySymbol())
                                     ->required(),
                                 TextInput::make('tax')
-                                    ->label(fn (): string => __('app.fields.tax_with_rate', ['rate' => Helpers::getTaxRate()]))
+                                    ->label(fn(): string => __('app.fields.tax_with_rate', ['rate' => Helpers::getTaxRate()]))
                                     ->numeric()
                                     ->disabled()
                                     ->dehydrated()
@@ -234,16 +232,16 @@ class InvoiceForm
 
     private static function stringState(Get $get, string $path): ?string
     {
-        return \App\Support\Data::nullableString($get($path));
+        return Data::nullableString($get($path));
     }
 
     private static function intState(Get $get, string $path): int
     {
-        return \App\Support\Data::int($get($path));
+        return Data::int($get($path));
     }
 
     private static function floatState(Get $get, string $path): float
     {
-        return \App\Support\Data::float($get($path));
+        return Data::float($get($path));
     }
 }

@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\Plans\Tables;
 
+use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Models\Plan;
 use App\Models\Service;
+use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -163,7 +165,7 @@ class PlanTable
                             ->label(__('app.fields.status'))
                             ->disabled()
                             ->color('gray'),
-                        Action::make('mark_as_active')
+                        StatusAction::make('mark_as_active', Status::Active)
                             ->color('success')
                             ->label(__('app.actions.mark_as_active'))
                             ->requiresConfirmation()
@@ -175,7 +177,7 @@ class PlanTable
                                     ->send();
                             }))
                             ->visible(fn ($record) => $record->status->value === 'inactive'),
-                        Action::make('mark_as_inactive')
+                        StatusAction::make('mark_as_inactive', Status::Inactive)
                             ->color('danger')
                             ->label(__('app.actions.mark_as_inactive'))
                             ->requiresConfirmation()

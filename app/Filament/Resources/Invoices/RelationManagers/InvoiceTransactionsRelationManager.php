@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\RelationManagers;
 
 use App\Helpers\Helpers;
+use App\Support\AppConfig;
 use App\Support\Billing\PaymentMethod;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -31,7 +32,7 @@ class InvoiceTransactionsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('occurred_at')
                     ->label(__('app.fields.date'))
-                    ->dateTime()
+                    ->dateTime('d M Y, h:i A', AppConfig::timezone())
                     ->sortable(),
                 TextColumn::make('type')
                     ->label(__('app.fields.type'))

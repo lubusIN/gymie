@@ -9,6 +9,8 @@ class CreateEnquiry extends CreateRecord
 {
     protected static string $resource = EnquiryResource::class;
 
+    protected static bool $canCreateAnother = false;
+
     public function getTitle(): string
     {
         return __('app.actions.new', ['resource' => EnquiryResource::getModelLabel()]);

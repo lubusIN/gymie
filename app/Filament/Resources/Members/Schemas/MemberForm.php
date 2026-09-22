@@ -8,6 +8,7 @@ use App\Models\Member;
 use App\Support\Filament\LocationSection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -54,7 +55,7 @@ class MemberForm
                                     ->readOnly()
                                     ->disabled()
                                     ->dehydrated()
-                                    ->default(fn(Get $get) => Helpers::generateLastNumber(
+                                    ->default(fn (Get $get) => Helpers::generateLastNumber(
                                         'member',
                                         Member::class,
                                         null,
@@ -89,14 +90,16 @@ class MemberForm
                                     ->regex('/^\+?[0-9\s\-\(\)]+$/') // Allows +, digits, spaces, dashes, and parentheses
                                     ->hintIcon('heroicon-m-question-mark-circle')
                                     ->hintIconTooltip(__('app.help.phone_format')),
-                                Select::make('gender')
+                                Radio::make('gender')
                                     ->options([
                                         'male' => __('app.options.gender.male'),
                                         'female' => __('app.options.gender.female'),
                                         'other' => __('app.options.gender.other'),
-                                    ])->default('male')
+                                    ])
                                     ->label(__('app.fields.gender'))
-                                    ->selectablePlaceholder(false)
+                                    ->default('male')
+                                    ->inline()
+                                    ->inlineLabel(false)
                                     ->required(),
                                 DatePicker::make('dob')
                                     ->required()
@@ -141,7 +144,7 @@ class MemberForm
                             ->deletable(false)
                             ->extraAttributes(['class' => 'rmv_rept-space'])
                             ->columns(3)
-                            ->schema(fn(HasSchemas&Component $livewire): array => SubscriptionForm::configure(Schema::make($livewire))
+                            ->schema(fn (HasSchemas&Component $livewire): array => SubscriptionForm::configure(Schema::make($livewire))
                                 ->getComponents(withActions: false)),
                     ]),
             ]);

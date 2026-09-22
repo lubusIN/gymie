@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use App\Support\Filament\LocationSection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
@@ -65,16 +66,17 @@ class UserForm
                                     ->maxLength(20)
                                     ->regex('/^\+?[0-9\s\-\(\)]+$/') // Allows +, digits, spaces, dashes, and parentheses
                                     ->required(),
-                                Select::make('gender')
-                                    ->label(__('app.fields.gender'))
+                                Radio::make('gender')
                                     ->options([
                                         'male' => __('app.options.gender.male'),
                                         'female' => __('app.options.gender.female'),
                                         'other' => __('app.options.gender.other'),
                                     ])
-                                    ->required()
+                                    ->label(__('app.fields.gender'))
                                     ->default('male')
-                                    ->selectablePlaceholder(false),
+                                    ->inline()
+                                    ->inlineLabel(false)
+                                    ->required(),
                                 DatePicker::make('dob')
                                     ->required()
                                     ->label(__('app.fields.dob')),

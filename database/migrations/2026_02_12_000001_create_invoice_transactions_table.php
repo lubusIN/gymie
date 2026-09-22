@@ -17,13 +17,15 @@ return new class extends Migration
                 ->constrained('invoices')
                 ->onDelete('cascade');
             $table->enum('type', ['payment', 'refund']);
-            $table->float('amount')->default(0);
+            $table->decimal('amount', 12, 2)->default(0);
             $table->timestamp('occurred_at');
             $table->string('payment_method')->nullable();
             $table->text('note')->nullable();
             $table->string('reference_id')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+            $table->index(['occurred_at', 'type']);
+            $table->index(['invoice_id', 'occurred_at']);
         });
     }
 
@@ -35,4 +37,3 @@ return new class extends Migration
         Schema::dropIfExists('invoice_transactions');
     }
 };
-

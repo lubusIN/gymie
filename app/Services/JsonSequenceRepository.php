@@ -6,6 +6,8 @@ use App\Contracts\SequenceRepository;
 use App\Contracts\SettingsRepository;
 use App\Helpers\Helpers;
 use App\Support\Data;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -34,9 +36,7 @@ class JsonSequenceRepository implements SequenceRepository
     ): string {
         $date = Helpers::parseDate($dateString);
         [$start, $end] = Helpers::getFiscalSpan($date);
-        $settings = $this->settingsRepository->get();
-
-        /** @var \Illuminate\Database\Eloquent\Model $model */
+        /** @var Model $model */
         $model = new $modelClass;
         $table = $model->getTable();
 
@@ -44,38 +44,45 @@ class JsonSequenceRepository implements SequenceRepository
             ? 'date'
             : 'created_at';
 
-        $rawPrefix = data_get($settings, "{$type}.prefix", '');
-        $rawSaved = data_get($settings, "{$type}.last_number", '');
+        return Cache::lock($this->lockName($type, $start->toDateString()), 10)
+            ->block(5, function () use ($type, $modelClass, $modelColumn, $dateColumn, $start, $end): string {
+                $settings = $this->freshSettings();
+                $rawPrefix = data_get($settings, "{$type}.prefix", '');
+                $rawSaved = data_get($settings, "{$type}.last_number", '');
 
-        $prefix = trim(Data::string($rawPrefix), '-');
-        $prefix = filled($prefix) ? $prefix : 'GY';
-        $separator = $prefix !== '' ? '-' : '';
-        $match = $prefix.$separator;
+                $prefix = trim(Data::string($rawPrefix), '-');
+                $prefix = filled($prefix) ? $prefix : 'GY';
+                $separator = $prefix !== '' ? '-' : '';
+                $match = $prefix.$separator;
 
-        $lastFromDb = $modelClass::query()
-            ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()])
-            ->pluck($modelColumn ?? 'number')
-            ->map(
-                fn ($raw) => Str::of(Data::string($raw))
-                    ->whenStartsWith($match, fn ($s) => $s->after($match))
-                    ->__toString()
-            )
-            ->map(fn ($v) => is_numeric($v) ? (int) $v : 0)
-            ->max() ?: 0;
+                $lastFromDb = $modelClass::query()
+                    ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()])
+                    ->pluck($modelColumn ?? 'number')
+                    ->map(
+                        fn ($raw) => Str::of(Data::string($raw))
+                            ->whenStartsWith($match, fn ($value) => $value->after($match))
+                            ->__toString()
+                    )
+                    ->map(fn ($value): int => is_numeric($value) ? (int) $value : 0)
+                    ->max() ?: 0;
 
-        $lastFromSettings = Str::of(Data::string($rawSaved))
-            ->whenStartsWith($match, fn ($s) => $s->after($match))
-            ->__toString();
-        $lastFromSettings = is_numeric($lastFromSettings)
-            ? (int) $lastFromSettings
-            : 0;
+                $lastFromSettings = Str::of(Data::string($rawSaved))
+                    ->whenStartsWith($match, fn ($value) => $value->after($match))
+                    ->__toString();
+                $lastFromSettings = is_numeric($lastFromSettings)
+                    ? (int) $lastFromSettings
+                    : 0;
 
-        $next = max($lastFromDb, $lastFromSettings) + 1;
+                $next = max($lastFromDb, $lastFromSettings) + 1;
+                $number = str($prefix)
+                    ->when($separator !== '', fn ($value) => $value->append($separator))
+                    ->append((string) $next)
+                    ->__toString();
 
-        return str($prefix)
-            ->when($separator !== '', fn ($s) => $s->append($separator))
-            ->append((string) $next)
-            ->__toString();
+                $this->storeLastNumber($settings, $type, $prefix, $next);
+
+                return $number;
+            });
     }
 
     public function update(
@@ -90,39 +97,70 @@ class JsonSequenceRepository implements SequenceRepository
             return;
         }
 
-        $settings = $this->settingsRepository->get();
-        $rawPrefix = data_get($settings, "{$type}.prefix", 'GY');
-        $prefix = trim(Data::string($rawPrefix), '-');
+        Cache::lock($this->lockName($type, $start->toDateString()), 10)
+            ->block(5, function () use ($type, $newNumber): void {
+                $settings = $this->freshSettings();
+                $rawPrefix = data_get($settings, "{$type}.prefix", 'GY');
+                $prefix = trim(Data::string($rawPrefix), '-');
 
-        $numericPart = Str::of($newNumber)
-            ->match('/(\\d+)$/')
-            ->__toString();
+                $numericPart = Str::of($newNumber)
+                    ->match('/(\\d+)$/')
+                    ->__toString();
 
-        if ($numericPart === '' || ! ctype_digit($numericPart)) {
-            return;
-        }
+                if ($numericPart === '' || ! ctype_digit($numericPart)) {
+                    return;
+                }
 
-        $incoming = (int) $numericPart;
-        $rawStored = data_get($settings, "{$type}.last_number", '');
-        $storedNumeric = Str::of(Data::string($rawStored))
-            ->match('/(\\d+)$/')
-            ->__toString();
-        $current = ctype_digit($storedNumeric) ? (int) $storedNumeric : 0;
+                $incoming = (int) $numericPart;
+                $rawStored = data_get($settings, "{$type}.last_number", '');
+                $storedNumeric = Str::of(Data::string($rawStored))
+                    ->match('/(\\d+)$/')
+                    ->__toString();
+                $current = ctype_digit($storedNumeric) ? (int) $storedNumeric : 0;
 
-        if ($incoming <= $current) {
-            return;
-        }
+                if ($incoming <= $current) {
+                    return;
+                }
 
+                $this->storeLastNumber($settings, $type, $prefix, $incoming);
+            });
+    }
+
+    /**
+     * @param  array<string, mixed>  $settings
+     */
+    private function storeLastNumber(array $settings, string $type, string $prefix, int $number): void
+    {
         if (! isset($settings[$type]) || ! is_array($settings[$type])) {
             $settings[$type] = [];
         }
 
         /** @var array<string, mixed> $typeSettings */
         $typeSettings = $settings[$type];
-        $typeSettings['last_number'] = $incoming;
+        $typeSettings['last_number'] = $number;
         $typeSettings['prefix'] = $prefix;
         $settings[$type] = $typeSettings;
 
         $this->settingsRepository->put($settings);
+    }
+
+    private function lockName(string $type, string $periodStart): string
+    {
+        return "gymie-sequence:{$type}:{$periodStart}";
+    }
+
+    /**
+     * Reload JSON settings after acquiring the lock so a waiting request does
+     * not reserve a number from stale request-cached state.
+     *
+     * @return array<string, mixed>
+     */
+    private function freshSettings(): array
+    {
+        if ($this->settingsRepository instanceof JsonSettingsRepository) {
+            return $this->settingsRepository->fresh();
+        }
+
+        return $this->settingsRepository->get();
     }
 }

@@ -4,8 +4,13 @@ namespace App\Models;
 
 use App\Enums\Status;
 use App\Helpers\Helpers;
+use App\Observers\InvoiceObserver;
+use App\Support\AppConfig;
 use App\Support\Billing\InvoiceCalculator;
 use Carbon\Carbon;
+use Database\Factories\InvoiceFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,20 +25,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $due_date
  * @property string|null $payment_method
  * @property Status|null $status
- * @property float|null $tax
- * @property int|float|string|null $discount
- * @property float|null $discount_amount
+ * @property string|null $tax
+ * @property string|null $discount
+ * @property string|null $discount_amount
  * @property string|null $discount_note
- * @property float|null $paid_amount
- * @property float|null $total_amount
- * @property float|null $due_amount
- * @property float|null $subscription_fee
+ * @property string|null $paid_amount
+ * @property string|null $total_amount
+ * @property string|null $due_amount
+ * @property string|null $subscription_fee
  * @property-read Subscription|null $subscription
- * @property-read \Illuminate\Database\Eloquent\Collection<int, InvoiceTransaction> $transactions
+ * @property-read Collection<int, InvoiceTransaction> $transactions
  */
+#[ObservedBy(InvoiceObserver::class)]
 class Invoice extends Model
 {
-    /** @use HasFactory<\Database\Factories\InvoiceFactory> */
+    /** @use HasFactory<InvoiceFactory> */
     use HasFactory, SoftDeletes;
 
     /**
@@ -58,11 +64,26 @@ class Invoice extends Model
         'subscription_fee',
     ];
 
-    protected $casts = [
-        'date' => 'date',
-        'due_date' => 'date',
-        'status' => Status::class,
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+            'due_date' => 'date',
+            'discount' => 'decimal:2',
+            'tax' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
+            'total_amount' => 'decimal:2',
+            'due_amount' => 'decimal:2',
+            'subscription_fee' => 'decimal:2',
+            'status' => Status::class,
+        ];
+    }
 
     /**
      * The subscription this invoice is for.
@@ -138,7 +159,7 @@ class Invoice extends Model
 
         $isDueOver = $due > 0
             && $this->due_date
-            && Carbon::parse($this->due_date)->lt(Carbon::today(\App\Support\AppConfig::timezone()));
+            && Carbon::parse($this->due_date)->lt(Carbon::today(AppConfig::timezone()));
 
         if ($isDueOver) {
             $status = 'overdue';
@@ -156,12 +177,10 @@ class Invoice extends Model
     }
 
     /**
-     * Boot the model and handle invoice calculations on saving.
+     * Register invoice calculations and transaction synchronization hooks.
      */
-    protected static function boot(): void
+    protected static function booted(): void
     {
-        parent::boot();
-
         static::saving(function (self $invoice): void {
             if (! $invoice->number) {
                 $invoice->number = Helpers::generateLastNumber('invoice', Invoice::class, $invoice->date);
@@ -192,7 +211,7 @@ class Invoice extends Model
                 $transaction = new InvoiceTransaction([
                     'type' => 'payment',
                     'amount' => $paid,
-                    'occurred_at' => now()->timezone(\App\Support\AppConfig::timezone()),
+                    'occurred_at' => now()->timezone(AppConfig::timezone()),
                     'payment_method' => $invoice->payment_method,
                     'note' => 'Initial payment',
                     'created_by' => auth()->id(),

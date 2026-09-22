@@ -19,17 +19,20 @@ return new class extends Migration
             $table->date('date');
             $table->date('due_date')->nullable();
             $table->string('payment_method')->nullable();
-            $table->float('discount')->nullable();
-            $table->float('tax')->nullable();
-            $table->float('discount_amount')->nullable();
+            $table->decimal('discount', 5, 2)->nullable();
+            $table->decimal('tax', 12, 2)->nullable();
+            $table->decimal('discount_amount', 12, 2)->nullable();
             $table->string('discount_note')->nullable();
-            $table->float('paid_amount')->default(0);
-            $table->float('total_amount')->default(0);
-            $table->float('due_amount')->default(0);
-            $table->float('subscription_fee')->default(0);
+            $table->decimal('paid_amount', 12, 2)->default(0);
+            $table->decimal('total_amount', 12, 2)->default(0);
+            $table->decimal('due_amount', 12, 2)->default(0);
+            $table->decimal('subscription_fee', 12, 2)->default(0);
             $table->enum('status', ['issued', 'paid', 'partial', 'overdue', 'refund', 'cancelled'])->default('issued');
             $table->softDeletes();
             $table->timestamps();
+            $table->index('date');
+            $table->index(['status', 'date']);
+            $table->index(['status', 'due_date']);
         });
     }
 

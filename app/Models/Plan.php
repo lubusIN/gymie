@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\Status;
 use App\Models\Concerns\CascadesSoftDeletes;
+use Database\Factories\PlanFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,15 +18,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $code
  * @property string|null $description
  * @property int|null $service_id
- * @property float|int|string|null $amount
+ * @property string|null $amount
  * @property int|float|string|null $days
  * @property Status|null $status
  * @property-read Service|null $service
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Subscription> $subscriptions
+ * @property-read Collection<int, Subscription> $subscriptions
  */
 class Plan extends Model
 {
-    /** @use HasFactory<\Database\Factories\PlanFactory> */
+    /** @use HasFactory<PlanFactory> */
     use CascadesSoftDeletes, HasFactory, SoftDeletes;
 
     /**
@@ -42,12 +44,18 @@ class Plan extends Model
         'status',
     ];
 
-    protected $casts = [
-        'status' => Status::class,
-    ];
-
-    /** @var list<string> */
-    protected $dates = ['deleted_at'];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'status' => Status::class,
+        ];
+    }
 
     /**
      * Get the sevice for the plan.

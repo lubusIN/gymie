@@ -6,6 +6,7 @@ use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Helpers\Helpers;
 use App\Models\Subscription;
+use App\Support\AppConfig;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -122,14 +123,13 @@ BLADE,
      */
     protected function getExpiringSoonQuery(): Builder
     {
-        $today = CarbonImmutable::today(\App\Support\AppConfig::timezone());
+        $today = CarbonImmutable::today(AppConfig::timezone());
         $end = $today->addDays(Helpers::getSubscriptionExpiringDays());
 
         return Subscription::query()
             ->with(['member', 'plan'])
-            ->whereDate('start_date', '<=', $today->toDateString())
-            ->whereDate('end_date', '>=', $today->toDateString())
-            ->whereDate('end_date', '<=', $end->toDateString())
+            ->where('start_date', '<=', $today->toDateString())
+            ->whereBetween('end_date', [$today->toDateString(), $end->toDateString()])
             ->orderBy('end_date');
     }
 
@@ -140,17 +140,17 @@ BLADE,
      */
     protected function getExpiredQuery(): Builder
     {
-        $today = CarbonImmutable::today(\App\Support\AppConfig::timezone());
+        $today = CarbonImmutable::today(AppConfig::timezone());
 
         return Subscription::query()
             ->with(['member', 'plan'])
-            ->whereDate('end_date', '<', $today->toDateString())
+            ->where('end_date', '<', $today->toDateString())
             ->orderByDesc('end_date');
     }
 
     public function table(Table $table): Table
     {
-        $today = CarbonImmutable::today(\App\Support\AppConfig::timezone())->toDateString();
+        $today = CarbonImmutable::today(AppConfig::timezone())->toDateString();
 
         return $table
             ->heading(null)
@@ -174,8 +174,8 @@ BLADE,
                     ->label(fn (): string => $this->activeTab === 'expired' ? __('app.widgets.days_since') : __('app.widgets.days_left'))
                     ->alignRight()
                     ->state(function (Subscription $record): string {
-                        $today = CarbonImmutable::today(\App\Support\AppConfig::timezone());
-                        $endDate = CarbonImmutable::parse($record->end_date, \App\Support\AppConfig::timezone())->startOfDay();
+                        $today = CarbonImmutable::today(AppConfig::timezone());
+                        $endDate = CarbonImmutable::parse($record->end_date, AppConfig::timezone())->startOfDay();
 
                         if ($this->activeTab === 'expired') {
                             $days = max($endDate->diffInDays($today, false), 0);
@@ -209,7 +209,7 @@ BLADE,
 
                             return ! Subscription::query()
                                 ->where('member_id', $record->member_id)
-                                ->whereDate('start_date', '>', $today)
+                                ->where('start_date', '>', $today)
                                 ->exists();
                         })
                         ->schema(fn (Subscription $record): array => SubscriptionForm::renewSchema($record))

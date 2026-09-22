@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Analytics\AnalyticsService;
 use App\Support\Analytics\AnalyticsDateRange;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -143,4 +144,30 @@ it('calculates collected financial and membership metrics within a custom date r
     expect($topPlans)->toHaveCount(2);
     expect($topPlans->first()['plan_name'])->toBe('Plan A');
     expect($topPlans->first()['collected'])->toBe(500.0);
+});
+
+it('includes every remaining expense category in the other chart segment', function (): void {
+    $range = AnalyticsDateRange::fromFilters([
+        'period' => 'custom',
+        'startDate' => '2026-02-01',
+        'endDate' => '2026-02-28',
+    ]);
+
+    Expense::factory()
+        ->count(55)
+        ->sequence(fn (Sequence $sequence): array => [
+            'category' => sprintf('Category %02d', $sequence->index + 1),
+            'amount' => $sequence->index + 1,
+            'date' => '2026-02-14',
+        ])
+        ->create();
+
+    $breakdown = app(AnalyticsService::class)
+        ->expenseCategoryBreakdownForChart($range, 5);
+
+    expect($breakdown)->toHaveCount(6)
+        ->and($breakdown->last())->toBe([
+            'category' => 'Other',
+            'total' => 1275.0,
+        ]);
 });

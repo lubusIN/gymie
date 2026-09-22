@@ -30,7 +30,7 @@ use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
@@ -48,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $this->basePanel($panel)
-            ->navigation(fn(NavigationBuilder $builder) => $this->buildNavigation($builder));
+            ->navigation(fn (NavigationBuilder $builder) => $this->buildNavigation($builder));
     }
 
     /**
@@ -81,8 +81,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([])
             ->plugins([FilamentShieldPlugin::make()
-                ->navigationIcon(fn(): null => null)
-                ->activeNavigationIcon(fn(): null => null)])
+                ->navigationIcon(fn (): null => null)
+                ->activeNavigationIcon(fn (): null => null)])
             ->middleware([
                 SetAppLocale::class,
                 EncryptCookies::class,
@@ -90,7 +90,7 @@ class AdminPanelProvider extends PanelProvider
                 StartSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
-                VerifyCsrfToken::class,
+                PreventRequestForgery::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
@@ -102,7 +102,7 @@ class AdminPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
-                fn(): HtmlString => new HtmlString(
+                fn (): HtmlString => new HtmlString(
                     Blade::render('@livewire(\\App\\Filament\\Livewire\\LocaleSwitcher::class, [], key(\'locale-switcher\'))')
                 ),
             );
@@ -161,8 +161,8 @@ class AdminPanelProvider extends PanelProvider
             ->item(
                 NavigationItem::make(__('app.navigation.dashboard'))
                     ->icon('heroicon-o-chart-bar')
-                    ->url(fn() => Dashboard::getUrl())
-                    ->isActiveWhen(fn() => request()->routeIs('filament.admin.pages.dashboard'))
+                    ->url(fn () => Dashboard::getUrl())
+                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.pages.dashboard'))
             );
     }
 

@@ -22,7 +22,7 @@ class EnquiryFollowUpsController extends ApiController
     {
         $this->requirePermission($request, 'View:Enquiry');
 
-        $perPage = QueryFilters::perPage($request->query('per_page'), default: 25);
+        $perPage = QueryFilters::perPage($request, default: 25);
 
         $rows = $enquiry->followUps()
             ->orderByDesc('schedule_date')

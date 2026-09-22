@@ -3,29 +3,32 @@
 namespace App\Models;
 
 use App\Enums\Status;
+use Database\Factories\SubscriptionFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int|null $renewed_from_subscription_id
  * @property int|null $member_id
  * @property int|null $plan_id
- * @property \Illuminate\Support\Carbon|null $start_date
- * @property \Illuminate\Support\Carbon|null $end_date
+ * @property Carbon|null $start_date
+ * @property Carbon|null $end_date
  * @property Status|null $status
  * @property-read Member|null $member
  * @property-read Plan|null $plan
  * @property-read Subscription|null $renewedFrom
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Subscription> $renewals
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Invoice> $invoices
+ * @property-read Collection<int, Subscription> $renewals
+ * @property-read Collection<int, Invoice> $invoices
  */
 class Subscription extends Model
 {
-    /** @use HasFactory<\Database\Factories\SubscriptionFactory> */
+    /** @use HasFactory<SubscriptionFactory> */
     use HasFactory, SoftDeletes;
 
     /**
@@ -42,14 +45,19 @@ class Subscription extends Model
         'status',
     ];
 
-    protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'status' => Status::class,
-    ];
-
-    /** @var list<string> */
-    protected $dates = ['deleted_at', 'start_date', 'end_date'];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date' => 'date',
+            'status' => Status::class,
+        ];
+    }
 
     /**
      * Get the invoices for the subscription.

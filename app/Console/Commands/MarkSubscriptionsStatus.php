@@ -48,7 +48,7 @@ class MarkSubscriptionsStatus extends Command
 
         if ($runAll || $runExpiredOnly) {
             $expiredCount = $this->updateStatusInChunks(Subscription::query()
-                ->whereDate('end_date', '<', $today)
+                ->where('end_date', '<', $today->toDateString())
                 ->whereNotIn('status', ['expired', 'renewed'])
                 ->whereDoesntHave('renewals'), 'expired');
 
@@ -59,7 +59,7 @@ class MarkSubscriptionsStatus extends Command
 
         if ($runAll || $runExpiredOnly) {
             $renewedCount = $this->updateStatusInChunks(Subscription::query()
-                ->whereDate('end_date', '<', $today)
+                ->where('end_date', '<', $today->toDateString())
                 ->where('status', '!=', 'renewed')
                 ->whereHas('renewals'), 'renewed');
 
@@ -70,7 +70,7 @@ class MarkSubscriptionsStatus extends Command
 
         if ($runAll) {
             $upcomingCount = Subscription::query()
-                ->whereDate('start_date', '>', $today)
+                ->where('start_date', '>', $today->toDateString())
                 ->where('status', '!=', 'renewed')
                 ->where('status', '!=', 'upcoming')
                 ->update(['status' => 'upcoming']);
@@ -82,7 +82,7 @@ class MarkSubscriptionsStatus extends Command
 
         if ($runAll || $runExpiringOnly) {
             $expiringCount = Subscription::query()
-                ->whereDate('start_date', '<=', $today)
+                ->where('start_date', '<=', $today->toDateString())
                 ->whereBetween('end_date', [$today->toDateString(), $expiringThreshold->toDateString()])
                 ->where('status', '!=', 'renewed')
                 ->where('status', '!=', 'expiring')
@@ -96,8 +96,8 @@ class MarkSubscriptionsStatus extends Command
 
         if ($runAll) {
             $ongoingCount = Subscription::query()
-                ->whereDate('start_date', '<=', $today)
-                ->whereDate('end_date', '>', $expiringThreshold)
+                ->where('start_date', '<=', $today->toDateString())
+                ->where('end_date', '>', $expiringThreshold->toDateString())
                 ->whereNotIn('status', ['ongoing', 'expired', 'renewed'])
                 ->update(['status' => 'ongoing']);
 

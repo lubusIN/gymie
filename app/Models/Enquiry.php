@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\Status;
 use App\Models\Concerns\CascadesSoftDeletes;
+use Database\Factories\EnquiryFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,9 +19,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string|null $email
  * @property string|null $contact
- * @property \Illuminate\Support\Carbon|null $date
+ * @property Carbon|null $date
  * @property string|null $gender
- * @property \Illuminate\Support\Carbon|null $dob
+ * @property Carbon|null $dob
  * @property Status|null $status
  * @property string|null $address
  * @property string|null $country
@@ -28,13 +31,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property array<int, mixed>|null $interested_in
  * @property string|null $source
  * @property string|null $goal
- * @property \Illuminate\Support\Carbon|null $start_by
+ * @property Carbon|null $start_by
  * @property-read User|null $user
- * @property-read \Illuminate\Database\Eloquent\Collection<int, FollowUp> $followUps
+ * @property-read Collection<int, FollowUp> $followUps
  */
 class Enquiry extends Model
 {
-    /** @use HasFactory<\Database\Factories\EnquiryFactory> */
+    /** @use HasFactory<EnquiryFactory> */
     use CascadesSoftDeletes, HasFactory, SoftDeletes;
 
     /**
@@ -62,16 +65,21 @@ class Enquiry extends Model
         'start_by',
     ];
 
-    protected $casts = [
-        'interested_in' => 'array',
-        'date' => 'date',
-        'dob' => 'date',
-        'start_by' => 'date',
-        'status' => Status::class,
-    ];
-
-    /** @var list<string> */
-    protected $dates = ['deleted_at'];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'interested_in' => 'array',
+            'date' => 'date',
+            'dob' => 'date',
+            'start_by' => 'date',
+            'status' => Status::class,
+        ];
+    }
 
     /**
      * Get the followUps for the enquiry.

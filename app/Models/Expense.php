@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Enums\Status;
+use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Expense extends Model
 {
-    /** @use HasFactory<\Database\Factories\ExpenseFactory> */
+    /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
 
     protected $attributes = [
@@ -30,11 +31,19 @@ class Expense extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-        'date' => 'date',
-        'due_date' => 'date',
-        'paid_at' => 'datetime',
-        'status' => Status::class,
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'date' => 'date',
+            'due_date' => 'date',
+            'paid_at' => 'datetime',
+            'status' => Status::class,
+        ];
+    }
 }

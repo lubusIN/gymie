@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\CascadesSoftDeletes;
+use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Service extends Model
 {
-    /** @use HasFactory<\Database\Factories\ServiceFactory> */
+    /** @use HasFactory<ServiceFactory> */
     use CascadesSoftDeletes, HasFactory, SoftDeletes;
 
     /**
@@ -22,9 +23,6 @@ class Service extends Model
         'name',
         'description',
     ];
-
-    /** @var list<string> */
-    protected $dates = ['deleted_at'];
 
     /**
      * Get the plans for the service.

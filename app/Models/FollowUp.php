@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int|null $enquiry_id
  * @property int|null $user_id
- * @property \Illuminate\Support\Carbon|null $schedule_date
+ * @property Carbon|null $schedule_date
  * @property string|null $method
  * @property string|null $outcome
  * @property Status|null $status
@@ -39,13 +40,18 @@ class FollowUp extends Model
         'status',
     ];
 
-    protected $casts = [
-        'schedule_date' => 'date',
-        'status' => Status::class,
-    ];
-
-    /** @var list<string> */
-    protected $dates = ['deleted_at'];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'schedule_date' => 'date',
+            'status' => Status::class,
+        ];
+    }
 
     /**
      * Get the enquiry for the follow-up.

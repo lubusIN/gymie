@@ -5,7 +5,7 @@ use App\Http\Middleware\SetAppLocale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
-test('it syncs Carbon locale with app locale', function () {
+test('it syncs Carbon locale with app locale', function (): void {
     $originalAppLocale = app()->getLocale();
     $originalCarbonLocale = Carbon::getLocale();
 
@@ -25,7 +25,7 @@ test('it syncs Carbon locale with app locale', function () {
         });
 
         $request = Request::create('/?locale=fr');
-        $middleware = new SetAppLocale;
+        $middleware = app(SetAppLocale::class);
 
         $middleware->handle($request, fn (Request $request) => response()->noContent());
 

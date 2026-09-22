@@ -72,7 +72,7 @@ class AnalyticsService
             ->sum('discount_amount');
 
         $outstanding = (float) Invoice::query()
-            ->whereDate('date', '<=', $range->referenceDateString())
+            ->where('date', '<=', $range->referenceDateString())
             ->where('due_amount', '>', 0)
             ->whereIn('status', ['issued', 'partial', 'overdue'])
             ->sum('due_amount');
@@ -127,8 +127,8 @@ class AnalyticsService
         $activeMembers = Member::query()
             ->whereHas('subscriptions', function (Builder $query) use ($referenceDate): void {
                 $query
-                    ->whereDate('start_date', '<=', $referenceDate)
-                    ->whereDate('end_date', '>=', $referenceDate);
+                    ->where('start_date', '<=', $referenceDate)
+                    ->where('end_date', '>=', $referenceDate);
             })
             ->count();
 
@@ -167,9 +167,8 @@ class AnalyticsService
         $end = $today->addDays($expiringDays);
 
         return Subscription::query()
-            ->whereDate('start_date', '<=', $today->toDateString())
-            ->whereDate('end_date', '>=', $today->toDateString())
-            ->whereDate('end_date', '<=', $end->toDateString())
+            ->where('start_date', '<=', $today->toDateString())
+            ->whereBetween('end_date', [$today->toDateString(), $end->toDateString()])
             ->count();
     }
 
@@ -355,18 +354,17 @@ class AnalyticsService
     public function expenseCategoryBreakdownForChart(AnalyticsDateRange $range, int $limit = 5): Collection
     {
         /** @var Collection<int, array{category: string, total: float}> $rows */
-        $rows = $this->expenseBreakdownByCategory($range, 50)
+        $top = $this->expenseBreakdownByCategory($range, $limit)
             ->map(fn (array $row): array => [
                 'category' => (string) $row['category'],
                 'total' => (float) $row['total'],
-            ]);
+            ])
+            ->values();
 
-        if ($rows->count() <= $limit) {
-            return $rows->values();
-        }
-
-        $top = $rows->take($limit)->values();
-        $otherTotal = Data::float($rows->slice($limit)->sum('total'));
+        $allCategoriesTotal = Data::float(Expense::query()
+            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
+            ->sum('amount'));
+        $otherTotal = round(max($allCategoriesTotal - Data::float($top->sum('total')), 0), 2);
 
         if ($otherTotal <= 0) {
             return $top;

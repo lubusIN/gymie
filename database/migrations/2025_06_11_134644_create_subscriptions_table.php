@@ -29,6 +29,9 @@ return new class extends Migration
                 ->default('ongoing');
             $table->softDeletes();
             $table->timestamps();
+            $table->index('start_date');
+            $table->index('end_date');
+            $table->index(['status', 'end_date']);
         });
     }
 

@@ -7,6 +7,7 @@ use App\Http\Requests\Api\V1\EnquiryUpdateRequest;
 use App\Http\Resources\V1\EnquiryResource;
 use App\Models\Enquiry;
 use App\Services\Api\QueryFilters;
+use App\Support\AppConfig;
 use App\Support\Data;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class EnquiriesController extends ApiController
 
         QueryFilters::applyIndexFilters($query, $request, self::RESOURCE_KEY);
 
-        $perPage = QueryFilters::perPage($request->query('per_page'));
+        $perPage = QueryFilters::perPage($request);
 
         return EnquiryResource::collection($query->paginate($perPage));
     }
@@ -48,7 +49,7 @@ class EnquiriesController extends ApiController
         $followUp = $data['follow_up'] ?? null;
         unset($data['follow_up']);
 
-        $data['date'] = $data['date'] ?? now()->timezone(\App\Support\AppConfig::timezone())->toDateString();
+        $data['date'] = $data['date'] ?? now()->timezone(AppConfig::timezone())->toDateString();
 
         $enquiry = Enquiry::create($data);
 

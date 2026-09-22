@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use App\Helpers\Helpers;
+use App\Support\Filament\LocationSection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
@@ -102,43 +101,11 @@ class UserForm
                             ])
                             ->columnSpan(3),
                     ]),
-                Section::make(__('app.ui.location'))
-                    ->schema([
-                        Textarea::make('address')
-                            ->label(__('app.fields.address'))
-                            ->required()
-                            ->placeholder(__('app.placeholders.address_example')),
-                        Group::make()
-                            ->schema([
-                                Select::make('country')
-                                    ->label(__('app.fields.country'))
-                                    ->placeholder(__('app.placeholders.select_country'))
-                                    ->options(Helpers::getCountries())
-                                    ->searchable()
-                                    ->preload()
-                                    ->required()
-                                    ->reactive()
-                                    ->afterStateUpdated(fn (callable $set) => [
-                                        $set('state', null),
-                                        $set('city', null),
-                                    ]),
-                                Select::make('state')
-                                    ->label(__('app.fields.state'))
-                                    ->placeholder(__('app.placeholders.select_state'))
-                                    ->options(fn ($get) => Helpers::getStates($get('country')))
-                                    ->searchable()
-                                    ->reactive(),
-                                Select::make('city')
-                                    ->label(__('app.fields.city'))
-                                    ->placeholder(__('app.placeholders.select_city'))
-                                    ->options(fn ($get) => Helpers::getCities($get('state')))
-                                    ->searchable()
-                                    ->reactive(),
-                                TextInput::make('pincode')
-                                    ->label(__('app.fields.pincode'))
-                                    ->placeholder(__('app.placeholders.pincode')),
-                            ])->columns(4),
-                    ]),
+                LocationSection::make(
+                    countrySearchable: true,
+                    countryPreloaded: true,
+                    regionSearchable: true,
+                ),
             ]);
     }
 }

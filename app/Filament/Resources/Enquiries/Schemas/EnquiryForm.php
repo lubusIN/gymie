@@ -2,16 +2,14 @@
 
 namespace App\Filament\Resources\Enquiries\Schemas;
 
-use App\Helpers\Helpers;
 use App\Models\Service;
 use App\Models\User;
+use App\Support\Filament\LocationSection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Blade;
@@ -84,42 +82,10 @@ class EnquiryForm
                             ->minDate(now())
                             ->placeholder(now()->format('d-m-Y')),
                     ])->columns(3)->columnSpanFull(),
-                Section::make(__('app.ui.location'))
-                    ->schema([
-                        Textarea::make('address')
-                            ->label(__('app.fields.address'))
-                            ->required()
-                            ->placeholder(__('app.placeholders.address_example')),
-                        Group::make()
-                            ->schema([
-                                Select::make('country')
-                                    ->label(__('app.fields.country'))
-                                    ->placeholder(__('app.placeholders.select_country'))
-                                    ->options(Helpers::getCountries())
-                                    ->required()
-                                    ->reactive()
-                                    ->afterStateUpdated(fn ($state, callable $set) => [
-                                        $set('state', null),
-                                        $set('city', null),
-                                    ]),
-                                Select::make('state')
-                                    ->label(__('app.fields.state'))
-                                    ->placeholder(__('app.placeholders.select_state'))
-                                    ->options(fn ($get) => Helpers::getStates($get('country')))
-                                    ->searchable()
-                                    ->reactive(),
-                                Select::make('city')
-                                    ->label(__('app.fields.city'))
-                                    ->placeholder(__('app.placeholders.select_city'))
-                                    ->options(fn ($get) => Helpers::getCities($get('state')))
-                                    ->searchable()
-                                    ->reactive(),
-                                TextInput::make('pincode')
-                                    ->label(__('app.fields.pincode'))
-                                    ->required()
-                                    ->placeholder(__('app.placeholders.pincode')),
-                            ])->columns(4),
-                    ]),
+                LocationSection::make(
+                    pincodeRequired: true,
+                    regionSearchable: true,
+                ),
                 Section::make(__('app.ui.preferences'))
                     ->schema([
                         Select::make('interested_in')

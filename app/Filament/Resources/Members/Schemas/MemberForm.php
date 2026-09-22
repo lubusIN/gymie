@@ -5,14 +5,13 @@ namespace App\Filament\Resources\Members\Schemas;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
 use App\Helpers\Helpers;
 use App\Models\Member;
+use App\Support\Filament\LocationSection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Contracts\HasSchemas;
@@ -55,7 +54,7 @@ class MemberForm
                                     ->readOnly()
                                     ->disabled()
                                     ->dehydrated()
-                                    ->default(fn (Get $get) => Helpers::generateLastNumber(
+                                    ->default(fn(Get $get) => Helpers::generateLastNumber(
                                         'member',
                                         Member::class,
                                         null,
@@ -127,43 +126,9 @@ class MemberForm
                                     ->selectablePlaceholder(false),
                             ])->columns(3)->columnSpan(3),
                     ])->columns(4),
-                Section::make(__('app.ui.location'))
-                    ->columns(2)
-                    ->schema([
-                        Textarea::make('address')
-                            ->label(__('app.fields.address'))
-                            ->required()
-                            ->rows(5)
-                            ->placeholder(__('app.placeholders.address_example')),
-                        Group::make()
-                            ->columns(2)
-                            ->schema([
-                                Select::make('country')
-                                    ->label(__('app.fields.country'))
-                                    ->placeholder(__('app.placeholders.select_country'))
-                                    ->options(Helpers::getCountries())
-                                    ->required()
-                                    ->reactive()
-                                    ->afterStateUpdated(fn ($state, callable $set) => [
-                                        $set('state', null),
-                                        $set('city', null),
-                                    ]),
-                                Select::make('state')
-                                    ->label(__('app.fields.state'))
-                                    ->placeholder(__('app.placeholders.select_state'))
-                                    ->options(fn ($get) => Helpers::getStates($get('country')))
-                                    ->reactive(),
-                                Select::make('city')
-                                    ->label(__('app.fields.city'))
-                                    ->placeholder(__('app.placeholders.select_city'))
-                                    ->options(fn ($get) => Helpers::getCities($get('state')))
-                                    ->reactive(),
-                                TextInput::make('pincode')
-                                    ->label(__('app.fields.pincode'))
-                                    ->required()
-                                    ->placeholder(__('app.placeholders.pincode')),
-                            ]),
-                    ]),
+                LocationSection::make(
+                    pincodeRequired: true,
+                ),
                 Section::make(__('app.titles.subscription_and_invoice'))
                     ->visibleOn('create')
                     ->schema([
@@ -176,7 +141,7 @@ class MemberForm
                             ->deletable(false)
                             ->extraAttributes(['class' => 'rmv_rept-space'])
                             ->columns(3)
-                            ->schema(fn (HasSchemas&Component $livewire): array => SubscriptionForm::configure(Schema::make($livewire))
+                            ->schema(fn(HasSchemas&Component $livewire): array => SubscriptionForm::configure(Schema::make($livewire))
                                 ->getComponents(withActions: false)),
                     ]),
             ]);

@@ -115,9 +115,9 @@ class ExpenseTable
             ->emptyStateDescription(__('app.empty.create_to_get_started', ['resource' => __('app.resources.expenses.singular')]))
             ->emptyStateActions([
                 CreateAction::make()
-                    ->label(__('app.actions.add_expense'))
+                    ->label(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))
                     ->icon('heroicon-m-plus')
-                    ->modalHeading(__('app.actions.add_expense'))
+                    ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))
                     ->createAnother(false)
                     ->modalWidth(Width::ScreenLarge)
                     ->closeModalByClickingAway(false)

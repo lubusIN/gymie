@@ -192,7 +192,6 @@ return [
         'view' => 'عرض :resource',
         'send' => 'ارسال',
         'back' => 'رجوع',
-        'add_expense' => 'اضافة مصروف',
         'new_follow_up' => 'متابعة جديدة',
         'record_actions' => 'اجراءات السجل',
         'change_status' => 'تغيير الحالة',

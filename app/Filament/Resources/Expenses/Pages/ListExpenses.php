@@ -19,9 +19,9 @@ class ListExpenses extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label(__('app.actions.add_expense'))
+                ->label(__('app.actions.new', ['resource' => ExpenseResource::getModelLabel()]))
                 ->icon('heroicon-m-plus')
-                ->modalHeading(__('app.actions.add_expense'))
+                ->modalHeading(__('app.actions.new', ['resource' => ExpenseResource::getModelLabel()]))
                 ->createAnother(false)
                 ->modalWidth(Width::ScreenLarge)
                 ->closeModalByClickingAway(false)

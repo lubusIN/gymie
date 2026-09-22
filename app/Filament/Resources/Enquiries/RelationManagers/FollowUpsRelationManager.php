@@ -52,6 +52,7 @@ class FollowUpsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make('create')
                     ->icon('heroicon-m-plus')
+                    ->label(__('app.actions.new_follow_up'))
                     ->visible(function (): bool {
                         $ownerRecord = $this->getOwnerRecord();
 

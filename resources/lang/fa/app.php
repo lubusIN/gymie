@@ -192,7 +192,6 @@ return [
         'view' => 'مشاهده :resource',
         'send' => 'ارسال',
         'back' => 'بازگشت',
-        'add_expense' => 'ثبت هزینه جدید',
         'new_follow_up' => 'پیگیری جدید',
         'record_actions' => 'ثبت اقدامات',
         'change_status' => 'تغییر وضعیت',

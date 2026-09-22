@@ -110,6 +110,8 @@ it('uses the correct submit labels for expense actions', function (): void {
         ->first(fn ($action): bool => $action->getName() === 'create');
 
     expect($headerAction)->toBeInstanceOf(CreateAction::class)
+        ->and($headerAction->getLabel())->toBe('New Expense')
+        ->and($headerAction->getModalHeading())->toBe('New Expense')
         ->and($headerAction->getModalSubmitActionLabel())->toBe('Create')
         ->and($headerAction->canCreateAnother())->toBeFalse();
 
@@ -127,6 +129,8 @@ it('uses the correct submit labels for expense actions', function (): void {
         ->first(fn ($action): bool => $action->getName() === 'create');
 
     expect($emptyStateAction)->toBeInstanceOf(CreateAction::class)
+        ->and($emptyStateAction->getLabel())->toBe('New Expense')
+        ->and($emptyStateAction->getModalHeading())->toBe('New Expense')
         ->and($emptyStateAction->getModalSubmitActionLabel())->toBe('Create')
         ->and($emptyStateAction->canCreateAnother())->toBeFalse();
 });

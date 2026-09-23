@@ -39,7 +39,7 @@ class SubscriptionsController extends ApiController
 
         QueryFilters::applyIndexFilters($query, $request, self::RESOURCE_KEY);
 
-        $perPage = QueryFilters::perPage($request->query('per_page'));
+        $perPage = QueryFilters::perPage($request);
 
         return SubscriptionResource::collection($query->paginate($perPage));
     }
@@ -173,8 +173,11 @@ class SubscriptionsController extends ApiController
     /**
      * Renew a subscription and create a new invoice.
      */
-    public function renew(SubscriptionRenewRequest $request, Subscription $subscription): JsonResponse
-    {
+    public function renew(
+        SubscriptionRenewRequest $request,
+        Subscription $subscription,
+        SubscriptionRenewalService $subscriptionRenewalService,
+    ): JsonResponse {
         $this->requirePermission($request, 'Update:Subscription');
 
         /** @var array{
@@ -195,7 +198,7 @@ class SubscriptionsController extends ApiController
          */
         $validated = $request->validated();
 
-        $result = app(SubscriptionRenewalService::class)->renew($subscription, $validated);
+        $result = $subscriptionRenewalService->renew($subscription, $validated);
 
         $newSubscription = $result['subscription'];
         $invoice = $result['invoice'];

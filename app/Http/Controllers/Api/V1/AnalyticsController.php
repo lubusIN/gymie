@@ -15,6 +15,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class AnalyticsController extends ApiController
 {
+    public function __construct(private readonly AnalyticsService $analyticsService) {}
+
     /**
      * Get financial KPIs for a range.
      */
@@ -22,8 +24,8 @@ class AnalyticsController extends ApiController
     {
         $this->requirePermission($request, 'ViewAny:Analytics');
 
-        $range = AnalyticsDateRange::fromFilters($request->all());
-        $metrics = app(AnalyticsService::class)->financialMetrics($range);
+        $range = $this->dateRange($request);
+        $metrics = $this->analyticsService->financialMetrics($range);
 
         return response()->json([
             'data' => [
@@ -43,8 +45,8 @@ class AnalyticsController extends ApiController
     {
         $this->requirePermission($request, 'ViewAny:Analytics');
 
-        $range = AnalyticsDateRange::fromFilters($request->all());
-        $metrics = app(AnalyticsService::class)->membershipMetrics($range);
+        $range = $this->dateRange($request);
+        $metrics = $this->analyticsService->membershipMetrics($range);
 
         return response()->json([
             'data' => [
@@ -64,19 +66,18 @@ class AnalyticsController extends ApiController
     {
         $this->requirePermission($request, 'ViewAny:Analytics');
 
-        $range = AnalyticsDateRange::fromFilters($request->all());
-        $service = app(AnalyticsService::class);
+        $range = $this->dateRange($request);
 
         $days = $range->end->diffInDays($range->start) + 1;
         $grouping = $days <= 31 ? 'day' : 'month';
 
         $collected = $grouping === 'day'
-            ? $service->collectedTrendByDate($range)
-            : $service->collectedTrendByMonth($range);
+            ? $this->analyticsService->collectedTrendByDate($range)
+            : $this->analyticsService->collectedTrendByMonth($range);
 
         $expenses = $grouping === 'day'
-            ? $service->expenseTrendByDate($range)
-            : $service->expenseTrendByMonth($range);
+            ? $this->analyticsService->expenseTrendByDate($range)
+            : $this->analyticsService->expenseTrendByMonth($range);
 
         $labels = collect(array_keys($collected))
             ->merge(array_keys($expenses))
@@ -112,8 +113,8 @@ class AnalyticsController extends ApiController
     {
         $this->requirePermission($request, 'ViewAny:Analytics');
 
-        $range = AnalyticsDateRange::fromFilters($request->all());
-        $rows = app(AnalyticsService::class)->expenseBreakdownByCategory($range, 10);
+        $range = $this->dateRange($request);
+        $rows = $this->analyticsService->expenseBreakdownByCategory($range, 10);
 
         return response()->json([
             'data' => $rows->values()->all(),
@@ -127,8 +128,8 @@ class AnalyticsController extends ApiController
     {
         $this->requirePermission($request, 'ViewAny:Analytics');
 
-        $range = AnalyticsDateRange::fromFilters($request->all());
-        $rows = app(AnalyticsService::class)->topPlansByCollected($range, 5);
+        $range = $this->dateRange($request);
+        $rows = $this->analyticsService->topPlansByCollected($range, 5);
 
         return response()->json([
             'data' => $rows->values()->all(),
@@ -142,7 +143,7 @@ class AnalyticsController extends ApiController
     {
         $this->requirePermission($request, 'ViewAny:Analytics');
 
-        $limit = (int) $request->query('limit', 5);
+        $limit = $request->integer('limit', 5);
         $limit = $limit > 0 ? min($limit, 50) : 5;
 
         $rows = InvoiceTransaction::query()
@@ -155,5 +156,17 @@ class AnalyticsController extends ApiController
             ->get();
 
         return InvoiceTransactionResource::collection($rows);
+    }
+
+    /**
+     * Build a date range from the supported analytics filters only.
+     */
+    private function dateRange(Request $request): AnalyticsDateRange
+    {
+        return AnalyticsDateRange::fromFilters($request->only([
+            'period',
+            'startDate',
+            'endDate',
+        ]));
     }
 }

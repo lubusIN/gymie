@@ -31,7 +31,7 @@ class UsersController extends ApiController
 
         QueryFilters::applyIndexFilters($query, $request, self::RESOURCE_KEY);
 
-        $perPage = QueryFilters::perPage($request->query('per_page'));
+        $perPage = QueryFilters::perPage($request);
 
         return UserResource::collection($query->paginate($perPage));
     }
@@ -150,7 +150,7 @@ class UsersController extends ApiController
 
         $actorRoles = $request->user()->roles->pluck('id')->toArray();
         $allowedRoleIds = array_intersect($roleIds, $actorRoles);
-        
+
         // Super admins can assign any role they request
         if ($request->user()->hasRole('super_admin')) {
             $allowedRoleIds = $roleIds;

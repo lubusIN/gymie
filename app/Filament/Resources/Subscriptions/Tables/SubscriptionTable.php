@@ -233,7 +233,7 @@ class SubscriptionTable
 
                                 return ! Subscription::query()
                                     ->where('member_id', $record->member_id)
-                                    ->whereDate('start_date', '>', $today)
+                                    ->where('start_date', '>', $today)
                                     ->exists();
                             })
                             ->schema(fn (Subscription $record): array => SubscriptionForm::renewSchema($record))

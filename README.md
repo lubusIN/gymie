@@ -7,10 +7,10 @@ Laravel based web application for gym & club management. Currently being used by
 
 ## Requirements
 
--   PHP >= 8.2
--   Laravel Framework ^12.0
+-   PHP >= 8.4
+-   Laravel Framework ^13.0
 -   Filament Admin Panel 5.x
--   Livewire ^3.0
+-   Livewire 4.x
 -   nnjeim/world ^1.1
 -   barryvdh/laravel-dompdf ^3.1
 -   Laravel Herd _(optional for local development)_

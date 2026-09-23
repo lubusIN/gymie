@@ -2,25 +2,30 @@
 
 namespace App\Models;
 
+use App\Observers\InvoiceTransactionObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int|null $invoice_id
  * @property string $type
- * @property float|int|string|null $amount
- * @property \Illuminate\Support\Carbon|null $occurred_at
+ * @property string|null $amount
+ * @property Carbon|null $occurred_at
  * @property string|null $payment_method
  * @property string|null $note
  * @property string|null $reference_id
  * @property int|null $created_by
  * @property-read Invoice|null $invoice
  */
+#[ObservedBy(InvoiceTransactionObserver::class)]
 class InvoiceTransaction extends Model
 {
-    /** @use HasFactory<\Illuminate\Database\Eloquent\Factories\Factory<static>> */
+    /** @use HasFactory<Factory<static>> */
     use HasFactory;
 
     /**
@@ -37,9 +42,18 @@ class InvoiceTransaction extends Model
         'created_by',
     ];
 
-    protected $casts = [
-        'occurred_at' => 'datetime',
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'occurred_at' => 'datetime',
+        ];
+    }
 
     /**
      * Get the invoice that this transaction belongs to.

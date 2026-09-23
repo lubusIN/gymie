@@ -33,7 +33,7 @@ class InvoiceNumberGeneratorTest extends TestCase
 
     #[Test]
     #[TestDox('Step 1: Given no existing invoices → returns GY-1')]
-    public function noExistingInvoicesReturnsGY1(): void
+    public function no_existing_invoices_returns_g_y1(): void
     {
         $next = Helpers::generateLastNumber(
             'invoice',
@@ -49,16 +49,35 @@ class InvoiceNumberGeneratorTest extends TestCase
     }
 
     #[Test]
+    #[TestDox('Generated invoice numbers are reserved before a record is saved')]
+    public function generated_invoice_numbers_are_reserved(): void
+    {
+        $first = Helpers::generateLastNumber(
+            'invoice',
+            Invoice::class,
+            '2025-06-17'
+        );
+        $second = Helpers::generateLastNumber(
+            'invoice',
+            Invoice::class,
+            '2025-06-17'
+        );
+
+        $this->assertSame('GY-1', $first);
+        $this->assertSame('GY-2', $second);
+    }
+
+    #[Test]
     #[TestDox('Step 2: Given two invoices in the fiscal year → returns GY-3')]
-    public function twoInRangeInvoicesReturnsGY3(): void
+    public function two_in_range_invoices_returns_g_y3(): void
     {
         Invoice::factory()->create([
             'number' => 'GY-1',
-            'date'   => '2025-04-01',
+            'date' => '2025-04-01',
         ]);
         Invoice::factory()->create([
             'number' => 'GY-2',
-            'date'   => '2025-05-01',
+            'date' => '2025-05-01',
         ]);
 
         $next = Helpers::generateLastNumber(
@@ -76,12 +95,12 @@ class InvoiceNumberGeneratorTest extends TestCase
 
     #[Test]
     #[TestDox('Step 3: Given only out-of-range invoices → returns GY-1')]
-    public function outOfRangeInvoicesReturnsGY1(): void
+    public function out_of_range_invoices_returns_g_y1(): void
     {
         // This one is dated before the FY start, so should be ignored
         Invoice::factory()->create([
             'number' => 'GY-1',
-            'date'   => '2024-03-15',
+            'date' => '2024-03-15',
         ]);
 
         $next = Helpers::generateLastNumber(

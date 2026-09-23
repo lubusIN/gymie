@@ -67,8 +67,6 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         ];
     }
 
-    protected $dates = ['deleted_at'];
-
     /**
      * Get the followUps for the user.
      */

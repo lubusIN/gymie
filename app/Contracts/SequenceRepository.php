@@ -11,6 +11,8 @@ namespace App\Contracts;
 interface SequenceRepository
 {
     /**
+     * Reserve and return the next number in the sequence.
+     *
      * @param  class-string  $modelClass
      */
     public function generate(

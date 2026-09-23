@@ -29,7 +29,7 @@ class MembersController extends ApiController
 
         QueryFilters::applyIndexFilters($query, $request, self::RESOURCE_KEY);
 
-        $perPage = QueryFilters::perPage($request->query('per_page'));
+        $perPage = QueryFilters::perPage($request);
 
         return MemberResource::collection($query->paginate($perPage));
     }

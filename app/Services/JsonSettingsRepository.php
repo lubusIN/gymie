@@ -71,6 +71,18 @@ class JsonSettingsRepository implements SettingsRepository
         return $this->cachedSettings = $this->normalize($settings);
     }
 
+    /**
+     * Reload settings from their backing store, bypassing the request cache.
+     *
+     * @return array<string, mixed>
+     */
+    public function fresh(): array
+    {
+        $this->cachedSettings = null;
+
+        return $this->get();
+    }
+
     public function put(array $settings): void
     {
         $normalized = $this->normalize($settings);

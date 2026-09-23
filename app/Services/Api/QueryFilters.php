@@ -3,6 +3,7 @@
 namespace App\Services\Api;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -22,7 +23,7 @@ final class QueryFilters
      * Apply all common index filters for a resource using allowlisted rules.
      *
      * This consolidates controller boilerplate while keeping query rules explicit
-     * (see {@see \App\Services\Api\ResourceQueryRules}).
+     * (see {@see ResourceQueryRules}).
      */
     /**
      * @template TModel of \Illuminate\Database\Eloquent\Model
@@ -165,12 +166,17 @@ final class QueryFilters
 
                     $builder->whereIn($column, $values);
                 }),
-                'date_range', 'datetime_range' => AllowedFilter::callback($key, static function (Builder $builder, mixed $value) use ($column): void {
+                'date_range', 'datetime_range' => AllowedFilter::callback($key, static function (Builder $builder, mixed $value) use ($column, $type): void {
                     if (! is_scalar($value)) {
                         return;
                     }
 
-                    self::applyRange($builder, $column, trim((string) $value));
+                    self::applyRange(
+                        $builder,
+                        $column,
+                        trim((string) $value),
+                        dateOnly: $type === 'date_range',
+                    );
                 }),
                 default => AllowedFilter::exact($key, $column),
             };
@@ -189,9 +195,9 @@ final class QueryFilters
     /**
      * @return int Per-page value clamped to a safe max.
      */
-    public static function perPage(?string $value, int $default = 15, int $max = 100): int
+    public static function perPage(Request $request, int $default = 15, int $max = 100): int
     {
-        $perPage = (int) ($value ?? $default);
+        $perPage = $request->integer('per_page', $default);
 
         if ($perPage <= 0) {
             return $default;
@@ -272,9 +278,9 @@ final class QueryFilters
             : $model->getTable().'.deleted_at';
 
         return match ($value) {
-            'with' => $query->withoutGlobalScope(\Illuminate\Database\Eloquent\SoftDeletingScope::class),
+            'with' => $query->withoutGlobalScope(SoftDeletingScope::class),
             'only' => $query
-                ->withoutGlobalScope(\Illuminate\Database\Eloquent\SoftDeletingScope::class)
+                ->withoutGlobalScope(SoftDeletingScope::class)
                 ->whereNotNull($deletedAtColumn),
             default => $query,
         };
@@ -285,13 +291,19 @@ final class QueryFilters
      *
      * @param  Builder<TModel>  $query
      */
-    private static function applyRange(Builder $query, string $column, string $value): void
+    private static function applyRange(Builder $query, string $column, string $value, bool $dateOnly): void
     {
         $range = self::parseRange($value);
 
         if ($range !== null) {
             [$from, $to] = $range;
             $query->whereBetween($column, [$from, $to]);
+
+            return;
+        }
+
+        if ($dateOnly) {
+            $query->where($column, $value);
 
             return;
         }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('code')->nullable()->unique();
             $table->string('description')->nullable();
             $table->integer('days')->nullable();
-            $table->float('amount')->nullable();
+            $table->decimal('amount', 12, 2)->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active')->nullable();
             $table->softDeletes();
             $table->timestamps();

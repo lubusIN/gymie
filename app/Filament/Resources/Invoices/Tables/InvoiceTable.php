@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceTransaction;
 use App\Models\Subscription;
 use App\Services\Email\InvoiceEmailService;
+use App\Services\Invoices\InvoiceTransactionService;
 use App\Support\AppConfig;
 use App\Support\Billing\PaymentMethod;
 use App\Support\Data;
@@ -29,7 +30,6 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class InvoiceTable
 {
@@ -85,11 +85,11 @@ class InvoiceTable
                         return $query
                             ->when(
                                 $data['date_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->where('date', '>=', $date),
                             )
                             ->when(
                                 $data['date_to'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->where('date', '<=', $date),
                             );
                     }),
             ])
@@ -225,7 +225,7 @@ class InvoiceTable
                                     return;
                                 }
 
-                                $record->transactions()->create([
+                                app(InvoiceTransactionService::class)->record($record, [
                                     'type' => 'payment',
                                     'amount' => $amount,
                                     'occurred_at' => $data['occurred_at'] ?? now()->timezone(AppConfig::timezone()),
@@ -267,33 +267,16 @@ class InvoiceTable
                                     ->placeholder(__('app.placeholders.optional_note')),
                             ])
                             ->action(function (Invoice $record, array $data) {
-                                $refunded = DB::transaction(function () use ($record, $data): bool {
-                                    $invoice = Invoice::query()
-                                        ->lockForUpdate()
-                                        ->find($record->getKey());
-
-                                    if (! $invoice || in_array($invoice->status?->value, ['refund', 'cancelled'], true)) {
-                                        return false;
-                                    }
-
-                                    $amount = max((float) ($invoice->paid_amount ?? 0), 0);
-
-                                    if ($amount <= 0) {
-                                        return false;
-                                    }
-
-                                    $invoice->transactions()->create([
-                                        'type' => 'refund',
-                                        'amount' => $amount,
+                                $refund = app(InvoiceTransactionService::class)->refundPaidBalance(
+                                    $record,
+                                    [
                                         'occurred_at' => $data['occurred_at'] ?? now()->timezone(AppConfig::timezone()),
                                         'note' => $data['note'] ?? null,
                                         'created_by' => auth()->id(),
-                                    ]);
+                                    ],
+                                );
 
-                                    return true;
-                                });
-
-                                if (! $refunded) {
+                                if (! $refund) {
                                     Notification::make()
                                         ->title(__('app.notifications.invalid_refund_amount'))
                                         ->danger()

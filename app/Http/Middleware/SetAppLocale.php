@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SetAppLocale
 {
+    public function __construct(private readonly SettingsRepository $settingsRepository) {}
+
     /**
      * @param  Closure(Request): Response  $next
      */
@@ -25,7 +27,7 @@ class SetAppLocale
 
         $settingsLocale = null;
         try {
-            $settings = app(SettingsRepository::class)->get();
+            $settings = $this->settingsRepository->get();
             $candidate = data_get($settings, 'general.locale');
             $settingsLocale = is_string($candidate) ? trim($candidate) : null;
         } catch (\Throwable) {

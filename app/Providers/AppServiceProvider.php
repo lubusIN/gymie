@@ -6,10 +6,6 @@ use App\Contracts\SequenceRepository;
 use App\Contracts\SettingsRepository;
 use App\Contracts\TenantContext;
 use App\Helpers\Helpers;
-use App\Models\Invoice;
-use App\Models\InvoiceTransaction;
-use App\Observers\InvoiceObserver;
-use App\Observers\InvoiceTransactionObserver;
 use App\Services\Api\Docs\AddIndexQueryParametersTransformer;
 use App\Services\JsonSequenceRepository;
 use App\Services\JsonSettingsRepository;
@@ -177,7 +173,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->configureDeletionPrevention();
-        $this->registerModelObservers();
     }
 
     /**
@@ -229,15 +224,6 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api-login', function (Request $request): Limit {
             return Limit::perMinute(10)->by((string) $request->ip());
         });
-    }
-
-    /**
-     * Register model observers.
-     */
-    private function registerModelObservers(): void
-    {
-        Invoice::observe(InvoiceObserver::class);
-        InvoiceTransaction::observe(InvoiceTransactionObserver::class);
     }
 
     /**

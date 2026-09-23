@@ -37,15 +37,20 @@ class AuthController extends ApiController
         if (
             ! $user
             || ($tenantContext->gymId() && Data::int($user->gym_id) !== $tenantContext->gymId())
-            || ! Hash::check(Data::string($request->input('password')), Data::string($user->password))
+            || ! Hash::check($request->string('password')->toString(), Data::string($user->password))
         ) {
             throw ValidationException::withMessages([
                 'email' => ['These credentials do not match our records.'],
             ]);
         }
 
-        $deviceName = Data::string($request->input('device_name')) ?: Data::string($request->userAgent(), 'api');
-        $deviceName = mb_substr($deviceName, 0, 255);
+        $deviceName = $request->string('device_name')->trim();
+
+        if ($deviceName->isEmpty()) {
+            $deviceName = str($request->userAgent() ?? 'api');
+        }
+
+        $deviceName = $deviceName->limit(255, '')->toString();
 
         $token = $user->createToken($deviceName)->plainTextToken;
 

@@ -7,17 +7,6 @@
     padding: 0px;
 }
 
-/* div[data-field-wrapper-id="component-1.guard_name"],
-div[data-field-wrapper-id*=".guard_name"] {
-    display: none !important;
-}
-
-:has(> [name="guard_name"]),
-:has(> * > [name="guard_name"]),
-div:has(input[name="guard_name"]) {
-    display: none !important;
-} */
-
 div[wire\:partial*="form.guard_name"] {
     display: none !important;
 }

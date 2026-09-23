@@ -5,10 +5,13 @@ namespace App\Models;
 use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Models\Concerns\CascadesSoftDeletes;
+use Database\Factories\MemberFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -20,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $emergency_contact
  * @property string|null $health_issue
  * @property string|null $gender
- * @property \Illuminate\Support\Carbon|null $dob
+ * @property Carbon|null $dob
  * @property string|null $address
  * @property string|null $country
  * @property string|null $state
@@ -29,11 +32,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $source
  * @property string|null $goal
  * @property Status|null $status
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Subscription> $subscriptions
+ * @property-read Collection<int, Subscription> $subscriptions
  */
 class Member extends Model
 {
-    /** @use HasFactory<\Database\Factories\MemberFactory> */
+    /** @use HasFactory<MemberFactory> */
     use CascadesSoftDeletes, HasFactory, SoftDeletes;
 
     /**
@@ -61,18 +64,18 @@ class Member extends Model
         'status',
     ];
 
-    protected $casts = ['dob' => 'date', 'status' => Status::class];
-
     /**
-     * The attributes that should be mutated to dates.
-     * (SoftDeletes already adds deleted_at rollover.)
+     * Get the attributes that should be cast.
      *
-     * @var list<string>
+     * @return array<string, string>
      */
-    protected $dates = [
-        'dob',
-        'deleted_at',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'dob' => 'date',
+            'status' => Status::class,
+        ];
+    }
 
     /**
      * Get the subscriptions for the member.
@@ -86,12 +89,10 @@ class Member extends Model
     }
 
     /**
-     * Boot the model and add cascade delete and restore behavior.
+     * Register member number synchronization hooks.
      */
-    protected static function boot(): void
+    protected static function booted(): void
     {
-        parent::boot();
-
         static::saving(function (self $member): void {
             if (! $member->code) {
                 $member->code = Helpers::generateLastNumber('member', Member::class, null, 'code');

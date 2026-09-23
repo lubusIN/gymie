@@ -7,6 +7,8 @@ use App\Http\Resources\V1\InvoiceTransactionResource;
 use App\Models\Invoice;
 use App\Models\InvoiceTransaction;
 use App\Services\Api\QueryFilters;
+use App\Services\Invoices\InvoiceTransactionService;
+use App\Support\AppConfig;
 use App\Support\Data;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +26,7 @@ class InvoiceTransactionsController extends ApiController
     {
         $this->requirePermission($request, 'View:Invoice');
 
-        $perPage = QueryFilters::perPage($request->query('per_page'), default: 25);
+        $perPage = QueryFilters::perPage($request, default: 25);
 
         $transactions = $invoice->transactions()
             ->orderByDesc('occurred_at')
@@ -36,16 +38,19 @@ class InvoiceTransactionsController extends ApiController
     /**
      * Create a payment/refund transaction for an invoice.
      */
-    public function store(InvoiceTransactionStoreRequest $request, Invoice $invoice): InvoiceTransactionResource
-    {
+    public function store(
+        InvoiceTransactionStoreRequest $request,
+        Invoice $invoice,
+        InvoiceTransactionService $transactionService,
+    ): InvoiceTransactionResource {
         $this->requirePermission($request, 'Update:Invoice');
 
         $data = $request->validated();
 
-        $transaction = $invoice->transactions()->create([
+        $transaction = $transactionService->record($invoice, [
             'type' => $data['type'],
             'amount' => $data['amount'],
-            'occurred_at' => $data['occurred_at'] ?? now()->timezone(\App\Support\AppConfig::timezone()),
+            'occurred_at' => $data['occurred_at'] ?? now()->timezone(AppConfig::timezone()),
             'payment_method' => $data['payment_method'] ?? $invoice->payment_method,
             'note' => $data['note'] ?? null,
             'reference_id' => $data['reference_id'] ?? null,
@@ -58,13 +63,17 @@ class InvoiceTransactionsController extends ApiController
     /**
      * Delete a transaction belonging to an invoice.
      */
-    public function destroy(Request $request, Invoice $invoice, InvoiceTransaction $transaction): JsonResponse
-    {
+    public function destroy(
+        Request $request,
+        Invoice $invoice,
+        InvoiceTransaction $transaction,
+        InvoiceTransactionService $transactionService,
+    ): JsonResponse {
         $this->requirePermission($request, 'Update:Invoice');
 
         abort_unless((int) $transaction->invoice_id === (int) $invoice->id, 404);
 
-        $transaction->delete();
+        $transactionService->delete($invoice, $transaction);
 
         return $this->noContent();
     }

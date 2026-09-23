@@ -321,6 +321,7 @@ return [
         'language' => 'اللغة',
         'actions' => [
             'save_settings' => 'حفظ الاعدادات',
+            'send_test_email' => 'إرسال بريد تجريبي',
         ],
         'tabs' => [
             'gym_info' => 'معلومات النادي',
@@ -348,6 +349,7 @@ return [
             'city' => 'المدينة',
             'zip' => 'الرمز البريدي',
             'email_address' => 'البريد الالكتروني',
+            'test_email_recipient' => 'المستلم',
             'contact_no' => 'رقم الهاتف',
             'prefix' => 'بادئة',
             'last_number' => 'اخر رقم',
@@ -375,6 +377,8 @@ return [
             'type_category' => 'اكتب اسم الفئة',
             'tokens_invoice' => 'الرموز: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}',
             'tokens_receipt' => 'الرموز: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}, {payment_amount}',
+            'gym_email_reply_to' => 'سيتم إرسال ردود الأعضاء على رسائل المعاملات إلى هذا العنوان.',
+            'test_email' => 'أرسل رسالة الآن للتحقق من خدمة الإرسال وهوية المرسل.',
         ],
         'placeholders' => [
             'prefix' => 'GY',
@@ -385,6 +389,10 @@ return [
     'notifications' => [
         'failed' => 'فشل',
         'failed_settings_save' => 'تعذر حفظ الاعدادات. حاول مرة اخرى.',
+        'mail_not_configured' => 'إرسال البريد غير مهيأ. قم بتهيئة خدمة الإرسال في بيئة التطبيق أولاً.',
+        'test_email_failed' => 'تعذر إرسال البريد التجريبي. تحقق من إعدادات البريد وسجلات التطبيق.',
+        'test_email_sent' => 'تم إرسال البريد التجريبي',
+        'test_email_sent_body' => 'تم إرسال بريد تجريبي إلى :email.',
         'language_updated' => 'تم تحديث اللغة',
         'plan_activated' => 'تم تفعيل الخطة',
         'plan_deactivated' => 'تم تعطيل الخطة',
@@ -523,5 +531,8 @@ return [
         'remaining_due' => 'المتبقي',
         'invoice_status_line' => 'فاتورتك <strong>:invoice_number</strong> حالتها <strong>:status</strong>. ملف PDF مرفق.',
         'payment_received_line' => 'تم استلام دفعتك للفاتورة <strong>:invoice_number</strong>. ملف PDF المحدث مرفق.',
+        'test_subject' => 'اختبار إرسال البريد لـ :gym_name',
+        'test_heading' => 'إرسال البريد يعمل',
+        'test_body' => 'تؤكد هذه الرسالة أن Gymie يستطيع إرسال رسائل المعاملات لـ :gym_name.',
     ],
 ];

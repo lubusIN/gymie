@@ -321,6 +321,7 @@ return [
         'language' => 'زبان سیستم',
         'actions' => [
             'save_settings' => 'ذخیره تنظیمات',
+            'send_test_email' => 'ارسال ایمیل آزمایشی',
         ],
         'tabs' => [
             'gym_info' => 'اطلاعات باشگاه',
@@ -348,6 +349,7 @@ return [
             'city' => 'شهر',
             'zip' => 'کد پستی',
             'email_address' => 'آدرس ایمیل',
+            'test_email_recipient' => 'گیرنده',
             'contact_no' => 'شماره تماس',
             'prefix' => 'پیشوند فاکتور',
             'last_number' => 'آخرین شماره فاکتور',
@@ -375,6 +377,8 @@ return [
             'type_category' => 'نام دسته‌بندی را تایپ کنید',
             'tokens_invoice' => 'کدهای پویا: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}',
             'tokens_receipt' => 'کدهای پویا: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}, {payment_amount}',
+            'gym_email_reply_to' => 'پاسخ اعضا به ایمیل‌های تراکنشی به این آدرس ارسال می‌شود.',
+            'test_email' => 'برای بررسی سرویس ارسال و هویت فرستنده، اکنون یک پیام آزمایشی ارسال کنید.',
         ],
         'placeholders' => [
             'prefix' => 'GY',
@@ -385,6 +389,10 @@ return [
     'notifications' => [
         'failed' => 'ناموفق',
         'failed_settings_save' => 'خطا در ذخیره‌سازی تنظیمات. لطفا مجدداً تلاش کنید.',
+        'mail_not_configured' => 'ارسال ایمیل پیکربندی نشده است. ابتدا سرویس ارسال را در محیط برنامه تنظیم کنید.',
+        'test_email_failed' => 'ایمیل آزمایشی ارسال نشد. تنظیمات ایمیل و گزارش‌های برنامه را بررسی کنید.',
+        'test_email_sent' => 'ایمیل آزمایشی ارسال شد',
+        'test_email_sent_body' => 'یک ایمیل آزمایشی به :email ارسال شد.',
         'language_updated' => 'زبان سیستم به‌روزرسانی شد',
         'plan_activated' => 'طرح با موفقیت فعال شد.',
         'plan_deactivated' => 'طرح غیرفعال شد.',
@@ -523,5 +531,8 @@ return [
         'remaining_due' => 'بدهی باقی‌مانده',
         'invoice_status_line' => 'فاکتور شما به شماره <strong>:invoice_number</strong> در وضعیت <strong>:status</strong> قرار دارد. فایل PDF ضمیمه شده است.',
         'payment_received_line' => 'پرداخت شما برای فاکتور شماره <strong>:invoice_number</strong> دریافت شد. فایل PDF به‌روزرسانی شده فاکتور ضمیمه گردیده است.',
+        'test_subject' => 'آزمایش ارسال ایمیل :gym_name',
+        'test_heading' => 'ارسال ایمیل فعال است',
+        'test_body' => 'این پیام تأیید می‌کند که Gymie می‌تواند ایمیل‌های تراکنشی :gym_name را ارسال کند.',
     ],
 ];

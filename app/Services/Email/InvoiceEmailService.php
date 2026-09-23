@@ -8,6 +8,7 @@ use App\Jobs\SendInvoiceIssuedEmail;
 use App\Jobs\SendInvoicePaymentReceiptEmail;
 use App\Mail\InvoiceIssuedMail;
 use App\Mail\InvoicePaymentReceiptMail;
+use App\Mail\TestEmail;
 use App\Models\Invoice;
 use App\Models\InvoiceTransaction;
 use App\Support\AppConfig;
@@ -17,6 +18,7 @@ use App\Support\Invoices\InvoicePdfRenderer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use LogicException;
 
 /**
  * Invoice email service.
@@ -24,7 +26,7 @@ use Illuminate\Support\Str;
  * This service is responsible for:
  * - building invoice/payment email payloads
  * - rendering PDF attachments
- * - configuring Reply-To from gym settings
+ * - configuring the sender identity and Reply-To from gym settings
  * - rendering safe, token-based subject templates
  */
 final class InvoiceEmailService
@@ -62,6 +64,55 @@ final class InvoiceEmailService
     }
 
     /**
+     * Determine whether the selected mailer can deliver email outside the application.
+     */
+    public function isMailDeliveryConfigured(): bool
+    {
+        $mailer = config('mail.default');
+
+        if (! is_string($mailer) || $mailer === '') {
+            return false;
+        }
+
+        $transport = config("mail.mailers.{$mailer}.transport");
+        $fromAddress = config('mail.from.address');
+
+        return is_string($transport)
+            && ! in_array($transport, ['array', 'log'], true)
+            && is_string($fromAddress)
+            && filter_var($fromAddress, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
+    /**
+     * Send a synchronous message so an administrator can verify mail delivery.
+     */
+    public function sendTestEmail(string $toEmail): void
+    {
+        if (! $this->isMailDeliveryConfigured()) {
+            throw new LogicException('Outbound mail delivery is not configured.');
+        }
+
+        if (! filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+            throw new LogicException('The test email recipient is invalid.');
+        }
+
+        $settings = $this->settingsRepository->get();
+
+        $this->withLocaleFromSettings($settings, function () use ($settings, $toEmail): void {
+            $gym = $this->gymIdentityFromSettings($settings);
+            $gymName = $gym['name'] !== '' ? $gym['name'] : 'Gymie';
+            $mailable = new TestEmail(
+                fromAddress: $this->mailFromAddress(),
+                gymName: $gymName,
+                gymEmail: $gym['email'],
+                gymContact: $gym['contact'],
+            );
+
+            Mail::to($toEmail)->send($mailable);
+        });
+    }
+
+    /**
      * Send an "invoice issued" email with PDF attached.
      */
     public function sendInvoiceIssuedEmail(int $invoiceId, string $toEmail, ?string $note = null): void
@@ -96,6 +147,7 @@ final class InvoiceEmailService
             $mailable = new InvoiceIssuedMail(
                 invoice: $invoice,
                 subjectLine: $subject,
+                fromAddress: $this->mailFromAddress(),
                 gymName: $gymName,
                 gymEmail: $gym['email'],
                 gymContact: $gym['contact'],
@@ -103,10 +155,6 @@ final class InvoiceEmailService
                 note: $note,
                 pdfBytes: $pdfBytes,
             );
-
-            if (filled($gym['email'])) {
-                $mailable->replyTo($gym['email'], $gymName);
-            }
 
             Mail::to($toEmail)->send($mailable);
         });
@@ -158,6 +206,7 @@ final class InvoiceEmailService
                 invoice: $invoice,
                 transaction: $transaction,
                 subjectLine: $subject,
+                fromAddress: $this->mailFromAddress(),
                 gymName: $gymName,
                 gymEmail: $gym['email'],
                 gymContact: $gym['contact'],
@@ -165,10 +214,6 @@ final class InvoiceEmailService
                 note: $note,
                 pdfBytes: $pdfBytes,
             );
-
-            if (filled($gym['email'])) {
-                $mailable->replyTo($gym['email'], $gymName);
-            }
 
             Mail::to($toEmail)->send($mailable);
         });
@@ -217,6 +262,20 @@ final class InvoiceEmailService
         ]);
 
         return false;
+    }
+
+    /**
+     * Return the deployment-owned sender address used by every transactional email.
+     */
+    private function mailFromAddress(): string
+    {
+        $fromAddress = config('mail.from.address');
+
+        if (! is_string($fromAddress) || filter_var($fromAddress, FILTER_VALIDATE_EMAIL) === false) {
+            throw new LogicException('The outbound mail sender address is invalid.');
+        }
+
+        return $fromAddress;
     }
 
     /**

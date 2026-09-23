@@ -7,6 +7,7 @@ use App\Models\InvoiceTransaction;
 use App\Support\Invoices\InvoiceDocument;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -28,6 +29,7 @@ class InvoicePaymentReceiptMail extends Mailable
         public readonly Invoice $invoice,
         public readonly InvoiceTransaction $transaction,
         public readonly string $subjectLine,
+        public readonly string $fromAddress,
         public readonly string $gymName,
         public readonly string $gymEmail,
         public readonly string $gymContact,
@@ -42,6 +44,10 @@ class InvoicePaymentReceiptMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            from: new Address($this->fromAddress, $this->gymName),
+            replyTo: filter_var($this->gymEmail, FILTER_VALIDATE_EMAIL)
+                ? [new Address($this->gymEmail, $this->gymName)]
+                : [],
             subject: $this->subjectLine,
         );
     }

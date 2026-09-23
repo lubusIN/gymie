@@ -5,17 +5,19 @@ namespace App\Jobs;
 use App\Services\Email\InvoiceEmailService;
 use App\Support\Invoices\InvoiceDocumentNotRenderable;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
  * Send the "payment received" receipt email (queued).
  */
-class SendInvoicePaymentReceiptEmail implements ShouldQueue
+class SendInvoicePaymentReceiptEmail implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -25,6 +27,11 @@ class SendInvoicePaymentReceiptEmail implements ShouldQueue
     public int $tries = 3;
 
     public int $timeout = 60;
+
+    /**
+     * Keep duplicate delivery requests locked for longer than the retry window.
+     */
+    public int $uniqueFor = 3600;
 
     /** @var list<int> */
     public array $backoff = [10, 60, 300];
@@ -59,6 +66,14 @@ class SendInvoicePaymentReceiptEmail implements ShouldQueue
                 'missing' => $exception->viewData['missing'],
             ]);
         }
+    }
+
+    /**
+     * Identify one payment receipt delivery to one recipient.
+     */
+    public function uniqueId(): string
+    {
+        return "{$this->invoiceTransactionId}:".Str::lower(trim($this->toEmail));
     }
 
     public function failed(?Throwable $exception): void

@@ -2,7 +2,9 @@
 
 use App\Contracts\SettingsRepository;
 use App\Filament\Pages\Settings;
+use App\Mail\TestEmail;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -207,4 +209,50 @@ it('stores and reloads the gym logo', function (): void {
         ]);
 
     expect($reloadedComponent->get('data.general.gym_logo'))->toBeArray();
+});
+
+it('sends a test email from settings using the gym identity', function (): void {
+    config([
+        'mail.default' => 'smtp',
+        'mail.from.address' => 'notifications@gymie.test',
+    ]);
+
+    $repository = new class implements SettingsRepository
+    {
+        public function get(): array
+        {
+            return [
+                'general' => [
+                    'gym_name' => 'Demo Gym',
+                    'gym_email' => 'gym@example.com',
+                    'gym_contact' => '9999999999',
+                ],
+                'invoice' => [],
+                'member' => [],
+                'charges' => ['discounts' => []],
+                'expenses' => ['categories' => []],
+                'subscriptions' => ['expiring_days' => 7],
+                'payments' => [],
+                'notifications' => ['email' => []],
+            ];
+        }
+
+        public function put(array $settings): void {}
+    };
+
+    app()->instance(SettingsRepository::class, $repository);
+    Mail::fake();
+
+    Livewire::test(Settings::class)
+        ->callAction('sendTestEmail', [
+            'recipient' => 'owner@example.com',
+        ])
+        ->assertHasNoActionErrors()
+        ->assertNotified();
+
+    Mail::assertSent(TestEmail::class, function (TestEmail $mail): bool {
+        return $mail->hasTo('owner@example.com')
+            && $mail->hasFrom('notifications@gymie.test', 'Demo Gym')
+            && $mail->hasReplyTo('gym@example.com', 'Demo Gym');
+    });
 });

@@ -321,6 +321,7 @@ return [
         'language' => 'Langue',
         'actions' => [
             'save_settings' => 'Enregistrer les paramètres',
+            'send_test_email' => 'Envoyer un e-mail de test',
         ],
         'tabs' => [
             'gym_info' => 'Salle',
@@ -348,6 +349,7 @@ return [
             'city' => 'Ville',
             'zip' => 'Code postal',
             'email_address' => 'Adresse email',
+            'test_email_recipient' => 'Destinataire',
             'contact_no' => 'Téléphone',
             'prefix' => 'Préfixe',
             'last_number' => 'Dernier numéro',
@@ -375,6 +377,8 @@ return [
             'type_category' => 'Saisir le nom de catégorie',
             'tokens_invoice' => 'Jetons: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}',
             'tokens_receipt' => 'Jetons: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}, {payment_amount}',
+            'gym_email_reply_to' => 'Les réponses des membres aux e-mails transactionnels sont envoyées à cette adresse.',
+            'test_email' => 'Envoyez un message maintenant pour vérifier le fournisseur d’envoi et l’identité de l’expéditeur.',
         ],
         'placeholders' => [
             'prefix' => 'GY',
@@ -385,6 +389,10 @@ return [
     'notifications' => [
         'failed' => 'Erreur',
         'failed_settings_save' => 'Impossible d\'enregistrer les paramètres. Veuillez réessayer.',
+        'mail_not_configured' => 'L’envoi d’e-mails n’est pas configuré. Configurez d’abord un service d’envoi dans l’environnement de l’application.',
+        'test_email_failed' => 'L’e-mail de test n’a pas pu être envoyé. Vérifiez la configuration et les journaux de l’application.',
+        'test_email_sent' => 'E-mail de test envoyé',
+        'test_email_sent_body' => 'Un e-mail de test a été envoyé à :email.',
         'language_updated' => 'Langue mise à jour',
         'plan_activated' => 'Forfait activé',
         'plan_deactivated' => 'Forfait désactivé',
@@ -523,5 +531,8 @@ return [
         'remaining_due' => 'Reste dû',
         'invoice_status_line' => 'Votre facture <strong>:invoice_number</strong> est <strong>:status</strong>. Le PDF est en pièce jointe.',
         'payment_received_line' => 'Nous avons reçu votre paiement pour la facture <strong>:invoice_number</strong>. Le PDF mis à jour est en pièce jointe.',
+        'test_subject' => 'Test d’envoi d’e-mail de :gym_name',
+        'test_heading' => 'L’envoi d’e-mails fonctionne',
+        'test_body' => 'Ce message confirme que Gymie peut envoyer des e-mails transactionnels pour :gym_name.',
     ],
 ];

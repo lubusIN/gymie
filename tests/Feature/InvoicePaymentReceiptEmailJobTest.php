@@ -80,6 +80,8 @@ it('dispatches the payment receipt email job when enabled in settings', function
             && $job->toEmail === $member->email
             && $job->tries === 3
             && $job->timeout === 60
+            && $job->uniqueFor === 3600
+            && $job->uniqueId() === "{$transaction->id}:member@example.com"
             && $job->backoff === [10, 60, 300]
             && $job->afterCommit === true;
     });

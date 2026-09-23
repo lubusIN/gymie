@@ -321,6 +321,7 @@ return [
         'language' => 'Language',
         'actions' => [
             'save_settings' => 'Save settings',
+            'send_test_email' => 'Send test email',
         ],
         'tabs' => [
             'gym_info' => 'Gym Info',
@@ -348,6 +349,7 @@ return [
             'city' => 'City',
             'zip' => 'Zip Code',
             'email_address' => 'Email Address',
+            'test_email_recipient' => 'Recipient',
             'contact_no' => 'Contact No.',
             'prefix' => 'Prefix',
             'last_number' => 'Last Number',
@@ -375,6 +377,8 @@ return [
             'type_category' => 'Type category name',
             'tokens_invoice' => 'Tokens: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}',
             'tokens_receipt' => 'Tokens: {invoice_number}, {status}, {total}, {paid}, {due}, {gym_name}, {member_name}, {payment_amount}',
+            'gym_email_reply_to' => 'Member replies to transactional emails are sent to this address.',
+            'test_email' => 'Send a message now to verify the delivery provider and sender identity.',
         ],
         'placeholders' => [
             'prefix' => 'GY',
@@ -385,6 +389,10 @@ return [
     'notifications' => [
         'failed' => 'Failed',
         'failed_settings_save' => 'Unable to save settings. Please try again.',
+        'mail_not_configured' => 'Email delivery is not configured. Configure a delivery mailer in the application environment first.',
+        'test_email_failed' => 'The test email could not be sent. Check the mail configuration and application logs.',
+        'test_email_sent' => 'Test email sent',
+        'test_email_sent_body' => 'A test email was sent to :email.',
         'language_updated' => 'Language updated',
         'plan_activated' => 'Plan has been activated',
         'plan_deactivated' => 'Plan has been deactivated',
@@ -523,5 +531,8 @@ return [
         'remaining_due' => 'Remaining due',
         'invoice_status_line' => 'Your invoice <strong>:invoice_number</strong> is <strong>:status</strong>. The PDF is attached.',
         'payment_received_line' => 'We received your payment for invoice <strong>:invoice_number</strong>. The updated invoice PDF is attached.',
+        'test_subject' => ':gym_name email delivery test',
+        'test_heading' => 'Email delivery is working',
+        'test_body' => 'This message confirms that Gymie can send transactional emails for :gym_name.',
     ],
 ];

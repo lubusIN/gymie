@@ -36,18 +36,20 @@ class ListEnquiries extends ListRecords
     {
         return [
             'all' => Tab::make(__('app.common.all')),
-            'lead' => Tab::make(__('app.status.lead'))
-                ->badge(Enquiry::query()->where('status', 'lead')->count())
-                ->badgeColor(Status::Lead->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'lead')),
-            'member' => Tab::make(__('app.status.member'))
-                ->badge(Enquiry::query()->where('status', 'member')->count())
-                ->badgeColor(Status::Member->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'member')),
-            'lost' => Tab::make(__('app.status.lost'))
-                ->badge(Enquiry::query()->where('status', 'lost')->count())
-                ->badgeColor(Status::Lost->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'lost')),
+            Status::Lead->value => $this->statusTab(Status::Lead),
+            Status::FollowUpScheduled->value => $this->statusTab(Status::FollowUpScheduled),
+            Status::Member->value => $this->statusTab(Status::Member),
+            Status::Lost->value => $this->statusTab(Status::Lost),
         ];
+    }
+
+    private function statusTab(Status $status): Tab
+    {
+        return Tab::make($status->getLabel())
+            ->badge(Enquiry::query()->where('status', $status->value)->count())
+            ->badgeColor($status->getColor())
+            ->modifyQueryUsing(
+                fn (Builder $query): Builder => $query->where('status', $status->value),
+            );
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Enquiry;
 use App\Models\FollowUp;
 use App\Models\User;
 use App\Rules\ModelExists;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
 /**
@@ -47,7 +48,7 @@ final class FollowUpSchema
     /**
      * Rules for creating a follow-up under an enquiry (enquiry_id comes from route).
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function nestedStoreRules(): array
     {
@@ -56,14 +57,14 @@ final class FollowUpSchema
             'schedule_date' => ['required', 'date'],
             'method' => ['required', 'string', Rule::in(['call', 'email', 'in_person', 'whatsapp', 'other'])],
             'outcome' => ['nullable', 'string'],
-            'status' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', Rule::in([Status::Pending->value, Status::Done->value])],
         ];
     }
 
     /**
      * Rules for creating a follow-up directly.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function storeRules(): array
     {
@@ -73,12 +74,12 @@ final class FollowUpSchema
             'schedule_date' => ['required', 'date'],
             'method' => ['required', 'string', Rule::in(['call', 'email', 'in_person', 'whatsapp', 'other'])],
             'outcome' => ['nullable', 'string'],
-            'status' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', Rule::in([Status::Pending->value, Status::Done->value])],
         ];
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function updateRules(): array
     {
@@ -88,7 +89,7 @@ final class FollowUpSchema
             'schedule_date' => ['sometimes', 'date'],
             'method' => ['sometimes', 'string', Rule::in(['call', 'email', 'in_person', 'whatsapp', 'other'])],
             'outcome' => ['sometimes', 'nullable', 'string'],
-            'status' => ['sometimes', 'nullable', 'string'],
+            'status' => ['sometimes', 'nullable', 'string', Rule::in([Status::Pending->value, Status::Done->value])],
         ];
     }
 

@@ -74,6 +74,10 @@ it('keeps status row and confirmation modal icons aligned', function (
         Status::Paid,
         Heroicon::OutlinedCheckCircle,
     ],
+    'follow-up scheduled' => [
+        Status::FollowUpScheduled,
+        Heroicon::OutlinedClock,
+    ],
     'pending' => [
         Status::Pending,
         Heroicon::OutlinedClock,

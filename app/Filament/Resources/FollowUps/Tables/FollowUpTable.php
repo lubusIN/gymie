@@ -115,7 +115,7 @@ class FollowUpTable
                     return __('app.empty.no_records_in_range', ['records' => $records]);
                 }
 
-                return Enquiry::where('status', $tab)->exists()
+                return FollowUp::where('status', $tab)->exists()
                     ? __('app.empty.no_status_records_in_range', ['status' => $status, 'records' => $records])
                     : __('app.empty.no_status_records', ['status' => $status, 'records' => $records]);
             })

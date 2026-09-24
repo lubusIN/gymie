@@ -5,6 +5,7 @@ namespace App\Services\Api\Schemas;
 use App\Enums\Status;
 use App\Models\Member;
 use App\Rules\ModelUnique;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +35,7 @@ final class MemberSchema
             'sortable' => ['id', 'created_at', 'name'],
             'default_sort' => '-id',
             'status_column' => 'status',
-            'includes' => ['subscriptions', 'subscriptions.plan', 'subscriptions.invoices'],
+            'includes' => ['enquiry', 'subscriptions', 'subscriptions.plan', 'subscriptions.invoices'],
             'filters' => [
                 'status' => ['type' => 'exact', 'column' => 'status'],
                 'gender' => ['type' => 'exact', 'column' => 'gender'],
@@ -45,7 +46,7 @@ final class MemberSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function storeRules(): array
     {
@@ -71,7 +72,7 @@ final class MemberSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function updateRules(int|string $memberId): array
     {
@@ -103,6 +104,7 @@ final class MemberSchema
     {
         return [
             'id' => (int) $member->id,
+            'enquiry_id' => $member->enquiry_id,
             'code' => $member->code ? (string) $member->code : null,
             'name' => (string) $member->name,
             'email' => (string) $member->email,

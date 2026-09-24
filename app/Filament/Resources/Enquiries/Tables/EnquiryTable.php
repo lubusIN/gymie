@@ -3,9 +3,8 @@
 namespace App\Filament\Resources\Enquiries\Tables;
 
 use App\Enums\Status;
-use App\Filament\Resources\Members\MemberResource;
 use App\Models\Enquiry;
-use App\Support\Filament\StatusAction;
+use App\Support\Filament\EnquiryPipelineActions;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -15,9 +14,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,11 +29,32 @@ class EnquiryTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with([
+                'member',
+                'nextFollowUp',
+                'user',
+            ]))
             ->columns([
                 TextColumn::make('id')->sortable()->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.id')),
                 TextColumn::make('name')->searchable()->sortable()->label(__('app.fields.name')),
-                TextColumn::make('email')->searchable()->toggleable(isToggledHiddenByDefault: false)->label(__('app.fields.email')),
-                TextColumn::make('contact')->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.contact')),
+                TextColumn::make('contact')->searchable()->label(__('app.fields.contact')),
+                TextColumn::make('user.name')
+                    ->label(__('app.fields.assigned_to'))
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('source')
+                    ->label(__('app.fields.source'))
+                    ->formatStateUsing(fn (?string $state): string => $state
+                        ? (string) __('app.options.source.'.$state)
+                        : (string) __('app.placeholders.na')),
+                TextColumn::make('nextFollowUp.schedule_date')
+                    ->label(__('app.fields.next_follow_up'))
+                    ->date('d-m-Y')
+                    ->placeholder(__('app.placeholders.na'))
+                    ->color(fn (Enquiry $record): ?string => $record->nextFollowUp?->schedule_date?->isBefore(today())
+                        ? 'danger'
+                        : null),
+                TextColumn::make('email')->searchable()->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.email')),
                 TextColumn::make('date')->sortable()->date('d-m-Y')->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.date')),
                 TextColumn::make('start_by')->date('d-m-Y')->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.start_by')),
                 TextColumn::make('status')
@@ -100,6 +120,18 @@ class EnquiryTable
             ])
             ->filters([
                 TrashedFilter::make(),
+                SelectFilter::make('user')
+                    ->label(__('app.fields.assigned_to'))
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('source')
+                    ->label(__('app.fields.source'))
+                    ->options([
+                        'promotions' => __('app.options.source.promotions'),
+                        'word_of_mouth' => __('app.options.source.word_of_mouth'),
+                        'others' => __('app.options.source.others'),
+                    ]),
                 Filter::make('date')
                     ->schema([
                         DatePicker::make('date_from')->label(__('app.fields.date_from')),
@@ -123,37 +155,22 @@ class EnquiryTable
                         Action::make('heading_actions')
                             ->label(__('app.fields.status'))
                             ->disabled()
-                            ->visible(fn ($record): bool => in_array($record->status?->value, ['lead'], true))
+                            ->visible(fn (Enquiry $record): bool => ! in_array(
+                                $record->status,
+                                [Status::Member, Status::Lost],
+                                true,
+                            ))
                             ->color('gray'),
-                        Action::make('convert_to_member')
-                            ->label(__('app.actions.convert_to_member'))
-                            ->icon('heroicon-m-arrows-right-left')
-                            ->color('success')
-                            ->visible(fn (Enquiry $record): bool => $record->status?->value === 'lead')
-                            ->url(fn (Enquiry $record) => MemberResource::getUrl(
-                                'create',
-                                ['enquiry_id' => $record->id],
-                            )),
-                        StatusAction::make('mark_as_lost', Status::Lost)
-                            ->label(__('app.actions.mark_as_lost'))
-                            ->color('danger')
-                            ->requiresConfirmation()
-                            ->action(fn (Enquiry $record) => tap($record, function ($record) {
-                                $record->update(['status' => 'lost']);
-                                Notification::make()
-                                    ->title(__('app.notifications.enquiry_marked_as_lost'))
-                                    ->success()
-                                    ->icon('heroicon-o-x-circle')
-                                    ->iconColor('danger')
-                                    ->send();
-                            }))
-                            ->visible(fn ($record): bool => $record->status?->value === 'lead'),
+                        EnquiryPipelineActions::scheduleFollowUp(),
+                        EnquiryPipelineActions::convertToMember(),
+                        EnquiryPipelineActions::markAsLost(),
                     ])->dropdown(false),
                     ActionGroup::make([
                         Action::make('heading_actions')
                             ->label(__('app.actions.record_actions'))
                             ->disabled()
                             ->color('gray'),
+                        EnquiryPipelineActions::viewMember(),
                         EditAction::make()->hiddenLabel(),
                         DeleteAction::make()
                             ->hiddenLabel(),

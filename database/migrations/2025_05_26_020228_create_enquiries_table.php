@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('enquiries', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name')->nullable();
             $table->string('email')->unique()->nullable();
             $table->string('contact')->nullable();
@@ -25,13 +25,16 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->string('state')->nullable();
             $table->text('pincode')->nullable();
-            $table->enum('status', ['lead', 'member', 'lost'])->default('lead')->nullable();
+            $table->enum('status', ['lead', 'follow_up_scheduled', 'member', 'lost'])->default('lead');
+            $table->text('lost_reason')->nullable();
+            $table->timestamp('converted_at')->nullable();
             $table->json('interested_in')->nullable();
             $table->string('source')->nullable();
             $table->string('goal')->nullable();
             $table->date('start_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
+            $table->index(['status', 'created_at']);
         });
     }
 

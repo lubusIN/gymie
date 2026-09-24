@@ -2,13 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Models\Enquiry;
 use App\Models\Service;
 use App\Models\User;
 use Database\Factories\Concerns\WithSynchronizedLocation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Enquiry>
+ * @extends Factory<Enquiry>
  */
 class EnquiryFactory extends Factory
 {
@@ -31,7 +32,9 @@ class EnquiryFactory extends Factory
             'date' => $this->faker->date(now()),
             'gender' => $this->faker->randomElement(['male', 'female', 'other']),
             'dob' => $this->faker->date('d-m-Y', '-15 years'),
-            'status' => $this->faker->randomElement(['lead', 'member', 'lost']),
+            'status' => 'lead',
+            'lost_reason' => null,
+            'converted_at' => null,
             'address' => $location['address'],
             'country' => $location['country'],
             'city' => $location['city'],

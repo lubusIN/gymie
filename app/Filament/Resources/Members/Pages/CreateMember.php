@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources\Members\Pages;
 
+use App\Enums\Status;
 use App\Filament\Resources\Members\MemberResource;
 use App\Models\Enquiry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CreateMember extends CreateRecord
 {
@@ -20,28 +21,43 @@ class CreateMember extends CreateRecord
     {
         parent::mount();
 
-        if ($id = Request::query('enquiry_id')) {
-            $this->enquiryId = (int) $id;
+        $enquiryId = request()->integer('enquiry_id');
 
-            $enquiry = Enquiry::find($this->enquiryId);
-            if ($enquiry) {
-                $this->form->fill([
-                    ...($this->data ?? []),
-                    'name' => $enquiry->name,
-                    'email' => $enquiry->email,
-                    'contact' => $enquiry->contact,
-                    'gender' => $enquiry->gender,
-                    'dob' => $enquiry->dob,
-                    'address' => $enquiry->address,
-                    'country' => $enquiry->country,
-                    'city' => $enquiry->city,
-                    'state' => $enquiry->state,
-                    'pincode' => $enquiry->pincode,
-                    'source' => $enquiry->source,
-                    'goal' => $enquiry->goal,
-                ]);
-            }
+        if ($enquiryId === 0) {
+            return;
         }
+
+        $enquiry = Enquiry::query()
+            ->whereKey($enquiryId)
+            ->whereIn('status', [
+                Status::Lead->value,
+                Status::FollowUpScheduled->value,
+            ])
+            ->whereDoesntHave('member')
+            ->first();
+
+        if (! $enquiry) {
+            return;
+        }
+
+        Gate::authorize('view', $enquiry);
+
+        $this->enquiryId = $enquiry->id;
+        $this->form->fill([
+            ...($this->data ?? []),
+            'name' => $enquiry->name,
+            'email' => $enquiry->email,
+            'contact' => $enquiry->contact,
+            'gender' => $enquiry->gender,
+            'dob' => $enquiry->dob,
+            'address' => $enquiry->address,
+            'country' => $enquiry->country,
+            'city' => $enquiry->city,
+            'state' => $enquiry->state,
+            'pincode' => $enquiry->pincode,
+            'source' => $enquiry->source,
+            'goal' => $enquiry->goal,
+        ]);
     }
 
     protected function afterCreate(): void
@@ -50,9 +66,7 @@ class CreateMember extends CreateRecord
             return;
         }
 
-        // reload & update status
-        Enquiry::where('id', $this->enquiryId)
-            ->update(['status' => 'member']);
+        Enquiry::findOrFail($this->enquiryId)->convertTo($this->record);
 
         Notification::make()
             ->title(__('app.notifications.member_created'))

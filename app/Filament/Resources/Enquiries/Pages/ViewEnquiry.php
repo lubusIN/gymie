@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\Enquiries\Pages;
 
-use App\Enums\Status;
 use App\Filament\Resources\Enquiries\EnquiryResource;
-use App\Filament\Resources\Members\MemberResource;
 use App\Models\Enquiry;
-use Filament\Actions\Action;
+use App\Support\Filament\EnquiryPipelineActions;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -31,16 +30,13 @@ class ViewEnquiry extends ViewRecord
         return [
             EditAction::make(),
             DeleteAction::make(),
-            Action::make('convert_to_member')
-                ->label(__('app.actions.convert_to_member'))
-                ->icon('heroicon-s-arrows-right-left')
-                ->color('success')
-                ->requiresConfirmation()
-                ->visible(fn (Enquiry $record) => $record->status === Status::Lead)
-                ->url(fn (Enquiry $record) => MemberResource::getUrl(
-                    'create',
-                    ['enquiry_id' => $record->id],
-                )),
+            ActionGroup::make([
+                EnquiryPipelineActions::markAsContacted(),
+                EnquiryPipelineActions::scheduleFollowUp(),
+                EnquiryPipelineActions::convertToMember(),
+                EnquiryPipelineActions::markAsLost(),
+                EnquiryPipelineActions::viewMember(),
+            ]),
         ];
     }
 

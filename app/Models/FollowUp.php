@@ -74,4 +74,18 @@ class FollowUp extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Synchronize the owning enquiry whenever its follow-up queue changes.
+     */
+    protected static function booted(): void
+    {
+        $synchronizeEnquiry = static function (self $followUp): void {
+            $followUp->enquiry?->synchronizePipelineStatus();
+        };
+
+        static::saved($synchronizeEnquiry);
+        static::deleted($synchronizeEnquiry);
+        static::restored($synchronizeEnquiry);
+    }
 }

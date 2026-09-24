@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Enquiries\Schemas;
 
+use App\Enums\Status;
+use App\Filament\Resources\Members\MemberResource;
 use App\Models\Enquiry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
@@ -51,14 +53,32 @@ class EnquiryInfolist
                             ->label(__('app.fields.date'))
                             ->date(),
                         TextEntry::make('user.name')
-                            ->label(__('app.fields.lead_owner'))
+                            ->label(__('app.fields.assigned_to'))
                             ->weight(FontWeight::Bold)
                             ->color('success')
                             ->url(fn ($record): string => route('filament.admin.resources.users.view', $record->user_id)),
+                        TextEntry::make('nextFollowUp.schedule_date')
+                            ->label(__('app.fields.next_follow_up'))
+                            ->date()
+                            ->placeholder(__('app.placeholders.na')),
                         TextEntry::make('start_by')
                             ->label(__('app.fields.preferred_start_date'))
                             ->date()
                             ->placeholder(__('app.placeholders.na')),
+                        TextEntry::make('lost_reason')
+                            ->label(__('app.fields.lost_reason'))
+                            ->visible(fn (Enquiry $record): bool => $record->status === Status::Lost)
+                            ->columnSpan(2),
+                        TextEntry::make('converted_at')
+                            ->label(__('app.fields.converted_at'))
+                            ->dateTime()
+                            ->visible(fn (Enquiry $record): bool => $record->status === Status::Member),
+                        TextEntry::make('member.name')
+                            ->label(__('app.fields.member'))
+                            ->url(fn (Enquiry $record): ?string => $record->member
+                                ? MemberResource::getUrl('view', ['record' => $record->member])
+                                : null)
+                            ->visible(fn (Enquiry $record): bool => $record->member !== null),
                     ])
                     ->columns(3)
                     ->columnSpan(4),

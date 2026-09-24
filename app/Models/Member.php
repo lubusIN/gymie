@@ -9,12 +9,14 @@ use Database\Factories\MemberFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int|null $enquiry_id
  * @property string|null $photo
  * @property string $code
  * @property string $name
@@ -33,6 +35,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $goal
  * @property Status|null $status
  * @property-read Collection<int, Subscription> $subscriptions
+ * @property-read Enquiry|null $enquiry
  */
 class Member extends Model
 {
@@ -45,6 +48,7 @@ class Member extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'enquiry_id',
         'photo',
         'code',
         'name',
@@ -86,6 +90,16 @@ class Member extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Get the enquiry that was converted into this member.
+     *
+     * @return BelongsTo<Enquiry, $this>
+     */
+    public function enquiry(): BelongsTo
+    {
+        return $this->belongsTo(Enquiry::class);
     }
 
     /**

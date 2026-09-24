@@ -10,8 +10,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use LogicException;
 
 /**
  * @property int $id
@@ -32,7 +35,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $source
  * @property string|null $goal
  * @property Carbon|null $start_by
+ * @property string|null $lost_reason
+ * @property Carbon|null $converted_at
  * @property-read User|null $user
+ * @property-read Member|null $member
+ * @property-read FollowUp|null $nextFollowUp
  * @property-read Collection<int, FollowUp> $followUps
  */
 class Enquiry extends Model
@@ -63,6 +70,8 @@ class Enquiry extends Model
         'source',
         'goal',
         'start_by',
+        'lost_reason',
+        'converted_at',
     ];
 
     /**
@@ -77,6 +86,7 @@ class Enquiry extends Model
             'date' => 'date',
             'dob' => 'date',
             'start_by' => 'date',
+            'converted_at' => 'datetime',
             'status' => Status::class,
         ];
     }
@@ -93,6 +103,29 @@ class Enquiry extends Model
     }
 
     /**
+     * Get the earliest pending follow-up for the enquiry.
+     *
+     * @return HasOne<FollowUp, $this>
+     */
+    public function nextFollowUp(): HasOne
+    {
+        return $this->hasOne(FollowUp::class)->ofMany(
+            ['schedule_date' => 'min', 'id' => 'min'],
+            fn ($query) => $query->where('status', Status::Pending->value),
+        );
+    }
+
+    /**
+     * Get the member created from this enquiry.
+     *
+     * @return HasOne<Member, $this>
+     */
+    public function member(): HasOne
+    {
+        return $this->hasOne(Member::class);
+    }
+
+    /**
      * Get the user for the enquiry.
      */
     /**
@@ -101,6 +134,53 @@ class Enquiry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Keep the enquiry pipeline aligned with its pending follow-ups.
+     */
+    public function synchronizePipelineStatus(): void
+    {
+        if (in_array($this->status, [Status::Member, Status::Lost], true)) {
+            return;
+        }
+
+        $hasPendingFollowUp = $this->followUps()
+            ->where('status', Status::Pending->value)
+            ->exists();
+
+        if ($hasPendingFollowUp) {
+            $this->updateQuietly(['status' => Status::FollowUpScheduled]);
+
+            return;
+        }
+
+        if ($this->status !== Status::Lead) {
+            $this->updateQuietly(['status' => Status::Lead]);
+        }
+    }
+
+    /**
+     * Link the converted member and close the enquiry pipeline.
+     */
+    public function convertTo(Member $member): void
+    {
+        DB::transaction(function () use ($member): void {
+            $this->refresh();
+
+            if (in_array($this->status, [Status::Member, Status::Lost], true)) {
+                throw new LogicException('Only open enquiries can be converted.');
+            }
+
+            $member->enquiry()->associate($this);
+            $member->save();
+
+            $this->update([
+                'status' => Status::Member,
+                'lost_reason' => null,
+                'converted_at' => now(),
+            ]);
+        });
     }
 
     /**

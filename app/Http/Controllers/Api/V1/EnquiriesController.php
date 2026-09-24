@@ -12,6 +12,7 @@ use App\Support\Data;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Enquiries CRUD endpoints.
@@ -27,7 +28,7 @@ class EnquiriesController extends ApiController
     {
         $this->requirePermission($request, 'ViewAny:Enquiry');
 
-        $query = Enquiry::query();
+        $query = Enquiry::query()->with(['member', 'nextFollowUp']);
 
         QueryFilters::applyIndexFilters($query, $request, self::RESOURCE_KEY);
 
@@ -51,18 +52,22 @@ class EnquiriesController extends ApiController
 
         $data['date'] = $data['date'] ?? now()->timezone(AppConfig::timezone())->toDateString();
 
-        $enquiry = Enquiry::create($data);
+        $enquiry = DB::transaction(function () use ($data, $followUp): Enquiry {
+            $enquiry = Enquiry::create($data);
 
-        if (is_array($followUp)) {
-            $enquiry->followUps()->create([
-                'user_id' => $data['user_id'],
-                'schedule_date' => $followUp['schedule_date'],
-                'method' => $followUp['method'],
-                'status' => 'pending',
-            ]);
-        }
+            if (is_array($followUp)) {
+                $enquiry->followUps()->create([
+                    'user_id' => $data['user_id'],
+                    'schedule_date' => $followUp['schedule_date'],
+                    'method' => $followUp['method'],
+                    'status' => 'pending',
+                ]);
+            }
 
-        return new EnquiryResource($enquiry->refresh());
+            return $enquiry;
+        });
+
+        return new EnquiryResource($enquiry->refresh()->load(['member', 'nextFollowUp']));
     }
 
     /**
@@ -72,7 +77,7 @@ class EnquiriesController extends ApiController
     {
         $this->requirePermission($request, 'View:Enquiry');
 
-        return new EnquiryResource($enquiry);
+        return new EnquiryResource($enquiry->loadMissing(['member', 'nextFollowUp']));
     }
 
     /**
@@ -82,9 +87,15 @@ class EnquiriesController extends ApiController
     {
         $this->requirePermission($request, 'Update:Enquiry');
 
-        $enquiry->update($request->validated());
+        $data = $request->validated();
 
-        return new EnquiryResource($enquiry->refresh());
+        if (isset($data['status']) && $data['status'] !== 'lost') {
+            $data['lost_reason'] = null;
+        }
+
+        $enquiry->update($data);
+
+        return new EnquiryResource($enquiry->refresh()->load(['member', 'nextFollowUp']));
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Enquiries\Schemas;
 
+use App\Filament\Resources\FollowUps\Schemas\FollowUpForm;
 use App\Models\Service;
 use App\Models\User;
 use App\Support\Filament\LocationSection;
@@ -60,8 +61,8 @@ class EnquiryForm
                             ->inlineLabel(false)
                             ->required(),
                         Select::make('user_id')
-                            ->label(__('app.fields.lead_owner'))
-                            ->placeholder(__('app.placeholders.select_lead_owner'))
+                            ->label(__('app.fields.assigned_to'))
+                            ->placeholder(__('app.placeholders.select_assignee'))
                             ->relationship('user', 'name')
                             ->required()
                             ->getOptionLabelFromRecordUsing(function (User $record): string {
@@ -120,22 +121,7 @@ class EnquiryForm
                             ->hiddenLabel()
                             ->columnSpanFull()
                             ->extraAttributes(['class' => 'new_enquiry_follow_up'])
-                            ->schema([
-                                Select::make('method')
-                                    ->options([
-                                        'call' => __('app.options.follow_up_method.call'),
-                                        'email' => __('app.options.follow_up_method.email'),
-                                        'in_person' => __('app.options.follow_up_method.in_person'),
-                                        'whatsapp' => __('app.options.follow_up_method.whatsapp'),
-                                        'other' => __('app.options.follow_up_method.other'),
-                                    ])->default('call')
-                                    ->required()
-                                    ->label(__('app.fields.follow_up_method'))
-                                    ->placeholder(__('app.placeholders.select_follow_up_method')),
-                                DatePicker::make('schedule_date')
-                                    ->label(__('app.fields.due_date'))
-                                    ->required(),
-                            ])
+                            ->schema(FollowUpForm::scheduleFields())
                             ->columns(2)
                             ->maxItems(1)
                             ->deletable(false),

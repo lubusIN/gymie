@@ -7,6 +7,7 @@ use App\Models\Enquiry;
 use App\Models\User;
 use App\Rules\ModelExists;
 use App\Rules\ModelUnique;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
 /**
@@ -33,7 +34,7 @@ final class EnquirySchema
             'sortable' => ['id', 'created_at', 'date'],
             'default_sort' => '-id',
             'status_column' => 'status',
-            'includes' => ['followUps', 'user'],
+            'includes' => ['followUps', 'member', 'nextFollowUp', 'user'],
             'filters' => [
                 'user_id' => ['type' => 'exact', 'column' => 'user_id'],
                 'status' => ['type' => 'exact', 'column' => 'status'],
@@ -44,7 +45,7 @@ final class EnquirySchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function storeRules(): array
     {
@@ -56,7 +57,8 @@ final class EnquirySchema
             'date' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
             'dob' => ['nullable', 'date'],
-            'status' => ['nullable', 'string'],
+            'status' => ['prohibited'],
+            'lost_reason' => ['prohibited'],
             'address' => ['nullable', 'string'],
             'country' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
@@ -74,7 +76,7 @@ final class EnquirySchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function updateRules(int|string $enquiryId): array
     {
@@ -86,7 +88,11 @@ final class EnquirySchema
             'date' => ['sometimes', 'nullable', 'date'],
             'gender' => ['sometimes', 'nullable', 'string', Rule::in(['male', 'female', 'other'])],
             'dob' => ['sometimes', 'nullable', 'date'],
-            'status' => ['sometimes', 'nullable', 'string'],
+            'status' => ['sometimes', 'string', Rule::in([
+                Status::Lead->value,
+                Status::Lost->value,
+            ])],
+            'lost_reason' => ['nullable', 'string', 'max:1000', 'required_if:status,lost'],
             'address' => ['sometimes', 'nullable', 'string'],
             'country' => ['sometimes', 'nullable', 'string', 'max:255'],
             'city' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -115,6 +121,10 @@ final class EnquirySchema
             'gender' => $enquiry->gender ? (string) $enquiry->gender : null,
             'dob' => $enquiry->dob?->toDateString(),
             'status' => Status::valueOf($enquiry->status),
+            'lost_reason' => $enquiry->lost_reason ? (string) $enquiry->lost_reason : null,
+            'converted_at' => $enquiry->converted_at?->toISOString(),
+            'converted_member_id' => $enquiry->member?->id,
+            'next_follow_up_at' => $enquiry->nextFollowUp?->schedule_date?->toDateString(),
             'address' => $enquiry->address ? (string) $enquiry->address : null,
             'country' => $enquiry->country ? (string) $enquiry->country : null,
             'state' => $enquiry->state ? (string) $enquiry->state : null,

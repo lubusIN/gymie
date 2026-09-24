@@ -24,8 +24,9 @@ enum Status: string implements HasColor, HasLabel
     case Expired = 'expired';
     case Renewed = 'renewed';
     case Lead = 'lead';
-    case Lost = 'lost';
+    case FollowUpScheduled = 'follow_up_scheduled';
     case Member = 'member';
+    case Lost = 'lost';
 
     private const COLORS = [
         self::Upcoming->value => 'gray',
@@ -44,8 +45,9 @@ enum Status: string implements HasColor, HasLabel
         self::Expired->value => 'danger',
         self::Renewed->value => 'success',
         self::Lead->value => 'info',
-        self::Lost->value => 'danger',
+        self::FollowUpScheduled->value => 'warning',
         self::Member->value => 'success',
+        self::Lost->value => 'danger',
     ];
 
     public function getLabel(): string

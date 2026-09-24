@@ -53,7 +53,7 @@ class EnquiryInfolist
                             ->label(__('app.fields.date'))
                             ->date(),
                         TextEntry::make('user.name')
-                            ->label(__('app.fields.assigned_to'))
+                            ->label(__('app.fields.lead_owner'))
                             ->weight(FontWeight::Bold)
                             ->color('success')
                             ->url(fn ($record): string => route('filament.admin.resources.users.view', $record->user_id)),

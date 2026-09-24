@@ -2,6 +2,7 @@
 
 use App\Enums\Status;
 use App\Filament\Resources\Enquiries\Pages\ListEnquiries;
+use App\Filament\Resources\Enquiries\Pages\ViewEnquiry;
 use App\Filament\Resources\Members\Pages\CreateMember;
 use App\Models\Enquiry;
 use App\Models\FollowUp;
@@ -35,6 +36,15 @@ it('creates enquiries in the lead stage', function (): void {
         'email' => 'taylor@example.com',
         'status' => Status::Lead->value,
     ]);
+});
+
+it('renders the available pipeline actions on the enquiry view', function (): void {
+    $enquiry = Enquiry::factory()->create(['status' => Status::Lead]);
+
+    Livewire::test(ViewEnquiry::class, ['record' => $enquiry->getRouteKey()])
+        ->assertActionVisible('schedule_follow_up')
+        ->assertActionVisible('convert_to_member')
+        ->assertActionVisible('mark_as_lost');
 });
 
 it('keeps the enquiry pipeline aligned with pending follow-ups', function (): void {

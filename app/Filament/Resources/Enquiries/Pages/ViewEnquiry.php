@@ -31,7 +31,6 @@ class ViewEnquiry extends ViewRecord
             EditAction::make(),
             DeleteAction::make(),
             ActionGroup::make([
-                EnquiryPipelineActions::markAsContacted(),
                 EnquiryPipelineActions::scheduleFollowUp(),
                 EnquiryPipelineActions::convertToMember(),
                 EnquiryPipelineActions::markAsLost(),

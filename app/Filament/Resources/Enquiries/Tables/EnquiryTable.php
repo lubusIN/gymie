@@ -39,7 +39,7 @@ class EnquiryTable
                 TextColumn::make('name')->searchable()->sortable()->label(__('app.fields.name')),
                 TextColumn::make('contact')->searchable()->label(__('app.fields.contact')),
                 TextColumn::make('user.name')
-                    ->label(__('app.fields.assigned_to'))
+                    ->label(__('app.fields.lead_owner'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('source')
@@ -121,7 +121,7 @@ class EnquiryTable
             ->filters([
                 TrashedFilter::make(),
                 SelectFilter::make('user')
-                    ->label(__('app.fields.assigned_to'))
+                    ->label(__('app.fields.lead_owner'))
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload(),

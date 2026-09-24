@@ -61,7 +61,7 @@ class EnquiryForm
                             ->inlineLabel(false)
                             ->required(),
                         Select::make('user_id')
-                            ->label(__('app.fields.assigned_to'))
+                            ->label(__('app.fields.lead_owner'))
                             ->placeholder(__('app.placeholders.select_assignee'))
                             ->relationship('user', 'name')
                             ->required()

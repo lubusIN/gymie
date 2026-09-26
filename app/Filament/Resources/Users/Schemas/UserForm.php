@@ -57,11 +57,11 @@ class UserForm
                                             ->required()
                                             ->placeholder(__('app.placeholders.example_email'))
                                             ->unique(ignorable: fn ($record) => $record)
-                                            ->prefixIcon('heroicon-m-envelope'),
+                                            ->prefixIcon('heroicon-o-envelope'),
                                     ])->columns(2)->columnSpanFull(),
                                 TextInput::make('contact')
                                     ->label(__('app.fields.contact'))
-                                    ->prefixIcon('heroicon-m-phone')
+                                    ->prefixIcon('heroicon-o-phone')
                                     ->tel()
                                     ->maxLength(20)
                                     ->regex('/^\+?[0-9\s\-\(\)]+$/') // Allows +, digits, spaces, dashes, and parentheses

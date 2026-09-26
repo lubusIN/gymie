@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\Enquiries\RelationManagers;
 
-use App\Filament\Resources\FollowUps\FollowUpResource;
+use App\Filament\Resources\FollowUps\Schemas\FollowUpForm;
 use App\Filament\Resources\FollowUps\Tables\FollowUpTable;
-use App\Models\Enquiry;
+use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
@@ -19,60 +19,52 @@ class FollowUpsRelationManager extends RelationManager
 
     protected static ?string $title = null;
 
+    protected static string|BackedEnum|null $icon = 'heroicon-o-calendar-days';
+
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('app.titles.follow_up_timeline');
+        return __('app.resources.follow_ups.plural');
     }
 
-    /**
-     * Determine if the relation manager is read-only.
-     *
-     * @return bool Returns false, indicating the relation manager is not read-only.
-     */
     public function isReadOnly(): bool
     {
         return false;
     }
 
     /**
-     * Define the form schema for the resource.
+     * Configure the fields used to create or edit a follow-up.
      */
     public function form(Schema $schema): Schema
     {
-        return FollowUpResource::form($schema);
+        return $schema->schema(FollowUpForm::scheduleFields())->columns(1);
     }
 
     /**
-     * Define the table for listing records in the resource.
+     * Configure the enquiry's follow-up table.
      */
     public function table(Table $table): Table
     {
         return $table
             ->columns(FollowUpTable::getColumns())
             ->headerActions([
-                CreateAction::make('create')
-                    ->icon('heroicon-m-plus')
+                CreateAction::make()
                     ->label(__('app.actions.new_follow_up'))
-                    ->visible(function (): bool {
-                        $ownerRecord = $this->getOwnerRecord();
-
-                        return $ownerRecord instanceof Enquiry && $ownerRecord->followUps()->exists();
-                    })
-                    ->createAnother(false)
+                    ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new_follow_up'))
-                    ->modalWidth('sm'),
+                    ->modalWidth('sm')
+                    ->createAnother(false)
+                    ->mutateDataUsing(fn (array $data): array => [
+                        ...$data,
+                        'user_id' => $this->getOwnerRecord()->user_id,
+                    ]),
             ])
             ->emptyStateIcon('heroicon-o-arrow-path-rounded-square')
-            ->emptyStateHeading(__('app.empty.no_records', ['records' => __('app.resources.follow_ups.plural')]))
-            ->emptyStateDescription(__('app.empty.create_to_get_started', ['resource' => __('app.resources.follow_ups.singular')]))
-            ->emptyStateActions([
-                CreateAction::make('create-follow-up')
-                    ->icon('heroicon-o-plus')
-                    ->label(__('app.actions.new_follow_up'))
-                    ->createAnother(false)
-                    ->modalHeading(__('app.actions.new_follow_up'))
-                    ->modalWidth('sm'),
-            ])
+            ->emptyStateHeading(__('app.empty.no_records', [
+                'records' => __('app.resources.follow_ups.plural'),
+            ]))
+            ->emptyStateDescription(__('app.empty.create_to_get_started', [
+                'resource' => __('app.resources.follow_ups.singular'),
+            ]))
             ->filters(FollowUpTable::getTableFilters())
             ->recordActions(FollowUpTable::getTableActions())
             ->toolbarActions([

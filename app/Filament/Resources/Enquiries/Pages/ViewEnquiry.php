@@ -5,9 +5,8 @@ namespace App\Filament\Resources\Enquiries\Pages;
 use App\Filament\Resources\Enquiries\EnquiryResource;
 use App\Models\Enquiry;
 use App\Support\Filament\EnquiryPipelineActions;
+use App\Support\Filament\RecordPageActions;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
@@ -28,10 +27,10 @@ class ViewEnquiry extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
-            DeleteAction::make(),
+            RecordPageActions::edit(),
+            RecordPageActions::delete(),
             ActionGroup::make([
-                EnquiryPipelineActions::scheduleFollowUp(),
+                EnquiryPipelineActions::addNote(),
                 EnquiryPipelineActions::convertToMember(),
                 EnquiryPipelineActions::markAsLost(),
                 EnquiryPipelineActions::viewMember(),

@@ -81,14 +81,14 @@ class MemberForm
                                     ->maxLength(20)
                                     ->regex('/^\+?[0-9\s\-\(\)]+$/') // Allows +, digits, spaces, dashes, and parentheses
                                     ->required()
-                                    ->hintIcon('heroicon-m-question-mark-circle')
+                                    ->hintIcon('heroicon-o-question-mark-circle')
                                     ->hintIconTooltip(__('app.help.phone_format')),
                                 TextInput::make('emergency_contact')
                                     ->label(__('app.fields.emergency_contact'))
                                     ->tel()
                                     ->maxLength(20)
                                     ->regex('/^\+?[0-9\s\-\(\)]+$/') // Allows +, digits, spaces, dashes, and parentheses
-                                    ->hintIcon('heroicon-m-question-mark-circle')
+                                    ->hintIcon('heroicon-o-question-mark-circle')
                                     ->hintIconTooltip(__('app.help.phone_format')),
                                 Radio::make('gender')
                                     ->options([

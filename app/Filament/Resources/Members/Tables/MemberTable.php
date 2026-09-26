@@ -132,11 +132,11 @@ class MemberTable
                         DatePicker::make('date_from')
                             ->label(__('app.fields.date_from'))
                             ->native(false)
-                            ->suffixIcon('heroicon-m-calendar-days'),
+                            ->suffixIcon('heroicon-o-calendar-days'),
                         DatePicker::make('date_to')
                             ->label(__('app.fields.date_to'))
                             ->native(false)
-                            ->suffixIcon('heroicon-m-calendar-days'),
+                            ->suffixIcon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

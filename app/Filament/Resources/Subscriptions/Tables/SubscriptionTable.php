@@ -156,11 +156,11 @@ class SubscriptionTable
                         DatePicker::make('date_from')
                             ->label(__('app.fields.date_from'))
                             ->native(false)
-                            ->suffixIcon('heroicon-m-calendar-days'),
+                            ->suffixIcon('heroicon-o-calendar-days'),
                         DatePicker::make('date_to')
                             ->label(__('app.fields.date_to'))
                             ->native(false)
-                            ->suffixIcon('heroicon-m-calendar-days'),
+                            ->suffixIcon('heroicon-o-calendar-days'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -214,7 +214,7 @@ class SubscriptionTable
                             ->color('gray'),
                         Action::make('renew')
                             ->label(__('app.actions.renew'))
-                            ->icon('heroicon-m-arrow-path')
+                            ->icon('heroicon-o-arrow-path')
                             ->color('success')
                             ->modalHeading(__('app.actions.renew'))
                             ->modalSubmitActionLabel(__('app.actions.renew'))

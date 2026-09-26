@@ -102,7 +102,7 @@ class ExpenseTable
                     ])->dropdown(false),
                 ])
                     ->label(__('app.actions.record_actions'))
-                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->icon('heroicon-o-ellipsis-vertical')
                     ->dropdown(),
             ])
             ->toolbarActions([
@@ -116,7 +116,7 @@ class ExpenseTable
             ->emptyStateActions([
                 CreateAction::make()
                     ->label(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))
-                    ->icon('heroicon-m-plus')
+                    ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))
                     ->createAnother(false)
                     ->modalWidth(Width::ScreenLarge)

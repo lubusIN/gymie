@@ -4,8 +4,7 @@ namespace App\Filament\Resources\Members\Pages;
 
 use App\Filament\Resources\Members\MemberResource;
 use App\Models\Member;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
+use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
@@ -18,8 +17,8 @@ class ViewMember extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
-            DeleteAction::make(),
+            RecordPageActions::edit(),
+            RecordPageActions::delete(),
         ];
     }
 

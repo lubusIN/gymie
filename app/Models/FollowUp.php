@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EnquiryActivityType;
 use App\Enums\Status;
 use Database\Factories\FollowUpFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -80,6 +81,25 @@ class FollowUp extends Model
      */
     protected static function booted(): void
     {
+        static::created(function (self $followUp): void {
+            $followUp->enquiry?->recordActivity(EnquiryActivityType::FollowUpScheduled, [
+                'follow_up_id' => $followUp->getKey(),
+                'method' => $followUp->method,
+                'schedule_date' => $followUp->schedule_date?->toDateString(),
+            ]);
+        });
+
+        static::updated(function (self $followUp): void {
+            if (! $followUp->wasChanged('status') || $followUp->status !== Status::Done) {
+                return;
+            }
+
+            $followUp->enquiry?->recordActivity(EnquiryActivityType::FollowUpCompleted, [
+                'follow_up_id' => $followUp->getKey(),
+                'outcome' => $followUp->outcome,
+            ]);
+        });
+
         $synchronizeEnquiry = static function (self $followUp): void {
             $followUp->enquiry?->synchronizePipelineStatus();
         };

@@ -2,6 +2,7 @@
 @import "../../../../vendor/filament/filament/resources/css/theme.css";
 
 @source '../../../../app/Filament/**/*';
+@source '../../../../app/Support/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 
 .fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-label-ctn > .fi-icon {

@@ -326,7 +326,7 @@ class SubscriptionForm
                     DatePicker::make('start_date')
                         ->label(__('app.fields.start_date'))
                         ->native(false)
-                        ->suffixIcon('heroicon-m-calendar-days')
+                        ->suffixIcon('heroicon-o-calendar-days')
                         ->default($defaultStartDate)
                         ->live()
                         ->afterStateUpdated(function (Get $get, Set $set): void {
@@ -341,7 +341,7 @@ class SubscriptionForm
                     DatePicker::make('end_date')
                         ->label(__('app.fields.end_date'))
                         ->native(false)
-                        ->suffixIcon('heroicon-m-calendar-days')
+                        ->suffixIcon('heroicon-o-calendar-days')
                         ->disabled()
                         ->dehydrated()
                         ->default(fn (Get $get): string => Helpers::calculateSubscriptionEndDate(
@@ -371,7 +371,7 @@ class SubscriptionForm
                             DatePicker::make('invoice_date')
                                 ->label(__('app.fields.invoice_date'))
                                 ->native(false)
-                                ->suffixIcon('heroicon-m-calendar-days')
+                                ->suffixIcon('heroicon-o-calendar-days')
                                 ->default($today)
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
@@ -389,7 +389,7 @@ class SubscriptionForm
                             DatePicker::make('invoice_due_date')
                                 ->label(__('app.fields.due_date'))
                                 ->native(false)
-                                ->suffixIcon('heroicon-m-calendar-days')
+                                ->suffixIcon('heroicon-o-calendar-days')
                                 ->default($today)
                                 ->required(),
                             DiscountSelect::make('discount')

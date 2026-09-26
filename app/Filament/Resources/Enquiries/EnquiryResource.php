@@ -6,7 +6,6 @@ use App\Filament\Resources\Enquiries\Pages\CreateEnquiry;
 use App\Filament\Resources\Enquiries\Pages\EditEnquiry;
 use App\Filament\Resources\Enquiries\Pages\ListEnquiries;
 use App\Filament\Resources\Enquiries\Pages\ViewEnquiry;
-use App\Filament\Resources\Enquiries\RelationManagers\FollowUpsRelationManager;
 use App\Filament\Resources\Enquiries\Schemas\EnquiryForm;
 use App\Filament\Resources\Enquiries\Schemas\EnquiryInfolist;
 use App\Filament\Resources\Enquiries\Tables\EnquiryTable;
@@ -104,16 +103,6 @@ class EnquiryResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return EnquiryInfolist::configure($schema);
-    }
-
-    /**
-     * Define the relations for the resource.
-     */
-    public static function getRelations(): array
-    {
-        return [
-            FollowUpsRelationManager::class,
-        ];
     }
 
     public static function getPages(): array

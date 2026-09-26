@@ -4,8 +4,7 @@ namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
+use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
@@ -26,8 +25,8 @@ class ViewUser extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
-            DeleteAction::make(),
+            RecordPageActions::edit(),
+            RecordPageActions::delete(),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Support\Filament;
 
+use App\Enums\EnquiryActivityType;
 use App\Enums\Status;
 use App\Filament\Resources\FollowUps\Schemas\FollowUpForm;
 use App\Filament\Resources\Members\MemberResource;
@@ -14,6 +15,34 @@ use Filament\Notifications\Notification;
 final class EnquiryPipelineActions
 {
     private function __construct() {}
+
+    public static function addNote(): Action
+    {
+        return Action::make('add_note')
+            ->label(__('app.actions.add_note'))
+            ->icon('heroicon-o-chat-bubble-left-ellipsis')
+            ->color('gray')
+            ->authorize('update')
+            ->modalWidth('sm')
+            ->schema([
+                Textarea::make('note')
+                    ->label(__('app.fields.note'))
+                    ->placeholder(__('app.placeholders.activity_note'))
+                    ->required()
+                    ->maxLength(5000)
+                    ->rows(5),
+            ])
+            ->action(function (array $data, Enquiry $record): void {
+                $record->recordActivity(EnquiryActivityType::NoteAdded, [
+                    'note' => $data['note'],
+                ]);
+
+                Notification::make()
+                    ->title(__('app.notifications.note_added'))
+                    ->success()
+                    ->send();
+            });
+    }
 
     public static function scheduleFollowUp(): Action
     {
@@ -45,7 +74,7 @@ final class EnquiryPipelineActions
     {
         return Action::make('convert_to_member')
             ->label(__('app.actions.convert_to_member'))
-            ->icon('heroicon-m-arrows-right-left')
+            ->icon('heroicon-o-arrows-right-left')
             ->color('success')
             ->authorize(fn (Enquiry $record): bool => (auth()->user()?->can('update', $record) ?? false)
                 && (auth()->user()?->can('create', Member::class) ?? false))

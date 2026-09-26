@@ -5,8 +5,7 @@ namespace App\Filament\Resources\Subscriptions\Pages;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Models\Member;
 use App\Models\Subscription;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
+use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
@@ -30,9 +29,9 @@ class ViewSubscription extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make()
+            RecordPageActions::edit()
                 ->hidden(fn (): bool => in_array($this->record->status?->value, ['expired', 'renewed'], true)),
-            DeleteAction::make(),
+            RecordPageActions::delete(),
         ];
     }
 

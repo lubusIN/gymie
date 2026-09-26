@@ -179,7 +179,7 @@ class InvoiceTable
                         Action::make('add_payment')
                             ->label(__('app.actions.add_payment'))
                             ->color('info')
-                            ->icon('heroicon-s-banknotes')
+                            ->icon('heroicon-o-banknotes')
                             ->modalWidth('md')
                             ->schema([
                                 TextInput::make('amount')
@@ -248,7 +248,7 @@ class InvoiceTable
                         Action::make('refund')
                             ->label(__('app.actions.refund'))
                             ->color('warning')
-                            ->icon('heroicon-s-arrow-path')
+                            ->icon('heroicon-o-arrow-path')
                             ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
                             ->modalWidth('md')
                             ->schema([

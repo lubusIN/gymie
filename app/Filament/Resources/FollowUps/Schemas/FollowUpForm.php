@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\FollowUps\Schemas;
 
-use App\Filament\Resources\Enquiries\RelationManagers\FollowUpsRelationManager;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
@@ -22,7 +21,6 @@ class FollowUpForm
                     ->label(__('app.resources.enquiries.singular'))
                     ->relationship(name: 'enquiry', titleAttribute: 'name')
                     ->placeholder(__('app.placeholders.select_enquiry'))
-                    ->hiddenOn(FollowUpsRelationManager::class)
                     ->required(),
                 ...self::scheduleFields(),
             ]);

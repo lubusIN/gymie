@@ -106,7 +106,7 @@ class Settings extends Page implements HasForms
     private function generalTab(): Tab
     {
         return Tab::make(__('app.settings.tabs.gym_info'))
-            ->icon('heroicon-m-briefcase')
+            ->icon('heroicon-o-briefcase')
             ->schema([
                 Section::make(__('app.settings.sections.general_information'))
                     ->aside()
@@ -222,7 +222,7 @@ class Settings extends Page implements HasForms
     private function invoiceTab(): Tab
     {
         return
-            Tab::make(__('app.settings.tabs.invoice'))->icon('heroicon-m-document-text')
+            Tab::make(__('app.settings.tabs.invoice'))->icon('heroicon-o-document-text')
                 ->schema([
                     Grid::make(3)
                         ->schema([
@@ -282,7 +282,7 @@ class Settings extends Page implements HasForms
     private function memberTab(): Tab
     {
         return
-            Tab::make(__('app.settings.tabs.member'))->icon('heroicon-m-user-group')
+            Tab::make(__('app.settings.tabs.member'))->icon('heroicon-o-user-group')
                 ->schema([
                     Grid::make(2)
                         ->schema([
@@ -303,7 +303,7 @@ class Settings extends Page implements HasForms
     private function chargesTab(): Tab
     {
         return
-            Tab::make(__('app.settings.tabs.charges'))->icon('heroicon-m-currency-rupee')
+            Tab::make(__('app.settings.tabs.charges'))->icon('heroicon-o-currency-rupee')
                 ->schema([
                     Grid::make(3)
                         ->schema([
@@ -329,7 +329,7 @@ class Settings extends Page implements HasForms
     private function expensesTab(): Tab
     {
         return
-            Tab::make(__('app.settings.tabs.expenses'))->icon('heroicon-m-banknotes')
+            Tab::make(__('app.settings.tabs.expenses'))->icon('heroicon-o-banknotes')
                 ->schema([
                     TagsInput::make('expenses.categories')
                         ->label(__('app.settings.fields.categories'))
@@ -345,7 +345,7 @@ class Settings extends Page implements HasForms
     private function subscriptionsTab(): Tab
     {
         return
-            Tab::make(__('app.settings.tabs.subscriptions'))->icon('heroicon-m-ticket')
+            Tab::make(__('app.settings.tabs.subscriptions'))->icon('heroicon-o-ticket')
                 ->schema([
                     TextInput::make('subscriptions.expiring_days')
                         ->label(__('app.settings.fields.expiring_days'))

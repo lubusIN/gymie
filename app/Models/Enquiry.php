@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EnquiryActivityType;
 use App\Enums\Status;
 use App\Models\Concerns\CascadesSoftDeletes;
 use Database\Factories\EnquiryFactory;
@@ -11,10 +12,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * @property int $id
@@ -41,6 +44,7 @@ use LogicException;
  * @property-read Member|null $member
  * @property-read FollowUp|null $nextFollowUp
  * @property-read Collection<int, FollowUp> $followUps
+ * @property-read Collection<int, Activity> $activitiesAsSubject
  */
 class Enquiry extends Model
 {
@@ -92,6 +96,48 @@ class Enquiry extends Model
     }
 
     /**
+     * Record the meaningful enquiry events that form the activity timeline.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $enquiry): void {
+            $enquiry->recordActivity(EnquiryActivityType::LeadCreated);
+        });
+
+        static::updated(function (self $enquiry): void {
+            if ($enquiry->wasChanged('user_id')) {
+                $enquiry->recordActivity(EnquiryActivityType::LeadOwnerChanged, [
+                    'old' => self::userName($enquiry->getRawOriginal('user_id')),
+                    'new' => self::userName($enquiry->user_id),
+                ]);
+            }
+
+            if ($enquiry->wasChanged('source')) {
+                $enquiry->recordActivity(EnquiryActivityType::LeadSourceChanged, [
+                    'old' => $enquiry->getRawOriginal('source'),
+                    'new' => $enquiry->source,
+                ]);
+            }
+
+            if (! $enquiry->wasChanged('status')) {
+                return;
+            }
+
+            if ($enquiry->status === Status::Member) {
+                $enquiry->recordActivity(EnquiryActivityType::ConvertedToMember, [
+                    'member' => $enquiry->member()->value('name'),
+                ]);
+            }
+
+            if ($enquiry->status === Status::Lost) {
+                $enquiry->recordActivity(EnquiryActivityType::MarkedLost, [
+                    'reason' => $enquiry->lost_reason,
+                ]);
+            }
+        });
+    }
+
+    /**
      * Get the followUps for the enquiry.
      */
     /**
@@ -134,6 +180,30 @@ class Enquiry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the activity recorded for this enquiry.
+     *
+     * @return MorphMany<Activity, $this>
+     */
+    public function activitiesAsSubject(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject');
+    }
+
+    /**
+     * Append a business event to the enquiry timeline.
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    public function recordActivity(EnquiryActivityType $event, array $properties = []): void
+    {
+        activity(EnquiryActivityType::LogName)
+            ->performedOn($this)
+            ->event($event->value)
+            ->withProperties($properties)
+            ->log($event->value);
     }
 
     /**
@@ -191,5 +261,17 @@ class Enquiry extends Model
     protected static function relationsToCascade(): array
     {
         return ['followUps'];
+    }
+
+    /**
+     * Resolve a lead owner name while retaining names for soft-deleted users.
+     */
+    private static function userName(mixed $userId): ?string
+    {
+        if (! is_numeric($userId)) {
+            return null;
+        }
+
+        return User::withTrashed()->find((int) $userId)?->name;
     }
 }

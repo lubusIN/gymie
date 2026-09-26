@@ -18,7 +18,7 @@ class ListEnquiries extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-m-plus')
+                ->icon('heroicon-o-plus')
                 ->label(__('app.actions.new', ['resource' => EnquiryResource::getModelLabel()]))
                 ->hidden(! Enquiry::exists()),
         ];

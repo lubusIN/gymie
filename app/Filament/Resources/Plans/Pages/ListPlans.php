@@ -18,7 +18,7 @@ class ListPlans extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-m-plus')
+                ->icon('heroicon-o-plus')
                 ->modalAlignment('center')
                 ->modalWidth('xl')
                 ->label(__('app.actions.new', ['resource' => PlanResource::getModelLabel()]))

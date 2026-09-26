@@ -196,7 +196,7 @@ BLADE,
                 ActionGroup::make([
                     Action::make('renew')
                         ->label(__('app.actions.renew'))
-                        ->icon('heroicon-m-arrow-path')
+                        ->icon('heroicon-o-arrow-path')
                         ->color('success')
                         ->modalHeading(__('app.titles.renew_subscription'))
                         ->modalSubmitActionLabel(__('app.actions.renew'))

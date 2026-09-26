@@ -18,7 +18,7 @@ class ListMembers extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-m-plus')
+                ->icon('heroicon-o-plus')
                 ->label(__('app.actions.new', ['resource' => MemberResource::getModelLabel()]))
                 ->hidden(! Member::exists()),
         ];

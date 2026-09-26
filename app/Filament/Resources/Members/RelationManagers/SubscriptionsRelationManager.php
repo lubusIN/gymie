@@ -46,7 +46,7 @@ class SubscriptionsRelationManager extends RelationManager
         return SubscriptionResource::table($table)
             ->headerActions([
                 CreateAction::make()
-                    ->icon('heroicon-s-plus')
+                    ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.subscriptions.singular')]))
                     ->modalWidth('6xl')
                     ->closeModalByClickingAway(false)

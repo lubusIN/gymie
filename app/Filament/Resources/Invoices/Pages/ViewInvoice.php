@@ -4,7 +4,7 @@ namespace App\Filament\Resources\Invoices\Pages;
 
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Models\Invoice;
-use Filament\Actions\EditAction;
+use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
@@ -22,7 +22,7 @@ class ViewInvoice extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make()
+            RecordPageActions::edit()
                 ->hidden(fn (): bool => $this->record->status?->value !== 'issued'),
         ];
     }

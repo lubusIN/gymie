@@ -18,6 +18,8 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
@@ -30,6 +32,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component as SchemaComponent;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -89,28 +92,36 @@ class AppServiceProvider extends ServiceProvider
          * Configure the CreateAction globally to use a specific icon.
          */
         CreateAction::configureUsing(function (CreateAction $action) {
-            $action->icon('heroicon-s-plus');
+            $action->icon(Heroicon::OutlinedPlus);
         });
 
         /**
          * Configure the EditAction and DeleteAction globally to use specific icons.
          */
         EditAction::configureUsing(function (EditAction $action) {
-            $action->icon('heroicon-s-pencil-square');
+            $action->icon(Heroicon::OutlinedPencilSquare);
         });
 
         /**
          * Configure the DeleteAction globally to use a specific icon.
          */
         DeleteAction::configureUsing(function (DeleteAction $action) {
-            $action->icon('heroicon-s-trash');
+            $action->icon(Heroicon::OutlinedTrash);
+        });
+
+        ForceDeleteAction::configureUsing(function (ForceDeleteAction $action) {
+            $action->icon(Heroicon::OutlinedTrash);
+        });
+
+        RestoreAction::configureUsing(function (RestoreAction $action) {
+            $action->icon(Heroicon::OutlinedArrowUturnLeft);
         });
 
         /**
          * Configure the ViewAction globally to use a specific icon.
          */
         ViewAction::configureUsing(function (ViewAction $action) {
-            $action->icon('heroicon-s-eye');
+            $action->icon(Heroicon::OutlinedEye);
         });
 
         /**

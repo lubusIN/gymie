@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Subscriptions\Tables;
 
 use App\Enums\Status;
+use App\Filament\Resources\Plans\PlanResource;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
+use App\Helpers\Helpers;
 use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -25,6 +27,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,22 +46,41 @@ class SubscriptionTable
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('member.name')
                     ->label(__('app.fields.member'))
-                    ->description(fn ($record): string => $record->member->code),
+                    ->description(fn (Subscription $record): string => $record->member->code)
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('plan.name')
                     ->label(__('app.fields.plan'))
-                    ->description(fn ($record): string => $record->plan->code),
+                    ->description(fn (Subscription $record): string => $record->plan->code)
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('start_date')
                     ->label(__('app.fields.start_date'))
-                    ->date(),
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('end_date')
                     ->label(__('app.fields.end_date'))
-                    ->date(),
+                    ->date()
+                    ->description(fn (Subscription $record): ?string => self::daysLeft($record))
+                    ->sortable(),
+                TextColumn::make('invoice.due_amount')
+                    ->label(__('app.fields.due'))
+                    ->state(fn (Subscription $record): ?float => $record->invoice
+                        ? (float) $record->invoice->due_amount
+                        : null)
+                    ->formatStateUsing(fn (?float $state): string => Helpers::formatCurrency($state ?? 0))
+                    ->placeholder(__('app.placeholders.na'))
+                    ->color(fn (?float $state): string => ($state ?? 0) > 0 ? 'danger' : 'success')
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->date()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->sortable(),
             ])
+            ->defaultSort('end_date')
             ->emptyStateIcon(
                 ! Member::exists()
                     ? 'heroicon-o-user-group'
@@ -146,11 +168,16 @@ class SubscriptionTable
                 Action::make('create_plan')
                     ->icon('heroicon-o-plus')
                     ->label(__('app.actions.new', ['resource' => __('app.resources.plans.singular')]))
-                    ->url(fn () => route('filament.admin.resources.plans.create'))
+                    ->url(fn (): string => PlanResource::getUrl('index'))
                     ->hidden(fn () => Plan::exists()),
             ])
             ->filters([
                 TrashedFilter::make(),
+                SelectFilter::make('plan')
+                    ->label(__('app.fields.plan'))
+                    ->relationship('plan', 'name')
+                    ->searchable()
+                    ->preload(),
                 Filter::make('date')
                     ->schema([
                         DatePicker::make('date_from')
@@ -166,11 +193,11 @@ class SubscriptionTable
                         return $query
                             ->when(
                                 $data['date_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date),
                             )
                             ->when(
                                 $data['date_to'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
                             );
                     }),
             ])
@@ -178,7 +205,7 @@ class SubscriptionTable
                 ActionGroup::make([
                     ActionGroup::make([
                         Action::make('heading')
-                            ->label(__('app.actions.change_status'))
+                            ->label(__('app.fields.status'))
                             ->disabled()
                             ->color('gray')
                             ->hidden(fn ($record): bool => in_array($record->status?->value, ['expired', 'upcoming', 'renewed'], true)),
@@ -261,6 +288,25 @@ class SubscriptionTable
                 ->withoutGlobalScopes([
                     SoftDeletingScope::class,
                 ])
+                ->with([
+                    'invoice:id,subscription_id,due_amount,status',
+                    'member:id,code,name',
+                    'plan:id,code,name',
+                ])
                 ->withCount('renewals'));
+    }
+
+    /**
+     * Describe the remaining membership time for active subscriptions.
+     */
+    private static function daysLeft(Subscription $subscription): ?string
+    {
+        $days = $subscription->daysRemaining();
+
+        if ($days === null) {
+            return null;
+        }
+
+        return $days.' '.__('app.widgets.days_left');
     }
 }

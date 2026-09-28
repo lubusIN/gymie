@@ -18,14 +18,18 @@ return new class extends Migration
             $table->string('category', 100);
             $table->string('status', 30)->default('pending');
             $table->string('vendor')->nullable();
+            $table->string('payment_method', 50)->nullable();
+            $table->string('payment_reference')->nullable();
             $table->text('notes')->nullable();
+            $table->string('receipt_path')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
             $table->index(['name']);
             $table->index(['date']);
             $table->index(['category']);
-            $table->index(['status']);
+            $table->index(['status', 'paid_at']);
+            $table->index(['status', 'due_date']);
         });
     }
 

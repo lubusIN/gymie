@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Expenses\Pages;
 
 use App\Enums\Status;
 use App\Filament\Resources\Expenses\ExpenseResource;
+use App\Filament\Widgets\ExpenseOverviewWidget;
 use App\Models\Expense;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
@@ -26,6 +27,16 @@ class ListExpenses extends ListRecords
                 ->modalWidth(Width::ScreenLarge)
                 ->closeModalByClickingAway(false)
                 ->hidden(! Expense::exists()),
+        ];
+    }
+
+    /**
+     * @return array<class-string>
+     */
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            ExpenseOverviewWidget::class,
         ];
     }
 

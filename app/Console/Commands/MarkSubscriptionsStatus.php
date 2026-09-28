@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Models\Subscription;
 use App\Models\User;
@@ -50,7 +51,7 @@ class MarkSubscriptionsStatus extends Command
             $expiredCount = $this->updateStatusInChunks(Subscription::query()
                 ->where('end_date', '<', $today->toDateString())
                 ->whereNotIn('status', ['expired', 'renewed'])
-                ->whereDoesntHave('renewals'), 'expired');
+                ->whereDoesntHave('renewals'), Status::Expired);
 
             if ($expiredCount > 0) {
                 $summary[] = "{$expiredCount} expired";
@@ -61,7 +62,7 @@ class MarkSubscriptionsStatus extends Command
             $renewedCount = $this->updateStatusInChunks(Subscription::query()
                 ->where('end_date', '<', $today->toDateString())
                 ->where('status', '!=', 'renewed')
-                ->whereHas('renewals'), 'renewed');
+                ->whereHas('renewals'), Status::Renewed);
 
             if ($renewedCount > 0) {
                 $summary[] = "{$renewedCount} renewed";
@@ -69,11 +70,10 @@ class MarkSubscriptionsStatus extends Command
         }
 
         if ($runAll) {
-            $upcomingCount = Subscription::query()
+            $upcomingCount = $this->updateStatusInChunks(Subscription::query()
                 ->where('start_date', '>', $today->toDateString())
                 ->where('status', '!=', 'renewed')
-                ->where('status', '!=', 'upcoming')
-                ->update(['status' => 'upcoming']);
+                ->where('status', '!=', 'upcoming'), Status::Upcoming);
 
             if ($upcomingCount > 0) {
                 $summary[] = "{$upcomingCount} upcoming";
@@ -81,13 +81,12 @@ class MarkSubscriptionsStatus extends Command
         }
 
         if ($runAll || $runExpiringOnly) {
-            $expiringCount = Subscription::query()
+            $expiringCount = $this->updateStatusInChunks(Subscription::query()
                 ->where('start_date', '<=', $today->toDateString())
                 ->whereBetween('end_date', [$today->toDateString(), $expiringThreshold->toDateString()])
                 ->where('status', '!=', 'renewed')
                 ->where('status', '!=', 'expiring')
-                ->where('status', '!=', 'expired')
-                ->update(['status' => 'expiring']);
+                ->where('status', '!=', 'expired'), Status::Expiring);
 
             if ($expiringCount > 0) {
                 $summary[] = "{$expiringCount} expiring (≤ {$expiringDays} days)";
@@ -95,11 +94,10 @@ class MarkSubscriptionsStatus extends Command
         }
 
         if ($runAll) {
-            $ongoingCount = Subscription::query()
+            $ongoingCount = $this->updateStatusInChunks(Subscription::query()
                 ->where('start_date', '<=', $today->toDateString())
                 ->where('end_date', '>', $expiringThreshold->toDateString())
-                ->whereNotIn('status', ['ongoing', 'expired', 'renewed'])
-                ->update(['status' => 'ongoing']);
+                ->whereNotIn('status', ['ongoing', 'expired', 'renewed']), Status::Ongoing);
 
             if ($ongoingCount > 0) {
                 $summary[] = "{$ongoingCount} ongoing";
@@ -131,23 +129,24 @@ class MarkSubscriptionsStatus extends Command
     /**
      * @param  Builder<Subscription>  $query
      */
-    private function updateStatusInChunks(Builder $query, string $status): int
+    private function updateStatusInChunks(Builder $query, Status $status): int
     {
         $updatedCount = 0;
-        $model = $query->getModel();
-
         $query
-            ->select($model->getQualifiedKeyName())
+            ->with([
+                'member:id',
+                'plan:id,name',
+            ])
             ->chunkById(
                 500,
                 /** @param Collection<int, Subscription> $subscriptions */
                 function (Collection $subscriptions) use (&$updatedCount, $status): void {
-                    $updatedCount += Subscription::query()
-                        ->whereKey($subscriptions->modelKeys())
-                        ->update(['status' => $status]);
+                    foreach ($subscriptions as $subscription) {
+                        if ($subscription->update(['status' => $status])) {
+                            $updatedCount++;
+                        }
+                    }
                 },
-                column: $model->getQualifiedKeyName(),
-                alias: $model->getKeyName(),
             );
 
         return $updatedCount;

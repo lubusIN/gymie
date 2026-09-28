@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Invoices\Tables;
 
 use App\Enums\Status;
 use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Subscriptions\RelationManagers\InvoicesRelationManager;
 use App\Helpers\Helpers;
 use App\Models\Invoice;
 use App\Models\InvoiceTransaction;
@@ -42,13 +43,15 @@ class InvoiceTable
             ->columns([
                 TextColumn::make('id')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->hiddenOn(InvoicesRelationManager::class),
                 TextColumn::make('number')
                     ->label(__('app.fields.invoice_number'))
                     ->sortable(),
                 TextColumn::make('subscription.member.name')
                     ->label(__('app.fields.subscription'))
-                    ->description(fn ($record): string => $record->subscription->member->code),
+                    ->description(fn ($record): string => $record->subscription->member->code)
+                    ->hiddenOn(InvoicesRelationManager::class),
                 TextColumn::make('date')
                     ->label(__('app.fields.date'))
                     ->date()
@@ -60,6 +63,10 @@ class InvoiceTable
                 TextColumn::make('subscription_fee')
                     ->label(__('app.fields.fee'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                TextColumn::make('discount_amount')
+                    ->label(__('app.fields.discount'))
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->visibleOn(InvoicesRelationManager::class),
                 TextColumn::make('paid_amount')
                     ->label(__('app.fields.paid'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),

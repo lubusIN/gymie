@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SubscriptionActivityType;
 use App\Observers\InvoiceTransactionObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -66,10 +67,39 @@ class InvoiceTransaction extends Model
     }
 
     /**
+     * Append this payment or refund to the related subscription timeline.
+     */
+    public function recordSubscriptionActivity(): void
+    {
+        $event = match ($this->type) {
+            'payment' => SubscriptionActivityType::PaymentRecorded,
+            'refund' => SubscriptionActivityType::RefundRecorded,
+            default => null,
+        };
+
+        if ($event === null) {
+            return;
+        }
+
+        $this->loadMissing('invoice.subscription');
+
+        $this->invoice?->subscription?->recordActivity($event, [
+            'invoice' => $this->invoice->number,
+            'amount' => (float) ($this->amount ?? 0),
+            'payment_method' => $this->payment_method,
+            'note' => $this->note,
+        ]);
+    }
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void
     {
+        static::created(function (self $transaction): void {
+            $transaction->recordSubscriptionActivity();
+        });
+
         static::saved(function (self $transaction): void {
             if ($transaction->invoice instanceof Invoice) {
                 $transaction->invoice->syncFromTransactions();

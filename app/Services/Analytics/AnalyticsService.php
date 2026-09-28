@@ -2,6 +2,7 @@
 
 namespace App\Services\Analytics;
 
+use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -25,6 +26,18 @@ use Illuminate\Support\Collection;
 class AnalyticsService
 {
     /**
+     * Start a query for expenses that produced a cash outflow in the period.
+     *
+     * @return Builder<Expense>
+     */
+    private function paidExpensesWithin(AnalyticsDateRange $range): Builder
+    {
+        return Expense::query()
+            ->where('status', Status::Paid->value)
+            ->whereBetween('paid_at', [$range->start, $range->end]);
+    }
+
+    /**
      * Build a SQL expression that groups a date/datetime column by month.
      */
     private function monthGroupExpression(string $column, string $driver): string
@@ -45,7 +58,7 @@ class AnalyticsService
      * - `refunds`: refund transactions total (in range)
      * - `discounts`: invoice discount_amount total (invoice date in range)
      * - `outstanding`: sum of invoice due_amount as-of the range end date
-     * - `expenses`: sum of expenses (expense date in range)
+     * - `expenses`: paid expenses (payment time in range)
      * - `profit`: collected - expenses
      *
      * @return array{net_revenue: float, collected: float, refunds: float, discounts: float, outstanding: float, expenses: float, profit: float}
@@ -77,9 +90,7 @@ class AnalyticsService
             ->whereIn('status', ['issued', 'partial', 'overdue'])
             ->sum('due_amount');
 
-        $expenses = (float) Expense::query()
-            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
-            ->sum('amount');
+        $expenses = (float) $this->paidExpensesWithin($range)->sum('amount');
 
         return [
             'net_revenue' => $netRevenue,
@@ -240,9 +251,8 @@ class AnalyticsService
     public function expenseTrendByDate(AnalyticsDateRange $range): array
     {
         /** @var Collection<string, float> $rows */
-        $rows = Expense::query()
-            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
-            ->selectRaw('date as day')
+        $rows = $this->paidExpensesWithin($range)
+            ->selectRaw('DATE(paid_at) as day')
             ->selectRaw('SUM(amount) as total')
             ->groupBy('day')
             ->orderBy('day')
@@ -263,11 +273,10 @@ class AnalyticsService
     public function expenseTrendByMonth(AnalyticsDateRange $range): array
     {
         $driver = Expense::query()->getModel()->getConnection()->getDriverName();
-        $monthExpression = $this->monthGroupExpression('date', $driver);
+        $monthExpression = $this->monthGroupExpression('paid_at', $driver);
 
         /** @var Collection<string, float> $rows */
-        $rows = Expense::query()
-            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
+        $rows = $this->paidExpensesWithin($range)
             ->selectRaw("{$monthExpression} as month")
             ->selectRaw('SUM(amount) as total')
             ->groupBy('month')
@@ -328,8 +337,7 @@ class AnalyticsService
     public function expenseBreakdownByCategory(AnalyticsDateRange $range, int $limit = 10): Collection
     {
         /** @var Collection<int, object{category: string, total: float}> $rows */
-        $rows = Expense::query()
-            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
+        $rows = $this->paidExpensesWithin($range)
             ->select('category')
             ->selectRaw('SUM(amount) as total')
             ->groupBy('category')
@@ -361,9 +369,7 @@ class AnalyticsService
             ])
             ->values();
 
-        $allCategoriesTotal = Data::float(Expense::query()
-            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
-            ->sum('amount'));
+        $allCategoriesTotal = Data::float($this->paidExpensesWithin($range)->sum('amount'));
         $otherTotal = round(max($allCategoriesTotal - Data::float($top->sum('total')), 0), 2);
 
         if ($otherTotal <= 0) {

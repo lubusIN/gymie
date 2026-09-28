@@ -6,7 +6,6 @@ use App\Filament\Resources\Subscriptions\Pages\CreateSubscription;
 use App\Filament\Resources\Subscriptions\Pages\EditSubscription;
 use App\Filament\Resources\Subscriptions\Pages\ListSubscriptions;
 use App\Filament\Resources\Subscriptions\Pages\ViewSubscription;
-use App\Filament\Resources\Subscriptions\RelationManagers\InvoicesRelationManager;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionInfolist;
 use App\Filament\Resources\Subscriptions\Tables\SubscriptionTable;
@@ -110,16 +109,6 @@ class SubscriptionResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return SubscriptionInfolist::configure($schema);
-    }
-
-    /**
-     * Get the list of relations for this resource.
-     */
-    public static function getRelations(): array
-    {
-        return [
-            InvoicesRelationManager::class,
-        ];
     }
 
     /**

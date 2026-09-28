@@ -2,7 +2,10 @@
 
 namespace App\Services\Api\Schemas;
 
+use App\Enums\ExpensePaymentMethod;
 use App\Models\Expense;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Validation\Rule;
 
 /**
  * Single source of truth for Expense API validation and serialization.
@@ -39,7 +42,7 @@ final class ExpenseSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function storeRules(): array
     {
@@ -48,16 +51,18 @@ final class ExpenseSchema
             'amount' => ['required', 'numeric', 'min:0'],
             'date' => ['required', 'date'],
             'due_date' => ['nullable', 'date'],
-            'paid_at' => ['nullable', 'date'],
+            'paid_at' => ['nullable', 'date', 'required_if:status,paid'],
             'category' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', Rule::in(['pending', 'paid', 'overdue', 'cancelled'])],
             'vendor' => ['nullable', 'string', 'max:255'],
+            'payment_method' => ['nullable', Rule::enum(ExpensePaymentMethod::class), 'required_if:status,paid'],
+            'payment_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ];
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function updateRules(): array
     {
@@ -66,10 +71,12 @@ final class ExpenseSchema
             'amount' => ['sometimes', 'numeric', 'min:0'],
             'date' => ['sometimes', 'date'],
             'due_date' => ['sometimes', 'nullable', 'date'],
-            'paid_at' => ['sometimes', 'nullable', 'date'],
+            'paid_at' => ['nullable', 'date', 'required_if:status,paid'],
             'category' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'status' => ['sometimes', 'nullable', 'string'],
+            'status' => ['sometimes', 'nullable', 'string', Rule::in(['pending', 'paid', 'overdue', 'cancelled'])],
             'vendor' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'payment_method' => ['nullable', Rule::enum(ExpensePaymentMethod::class), 'required_if:status,paid'],
+            'payment_reference' => ['sometimes', 'nullable', 'string', 'max:255'],
             'notes' => ['sometimes', 'nullable', 'string'],
         ];
     }
@@ -89,6 +96,8 @@ final class ExpenseSchema
             'category' => $expense->category ? (string) $expense->category : null,
             'status' => filled($expense->getRawOriginal('status')) ? $expense->status->value : null,
             'vendor' => $expense->vendor ? (string) $expense->vendor : null,
+            'payment_method' => $expense->payment_method ? (string) $expense->payment_method : null,
+            'payment_reference' => $expense->payment_reference ? (string) $expense->payment_reference : null,
             'notes' => $expense->notes ? (string) $expense->notes : null,
             'created_at' => $expense->created_at?->toISOString(),
             'updated_at' => $expense->updated_at?->toISOString(),

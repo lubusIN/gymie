@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Enquiries\Schemas;
 
 use App\Enums\Status;
-use App\Filament\Infolists\Components\EnquiryActivityEntry;
+use App\Filament\Infolists\Components\ActivityTimelineEntry;
 use App\Filament\Resources\Enquiries\Pages\ViewEnquiry;
 use App\Filament\Resources\Enquiries\RelationManagers\FollowUpsRelationManager;
 use App\Filament\Resources\Members\MemberResource;
@@ -54,7 +54,7 @@ class EnquiryInfolist
                                 Section::make(__('app.activity.title'))
                                     ->columns(1)
                                     ->schema([
-                                        EnquiryActivityEntry::make('activity_timeline')
+                                        ActivityTimelineEntry::make('activity_timeline')
                                             ->hiddenLabel(),
                                     ]),
                             ]),

@@ -2,15 +2,21 @@
 
 namespace App\Models;
 
+use App\Enums\MemberActivityType;
 use App\Enums\Status;
+use App\Enums\SubscriptionActivityType;
+use App\Support\AppConfig;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * @property int $id
@@ -25,6 +31,8 @@ use Illuminate\Support\Carbon;
  * @property-read Subscription|null $renewedFrom
  * @property-read Collection<int, Subscription> $renewals
  * @property-read Collection<int, Invoice> $invoices
+ * @property-read Invoice|null $invoice
+ * @property-read Collection<int, Activity> $activitiesAsSubject
  */
 class Subscription extends Model
 {
@@ -60,6 +68,69 @@ class Subscription extends Model
     }
 
     /**
+     * Record subscription lifecycle changes on both relevant timelines.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $subscription): void {
+            $subscriptionEvent = $subscription->renewed_from_subscription_id
+                ? SubscriptionActivityType::SubscriptionRenewed
+                : SubscriptionActivityType::SubscriptionCreated;
+            $memberEvent = $subscription->renewed_from_subscription_id
+                ? MemberActivityType::SubscriptionRenewed
+                : MemberActivityType::SubscriptionCreated;
+            $properties = [
+                'plan' => $subscription->plan?->name,
+                'start_date' => $subscription->start_date?->toDateString(),
+                'end_date' => $subscription->end_date?->toDateString(),
+                'status' => $subscription->status?->value,
+            ];
+
+            $subscription->recordActivity($subscriptionEvent, $properties);
+            $subscription->member?->recordActivity($memberEvent, $properties);
+        });
+
+        static::updated(function (self $subscription): void {
+            if (! $subscription->wasChanged('status')) {
+                return;
+            }
+
+            $properties = [
+                'plan' => $subscription->plan?->name,
+                'old' => $subscription->getRawOriginal('status'),
+                'new' => $subscription->status?->value,
+            ];
+
+            $subscription->recordActivity(SubscriptionActivityType::SubscriptionStatusChanged, $properties);
+            $subscription->member?->recordActivity(MemberActivityType::SubscriptionStatusChanged, $properties);
+        });
+    }
+
+    /**
+     * Get the activity recorded for this subscription.
+     *
+     * @return MorphMany<Activity, $this>
+     */
+    public function activitiesAsSubject(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject');
+    }
+
+    /**
+     * Append a business event to the subscription timeline.
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    public function recordActivity(SubscriptionActivityType $event, array $properties = []): void
+    {
+        activity(SubscriptionActivityType::LogName)
+            ->performedOn($this)
+            ->event($event->value)
+            ->withProperties($properties)
+            ->log($event->value);
+    }
+
+    /**
      * Get the invoices for the subscription.
      */
     /**
@@ -68,6 +139,43 @@ class Subscription extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get the invoice generated for this subscription.
+     *
+     * @return HasOne<Invoice, $this>
+     */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * Get the number of days remaining for a current subscription.
+     */
+    public function daysRemaining(): ?int
+    {
+        if (
+            $this->start_date === null
+            || $this->end_date === null
+            || in_array($this->status, [Status::Expired, Status::Renewed], true)
+        ) {
+            return null;
+        }
+
+        $timezone = AppConfig::timezone();
+        $today = Carbon::today($timezone);
+        $startDate = Carbon::parse($this->start_date->toDateString(), $timezone)->startOfDay();
+        $endDate = Carbon::parse($this->end_date->toDateString(), $timezone)->startOfDay();
+
+        if ($startDate->isAfter($today) || $endDate->isBefore($today)) {
+            return null;
+        }
+
+        $days = (int) $today->diffInDays($endDate, false);
+
+        return max($days, 0);
     }
 
     /**

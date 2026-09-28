@@ -18,30 +18,11 @@ final class EnquiryPipelineActions
 
     public static function addNote(): Action
     {
-        return Action::make('add_note')
-            ->label(__('app.actions.add_note'))
-            ->icon('heroicon-o-chat-bubble-left-ellipsis')
-            ->color('gray')
-            ->authorize('update')
-            ->modalWidth('sm')
-            ->schema([
-                Textarea::make('note')
-                    ->label(__('app.fields.note'))
-                    ->placeholder(__('app.placeholders.activity_note'))
-                    ->required()
-                    ->maxLength(5000)
-                    ->rows(5),
-            ])
-            ->action(function (array $data, Enquiry $record): void {
-                $record->recordActivity(EnquiryActivityType::NoteAdded, [
-                    'note' => $data['note'],
-                ]);
-
-                Notification::make()
-                    ->title(__('app.notifications.note_added'))
-                    ->success()
-                    ->send();
-            });
+        return ActivityActions::addNote(
+            EnquiryActivityType::LogName,
+            EnquiryActivityType::NoteAdded->value,
+            __('app.placeholders.activity_note'),
+        );
     }
 
     public static function scheduleFollowUp(): Action

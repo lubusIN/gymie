@@ -2,13 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Enums\ExpensePaymentMethod;
 use App\Enums\Status;
 use App\Helpers\Helpers;
+use App\Models\Expense;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Expense>
+ * @extends Factory<Expense>
  */
 class ExpenseFactory extends Factory
 {
@@ -47,8 +49,13 @@ class ExpenseFactory extends Factory
             'category' => $category,
             'status' => $status,
             'vendor' => $this->faker->boolean(75) ? $this->faker->company() : null,
+            'payment_method' => $status === Status::Paid->value
+                ? $this->faker->randomElement(ExpensePaymentMethod::cases())->value
+                : null,
+            'payment_reference' => $status === Status::Paid->value && $this->faker->boolean()
+                ? $this->faker->bothify('PAY-########')
+                : null,
             'notes' => $this->faker->boolean(55) ? $this->faker->sentence(12) : null,
         ];
     }
 }
-

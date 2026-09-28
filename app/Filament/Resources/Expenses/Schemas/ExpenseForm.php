@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\Expenses\Schemas;
 
+use App\Enums\ExpensePaymentMethod;
 use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Support\AppConfig;
 use App\Support\Filament\ExpenseCategorySelect;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -79,6 +81,23 @@ class ExpenseForm
                                     ->placeholder(__('app.placeholders.optional_note'))
                                     ->rows(2)
                                     ->columnSpanFull(),
+                                FileUpload::make('receipt_path')
+                                    ->label(__('app.fields.receipt'))
+                                    ->disk('local')
+                                    ->directory('expenses/receipts')
+                                    ->visibility('private')
+                                    ->acceptedFileTypes([
+                                        'application/pdf',
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp',
+                                    ])
+                                    ->maxSize(5120)
+                                    ->preventFilePathTampering()
+                                    ->previewable(false)
+                                    ->openable(false)
+                                    ->downloadable(false)
+                                    ->columnSpanFull(),
                                 Select::make('status')
                                     ->label(__('app.fields.status'))
                                     ->options(static::getStatusOptions())
@@ -94,6 +113,8 @@ class ExpenseForm
                                         }
 
                                         $set('paid_at', null);
+                                        $set('payment_method', null);
+                                        $set('payment_reference', null);
                                     })
                                     ->required()
                                     ->columnSpan(2),
@@ -104,11 +125,23 @@ class ExpenseForm
                                     ->visible(fn (Get $get): bool => $get('status') === Status::Paid->value)
                                     ->required(fn (Get $get): bool => $get('status') === Status::Paid->value)
                                     ->columnSpan(2),
+                                Select::make('payment_method')
+                                    ->label(__('app.fields.payment_method'))
+                                    ->options(ExpensePaymentMethod::class)
+                                    ->visible(fn (Get $get): bool => $get('status') === Status::Paid->value)
+                                    ->required(fn (Get $get): bool => $get('status') === Status::Paid->value)
+                                    ->columnSpan(2),
+                                TextInput::make('payment_reference')
+                                    ->label(__('app.fields.payment_reference'))
+                                    ->placeholder(__('app.placeholders.payment_reference'))
+                                    ->visible(fn (Get $get): bool => $get('status') === Status::Paid->value)
+                                    ->maxLength(255)
+                                    ->columnSpan(2),
                                 TextInput::make('vendor')
                                     ->label(__('app.fields.vendor'))
                                     ->placeholder(__('app.placeholders.vendor_name'))
                                     ->maxLength(255)
-                                    ->columnSpan(2),
+                                    ->columnSpan(4),
                             ]),
                     ]),
             ]);

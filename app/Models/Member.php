@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MemberActivityType;
 use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Models\Concerns\CascadesSoftDeletes;
@@ -11,8 +12,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * @property int $id
@@ -36,6 +39,7 @@ use Illuminate\Support\Carbon;
  * @property Status|null $status
  * @property-read Collection<int, Subscription> $subscriptions
  * @property-read Enquiry|null $enquiry
+ * @property-read Collection<int, Activity> $activitiesAsSubject
  */
 class Member extends Model
 {
@@ -66,6 +70,25 @@ class Member extends Model
         'source',
         'goal',
         'status',
+    ];
+
+    /** @var list<string> */
+    private const ACTIVITY_FIELDS = [
+        'photo',
+        'name',
+        'email',
+        'contact',
+        'emergency_contact',
+        'health_issue',
+        'gender',
+        'dob',
+        'address',
+        'country',
+        'state',
+        'city',
+        'pincode',
+        'source',
+        'goal',
     ];
 
     /**
@@ -103,6 +126,30 @@ class Member extends Model
     }
 
     /**
+     * Get the activity recorded for this member.
+     *
+     * @return MorphMany<Activity, $this>
+     */
+    public function activitiesAsSubject(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject');
+    }
+
+    /**
+     * Append a business event to the member timeline.
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    public function recordActivity(MemberActivityType $event, array $properties = []): void
+    {
+        activity(MemberActivityType::LogName)
+            ->performedOn($this)
+            ->event($event->value)
+            ->withProperties($properties)
+            ->log($event->value);
+    }
+
+    /**
      * Register member number synchronization hooks.
      */
     protected static function booted(): void
@@ -112,6 +159,30 @@ class Member extends Model
                 $member->code = Helpers::generateLastNumber('member', Member::class, null, 'code');
             }
             Helpers::updateLastNumber('member', $member->code);
+        });
+
+        static::created(function (self $member): void {
+            $member->recordActivity(MemberActivityType::MemberCreated);
+        });
+
+        static::updated(function (self $member): void {
+            if ($member->wasChanged('status')) {
+                $member->recordActivity(MemberActivityType::MemberStatusChanged, [
+                    'old' => $member->getRawOriginal('status'),
+                    'new' => $member->status?->value,
+                ]);
+            }
+
+            $changedFields = array_values(array_intersect(
+                array_keys($member->getChanges()),
+                self::ACTIVITY_FIELDS,
+            ));
+
+            if ($changedFields !== []) {
+                $member->recordActivity(MemberActivityType::MemberUpdated, [
+                    'fields' => $changedFields,
+                ]);
+            }
         });
     }
 

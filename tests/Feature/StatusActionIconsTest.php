@@ -213,16 +213,26 @@ it('updates expense statuses from row actions', function (
     $expense = Expense::factory()->create([
         'status' => $sourceStatus,
         'paid_at' => null,
+        'payment_method' => null,
+        'payment_reference' => null,
     ]);
 
+    $data = $targetStatus === Status::Paid ? [
+        'paid_at' => '2026-09-28 10:00:00',
+        'payment_method' => 'upi',
+        'payment_reference' => 'UPI-123',
+    ] : [];
+
     Livewire::test(ListExpenses::class)
-        ->callTableAction($action, $expense)
+        ->callTableAction($action, $expense, $data)
         ->assertNotified();
 
     $expense->refresh();
 
     expect($expense->status)->toBe($targetStatus)
-        ->and($expense->paid_at !== null)->toBe($hasPaidAt);
+        ->and($expense->paid_at !== null)->toBe($hasPaidAt)
+        ->and($expense->payment_method)->toBe($hasPaidAt ? 'upi' : null)
+        ->and($expense->payment_reference)->toBe($hasPaidAt ? 'UPI-123' : null);
 })->with([
     'paid' => ['pending', 'mark_as_paid', Status::Paid, true],
     'overdue' => ['pending', 'mark_as_overdue', Status::Overdue, false],

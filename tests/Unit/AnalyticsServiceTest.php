@@ -116,7 +116,23 @@ it('calculates collected financial and membership metrics within a custom date r
     Expense::factory()->create([
         'amount' => 50,
         'date' => '2026-02-14',
+        'paid_at' => '2026-02-14 10:00:00',
         'category' => 'rent',
+        'status' => 'paid',
+    ]);
+    Expense::factory()->create([
+        'amount' => 500,
+        'date' => '2026-02-14',
+        'category' => 'rent',
+        'status' => 'pending',
+        'paid_at' => null,
+    ]);
+    Expense::factory()->create([
+        'amount' => 900,
+        'date' => '2026-02-14',
+        'category' => 'rent',
+        'status' => 'cancelled',
+        'paid_at' => null,
     ]);
 
     $service = app(AnalyticsService::class);
@@ -159,6 +175,8 @@ it('includes every remaining expense category in the other chart segment', funct
             'category' => sprintf('Category %02d', $sequence->index + 1),
             'amount' => $sequence->index + 1,
             'date' => '2026-02-14',
+            'paid_at' => '2026-02-14 10:00:00',
+            'status' => 'paid',
         ])
         ->create();
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Status;
+use App\Enums\SubscriptionActivityType;
 use App\Helpers\Helpers;
 use App\Observers\InvoiceObserver;
 use App\Support\AppConfig;
@@ -123,6 +124,7 @@ class Invoice extends Model
      */
     public function syncFromTransactions(): void
     {
+        $previousStatus = $this->status?->value;
         $paymentsTotal = (float) $this->transactions()
             ->where('type', 'payment')
             ->sum('amount');
@@ -174,6 +176,15 @@ class Invoice extends Model
             ]);
 
         $this->refresh();
+
+        $currentStatus = $this->status?->value;
+
+        if ($previousStatus !== null && $previousStatus !== $currentStatus) {
+            $this->recordSubscriptionActivity(SubscriptionActivityType::InvoiceStatusChanged, [
+                'old' => $previousStatus,
+                'new' => $currentStatus,
+            ]);
+        }
     }
 
     /**
@@ -203,6 +214,11 @@ class Invoice extends Model
         });
 
         static::created(function (self $invoice): void {
+            $invoice->recordSubscriptionActivity(SubscriptionActivityType::InvoiceCreated, [
+                'amount' => (float) ($invoice->total_amount ?? 0),
+                'status' => $invoice->status?->value,
+            ]);
+
             $paid = (float) ($invoice->paid_amount ?? 0);
             $paid = max($paid, 0);
             $paid = min($paid, (float) ($invoice->total_amount ?? 0));
@@ -225,13 +241,36 @@ class Invoice extends Model
 
                 $transaction->invoice()->associate($invoice);
                 $transaction->saveQuietly();
+                $transaction->recordSubscriptionActivity();
             }
 
             $invoice->syncFromTransactions();
         });
 
         static::updated(function (self $invoice): void {
+            if ($invoice->wasChanged('status')) {
+                $invoice->recordSubscriptionActivity(SubscriptionActivityType::InvoiceStatusChanged, [
+                    'old' => $invoice->getRawOriginal('status'),
+                    'new' => $invoice->status?->value,
+                ]);
+            }
+
             $invoice->syncFromTransactions();
         });
+    }
+
+    /**
+     * Append an invoice event to the related subscription timeline.
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    private function recordSubscriptionActivity(SubscriptionActivityType $event, array $properties): void
+    {
+        $this->loadMissing('subscription');
+
+        $this->subscription?->recordActivity($event, [
+            'invoice' => $this->number,
+            ...$properties,
+        ]);
     }
 }

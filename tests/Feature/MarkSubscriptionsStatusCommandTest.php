@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\SubscriptionActivityType;
 use App\Helpers\Helpers;
 use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -47,12 +49,12 @@ class MarkSubscriptionsStatusCommandTest extends TestCase
 
         $admin->assignRole('super_admin');
 
-        Subscription::factory()->create([
+        $expired = Subscription::factory()->create([
             'start_date' => now()->subMonth(),
             'end_date' => now()->subDay(),
             'status' => 'ongoing',
         ]);
-        Subscription::factory()->create([
+        $expiring = Subscription::factory()->create([
             'start_date' => now()->subMonth(),
             'end_date' => now()->addDays(3),
             'status' => 'ongoing',
@@ -72,6 +74,14 @@ class MarkSubscriptionsStatusCommandTest extends TestCase
         $this->assertSame(1, Subscription::query()->where('status', 'expired')->count());
         $this->assertSame(1, Subscription::query()->where('status', 'expiring')->count());
         $this->assertSame(1, Subscription::query()->where('status', 'ongoing')->count());
+        $this->assertSame(1, Activity::query()
+            ->forSubject($expired)
+            ->forEvent(SubscriptionActivityType::SubscriptionStatusChanged->value)
+            ->count());
+        $this->assertSame(1, Activity::query()
+            ->forSubject($expiring)
+            ->forEvent(SubscriptionActivityType::SubscriptionStatusChanged->value)
+            ->count());
 
         $notification = $admin->notifications()->latest()->first();
         $this->assertNotNull($notification);

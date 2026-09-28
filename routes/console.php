@@ -42,4 +42,10 @@ if ((bool) config('gymie-tenancy.enabled', false)) {
         ->withoutOverlapping(30)
         ->onOneServer()
         ->dailyAt('00:00');
+
+    Schedule::command('gymie:expenses')
+        ->name('gymie-expenses-overdue')
+        ->withoutOverlapping(30)
+        ->onOneServer()
+        ->dailyAt('00:00');
 }

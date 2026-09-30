@@ -136,6 +136,11 @@ class AdminPanelProvider extends PanelProvider
             ...SubscriptionResource::getNavigationItems(),
         ];
 
+        $whatsapp = [
+            ...\App\Filament\Resources\WhatsappMessages\WhatsappMessageResource::getNavigationItems(),
+            ...\App\Filament\Resources\WhatsappTemplates\WhatsappTemplateResource::getNavigationItems(),
+        ];
+
         return $builder
             ->groups([
                 NavigationGroup::make(__('app.navigation.groups.sales'))
@@ -156,6 +161,11 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make(__('app.navigation.groups.administration'))
                     ->icon('heroicon-o-wrench-screwdriver')
                     ->items($administration)
+                    ->collapsed(false),
+
+                NavigationGroup::make('WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                    ->items($whatsapp)
                     ->collapsed(false),
             ])
             ->item(

@@ -4,6 +4,11 @@ return [
     'api' => [
         'invalid_query' => 'Invalid query parameters.',
     ],
+    'validation' => [
+        'attendance_active_member' => 'Only active members can check in.',
+        'attendance_already_recorded_today' => 'Attendance has already been recorded for this member today.',
+        'attendance_current_membership_required' => 'A current membership is required to check in.',
+    ],
     'common' => [
         'all' => 'All',
         'available' => 'Available',
@@ -92,6 +97,12 @@ return [
         'discount_with_rate' => 'Discount (:rate%)',
         'password' => 'Password',
         'password_confirmation' => 'Confirm password',
+        'checked_in_at' => 'Checked in at',
+        'checked_in_by' => 'Checked in by',
+        'membership_status' => 'Membership status',
+        'last_visit' => 'Last visit',
+        'visits_last_30_days' => 'Visits (30 days)',
+        'visit_activity' => 'Visit activity',
     ],
     'placeholders' => [
         'na' => 'N/A',
@@ -193,6 +204,10 @@ return [
             'singular' => 'Expense',
             'plural' => 'Expenses',
         ],
+        'attendance' => [
+            'singular' => 'Attendance',
+            'plural' => 'Attendance',
+        ],
         'users' => [
             'singular' => 'User',
             'plural' => 'Users',
@@ -226,10 +241,15 @@ return [
         'email_receipt' => 'Email receipt',
         'view_pdf' => 'View PDF',
         'download' => 'Download',
+        'open' => 'Open',
         'convert_to_member' => 'Convert to member',
         'view_member' => 'View member',
         'save' => 'Save',
         'save_add_another' => 'Save & add another',
+        'check_in' => 'Check in',
+        'check_in_member' => 'Check in member',
+        'attendance_qr' => 'Attendance QR',
+        'download_qr' => 'Download QR',
     ],
     'empty' => [
         'no_records' => 'No :records',
@@ -477,6 +497,7 @@ return [
         'subscription_status_update_body' => 'Subscriptions updated: :summary.',
         'success' => 'Success',
         'success_settings_save' => 'Settings saved successfully!',
+        'member_checked_in' => 'Member checked in',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'Cannot delete :module',
@@ -486,6 +507,24 @@ return [
     'units' => [
         'day' => 'day',
         'days' => 'days',
+    ],
+    'attendance' => [
+        'no_current_membership' => 'No current membership',
+        'membership_summary' => ':plan · Ends :date',
+        'no_visits' => 'No attendance recorded',
+        'no_visits_description' => 'Check in a member to start recording visits.',
+        'never_visited' => 'Never visited',
+        'no_visit_for_days' => 'No visit in :days days',
+        'qr_alt' => 'Attendance check-in QR code',
+        'qr_description' => 'Print or display this shared QR code. Members can scan it, enter their member ID, and record today’s visit.',
+        'public_title' => 'Member check-in',
+        'public_description' => 'Enter your member ID to record today’s visit.',
+        'member_id' => 'Member ID',
+        'member_id_placeholder' => 'For example, GY-101',
+        'member_id_help' => 'Use the member ID shown on your profile or membership card.',
+        'public_check_in_success' => 'Attendance recorded. Have a great workout!',
+        'public_check_in_failed' => 'We could not record your attendance. Check your member ID or ask staff for help.',
+        'public_privacy_note' => 'This form only records your visit. No member details are displayed.',
     ],
     'payment_methods' => [
         'cash' => 'Cash',
@@ -527,6 +566,10 @@ return [
         'other' => 'Other',
     ],
     'widgets' => [
+        'financial_overview' => 'Financial Overview',
+        'today_check_ins' => "Today's check-ins",
+        'visits_last_7_days' => 'Visits in the last 7 days',
+        'members_needing_follow_up' => 'Members with no visit in 14 days',
         'paid_expenses_this_month' => 'Paid expenses this month',
         'pending_expenses' => 'Pending expenses',
         'overdue_expenses' => 'Overdue expenses',

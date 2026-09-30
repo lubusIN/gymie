@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Members\Schemas;
 
 use App\Filament\Infolists\Components\ActivityTimelineEntry;
 use App\Filament\Resources\Members\Pages\ViewMember;
+use App\Filament\Resources\Members\RelationManagers\AttendancesRelationManager;
 use App\Filament\Resources\Members\RelationManagers\SubscriptionsRelationManager;
 use App\Models\Member;
 use Filament\Infolists\Components\ImageEntry;
@@ -64,6 +65,22 @@ class MemberInfolist
                                         'pageClass' => ViewMember::class,
                                     ],
                                 )->key('subscriptions_relation_manager'),
+                            ]),
+                        Tab::make(__('app.resources.attendance.plural'))
+                            ->key('attendance_tab')
+                            ->icon('heroicon-o-clipboard-document-check')
+                            ->visible(fn (Member $record): bool => AttendancesRelationManager::canViewForRecord(
+                                $record,
+                                ViewMember::class,
+                            ))
+                            ->schema([
+                                LivewireComponent::make(
+                                    AttendancesRelationManager::class,
+                                    fn (Member $record): array => [
+                                        'ownerRecord' => $record,
+                                        'pageClass' => ViewMember::class,
+                                    ],
+                                )->key('attendance_relation_manager'),
                             ]),
                     ]),
             ]);

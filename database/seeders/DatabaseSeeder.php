@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             SubscriptionSeeder::class,
             InvoiceSeeder::class,
             ExpenseSeeder::class,
+            AttendanceSeeder::class,
         ]);
 
         $this->callConfiguredSeeders('gymie.seeding.after');

@@ -1,9 +1,18 @@
 <?php
 
+use App\Http\Controllers\AttendanceCheckInController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\InvoiceDocumentController;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/attendance/check-in', [AttendanceCheckInController::class, 'create'])
+    ->middleware('signed:relative')
+    ->name('attendance.check-in.create');
+
+Route::post('/attendance/check-in', [AttendanceCheckInController::class, 'store'])
+    ->middleware(['signed:relative', 'throttle:attendance-check-in'])
+    ->name('attendance.check-in.store');
 
 Route::middleware([Authenticate::class])
     ->group(function (): void {

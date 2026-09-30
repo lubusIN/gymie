@@ -4,6 +4,11 @@ return [
     'api' => [
         'invalid_query' => 'Paramètres de requête invalides.',
     ],
+    'validation' => [
+        'attendance_active_member' => 'Seuls les membres actifs peuvent être enregistrés.',
+        'attendance_already_recorded_today' => 'La présence de ce membre a déjà été enregistrée aujourd’hui.',
+        'attendance_current_membership_required' => 'Un abonnement en cours est requis pour enregistrer l’arrivée.',
+    ],
     'common' => [
         'all' => 'Tous',
         'available' => 'Disponible',
@@ -92,6 +97,12 @@ return [
         'discount_with_rate' => 'Remise (:rate%)',
         'password' => 'Mot de passe',
         'password_confirmation' => 'Confirmer le mot de passe',
+        'checked_in_at' => 'Arrivée',
+        'checked_in_by' => 'Arrivée enregistrée par',
+        'membership_status' => 'Statut de l’abonnement',
+        'last_visit' => 'Dernière visite',
+        'visits_last_30_days' => 'Visites (30 jours)',
+        'visit_activity' => 'Activité des visites',
     ],
     'placeholders' => [
         'na' => 'N/A',
@@ -193,6 +204,10 @@ return [
             'singular' => 'Dépense',
             'plural' => 'Dépenses',
         ],
+        'attendance' => [
+            'singular' => 'Présence',
+            'plural' => 'Présences',
+        ],
         'users' => [
             'singular' => 'Utilisateur',
             'plural' => 'Utilisateurs',
@@ -226,10 +241,15 @@ return [
         'email_receipt' => 'Envoyer le reçu',
         'view_pdf' => 'Voir PDF',
         'download' => 'Télécharger',
+        'open' => 'Ouvrir',
         'convert_to_member' => 'Convertir en membre',
         'view_member' => 'Voir le membre',
         'save' => 'Enregistrer',
         'save_add_another' => 'Enregistrer et ajouter',
+        'check_in' => 'Enregistrer l’arrivée',
+        'check_in_member' => 'Enregistrer l’arrivée du membre',
+        'attendance_qr' => 'QR de présence',
+        'download_qr' => 'Télécharger le QR',
     ],
     'empty' => [
         'no_records' => 'Aucun :records',
@@ -476,6 +496,7 @@ return [
         'subscription_status_update_body' => 'Abonnements mis à jour : :summary.',
         'success' => 'Succès',
         'success_settings_save' => 'Paramètres enregistrés.',
+        'member_checked_in' => 'Arrivée du membre enregistrée',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'Suppression impossible :module',
@@ -485,6 +506,24 @@ return [
     'units' => [
         'day' => 'jour',
         'days' => 'jours',
+    ],
+    'attendance' => [
+        'no_current_membership' => 'Aucun abonnement en cours',
+        'membership_summary' => ':plan · Se termine le :date',
+        'no_visits' => 'Aucune présence enregistrée',
+        'no_visits_description' => 'Enregistrez l’arrivée d’un membre pour commencer.',
+        'never_visited' => 'Aucune visite',
+        'no_visit_for_days' => 'Aucune visite depuis :days jours',
+        'qr_alt' => 'Code QR d’enregistrement de présence',
+        'qr_description' => 'Imprimez ou affichez ce code QR partagé. Les membres peuvent le scanner, saisir leur identifiant et enregistrer leur visite du jour.',
+        'public_title' => 'Enregistrement du membre',
+        'public_description' => 'Saisissez votre identifiant membre pour enregistrer votre visite du jour.',
+        'member_id' => 'Identifiant membre',
+        'member_id_placeholder' => 'Par exemple, GY-101',
+        'member_id_help' => 'Utilisez l’identifiant indiqué sur votre profil ou votre carte de membre.',
+        'public_check_in_success' => 'Présence enregistrée. Bon entraînement !',
+        'public_check_in_failed' => 'Impossible d’enregistrer votre présence. Vérifiez votre identifiant ou demandez de l’aide au personnel.',
+        'public_privacy_note' => 'Ce formulaire enregistre uniquement votre visite. Aucune donnée de membre n’est affichée.',
     ],
     'payment_methods' => [
         'cash' => 'Espèces',
@@ -526,6 +565,10 @@ return [
         'other' => 'Autre',
     ],
     'widgets' => [
+        'financial_overview' => 'Aperçu financier',
+        'today_check_ins' => 'Arrivées aujourd’hui',
+        'visits_last_7_days' => 'Visites des 7 derniers jours',
+        'members_needing_follow_up' => 'Membres sans visite depuis 14 jours',
         'paid_expenses_this_month' => 'Dépenses payées ce mois-ci',
         'pending_expenses' => 'Dépenses en attente',
         'overdue_expenses' => 'Dépenses en retard',

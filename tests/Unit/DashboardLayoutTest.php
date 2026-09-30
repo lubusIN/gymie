@@ -6,6 +6,7 @@ use App\Filament\Widgets\Analytics\FinancialMetricsWidget;
 use App\Filament\Widgets\Analytics\MembershipMetricsWidget;
 use App\Filament\Widgets\Analytics\MembershipOverviewSubscriptionsTableWidget;
 use App\Filament\Widgets\Analytics\RecentTransactionsTableWidget;
+use App\Filament\Widgets\AttendanceOverviewWidget;
 use Filament\Schemas\Components\Livewire;
 
 /**
@@ -75,6 +76,16 @@ it('includes membership overview on the dashboard', function (): void {
 
     expect($components)->toContain(MembershipMetricsWidget::class);
     expect($components)->toContain(MembershipOverviewSubscriptionsTableWidget::class);
+});
+
+it('keeps attendance overview out of the main dashboard', function (): void {
+    $dashboard = new Dashboard;
+
+    $widgetsComponent = $dashboard->getWidgetsContentComponent();
+
+    $components = collectLivewireComponentsFromSchema($widgetsComponent);
+
+    expect($components)->not->toContain(AttendanceOverviewWidget::class);
 });
 
 it('positions spending overview next to financial at md', function (): void {

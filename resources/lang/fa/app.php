@@ -4,6 +4,11 @@ return [
     'api' => [
         'invalid_query' => 'پارامترهای درخواست نامعتبر است.',
     ],
+    'validation' => [
+        'attendance_active_member' => 'فقط اعضای فعال می‌توانند وارد شوند.',
+        'attendance_already_recorded_today' => 'حضور این عضو امروز قبلاً ثبت شده است.',
+        'attendance_current_membership_required' => 'برای ثبت ورود، عضویت فعال لازم است.',
+    ],
     'common' => [
         'all' => 'همه',
         'available' => 'موجود',
@@ -92,6 +97,12 @@ return [
         'discount_with_rate' => 'تخفیف (:rate%)',
         'password' => 'رمز عبور',
         'password_confirmation' => 'تایید رمز عبور',
+        'checked_in_at' => 'زمان ورود',
+        'checked_in_by' => 'ثبت ورود توسط',
+        'membership_status' => 'وضعیت عضویت',
+        'last_visit' => 'آخرین مراجعه',
+        'visits_last_30_days' => 'مراجعه‌ها (۳۰ روز)',
+        'visit_activity' => 'فعالیت مراجعه',
     ],
     'placeholders' => [
         'na' => 'نامشخص',
@@ -193,6 +204,10 @@ return [
             'singular' => 'هزینه',
             'plural' => 'هزینه‌ها',
         ],
+        'attendance' => [
+            'singular' => 'حضور و غیاب',
+            'plural' => 'حضور و غیاب',
+        ],
         'users' => [
             'singular' => 'کاربر',
             'plural' => 'کاربران',
@@ -226,10 +241,15 @@ return [
         'email_receipt' => 'ارسال ایمیل رسید پرداخت',
         'view_pdf' => 'مشاهده PDF',
         'download' => 'دانلود',
+        'open' => 'باز کردن',
         'convert_to_member' => 'تبدیل به عضو رسمی',
         'view_member' => 'مشاهده عضو',
         'save' => 'ذخیره',
         'save_add_another' => 'ذخیره و ایجاد یکی دیگر',
+        'check_in' => 'ثبت ورود',
+        'check_in_member' => 'ثبت ورود عضو',
+        'attendance_qr' => 'کد QR حضور',
+        'download_qr' => 'دانلود کد QR',
     ],
     'empty' => [
         'no_records' => 'هیچ داده‌ای برای :records یافت نشد.',
@@ -476,6 +496,7 @@ return [
         'subscription_status_update_body' => 'اشتراک‌ها به‌روزرسانی شدند: :summary.',
         'success' => 'موفقیت‌آمیز',
         'success_settings_save' => 'تنظیمات با موفقیت ذخیره شد!',
+        'member_checked_in' => 'ورود عضو ثبت شد',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'عدم امکان حذف بخش :module',
@@ -485,6 +506,24 @@ return [
     'units' => [
         'day' => 'روز',
         'days' => 'روز',
+    ],
+    'attendance' => [
+        'no_current_membership' => 'عضویت فعالی وجود ندارد',
+        'membership_summary' => ':plan · پایان در :date',
+        'no_visits' => 'حضوری ثبت نشده است',
+        'no_visits_description' => 'برای شروع، ورود یک عضو را ثبت کنید.',
+        'never_visited' => 'بدون مراجعه',
+        'no_visit_for_days' => 'بدون مراجعه در :days روز',
+        'qr_alt' => 'کد QR ثبت حضور',
+        'qr_description' => 'این کد QR مشترک را چاپ یا نمایش دهید. اعضا می‌توانند آن را اسکن کنند، شناسه عضویت خود را وارد کنند و مراجعه امروز را ثبت کنند.',
+        'public_title' => 'ثبت حضور عضو',
+        'public_description' => 'برای ثبت مراجعه امروز، شناسه عضویت خود را وارد کنید.',
+        'member_id' => 'شناسه عضویت',
+        'member_id_placeholder' => 'برای مثال GY-101',
+        'member_id_help' => 'از شناسه درج‌شده در پروفایل یا کارت عضویت خود استفاده کنید.',
+        'public_check_in_success' => 'حضور شما ثبت شد. تمرین خوبی داشته باشید!',
+        'public_check_in_failed' => 'ثبت حضور انجام نشد. شناسه عضویت را بررسی کنید یا از کارکنان کمک بگیرید.',
+        'public_privacy_note' => 'این فرم فقط مراجعه شما را ثبت می‌کند و هیچ اطلاعات عضوی نمایش داده نمی‌شود.',
     ],
     'payment_methods' => [
         'cash' => 'نقدی',
@@ -526,6 +565,10 @@ return [
         'other' => 'سایر هزینه‌ها',
     ],
     'widgets' => [
+        'financial_overview' => 'نمای کلی مالی',
+        'today_check_ins' => 'ورودی‌های امروز',
+        'visits_last_7_days' => 'مراجعه‌ها در ۷ روز گذشته',
+        'members_needing_follow_up' => 'اعضای بدون مراجعه در ۱۴ روز گذشته',
         'paid_expenses_this_month' => 'هزینه‌های پرداخت‌شده این ماه',
         'pending_expenses' => 'هزینه‌های در انتظار',
         'overdue_expenses' => 'هزینه‌های سررسید گذشته',

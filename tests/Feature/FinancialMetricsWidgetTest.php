@@ -12,7 +12,7 @@ afterEach(function (): void {
     Helpers::setTestSettingsOverride(null);
 });
 
-it('does not render sparklines on net revenue and total collected cards', function (): void {
+it('renders the financial metrics in one overview card', function (): void {
     config()->set('app.timezone', 'UTC');
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-02-23', 'UTC'));
 
@@ -33,8 +33,12 @@ it('does not render sparklines on net revenue and total collected cards', functi
     ]);
 
     Livewire::test(FinancialMetricsWidget::class)
+        ->assertSee(__('app.widgets.financial_overview'))
         ->assertSee(__('app.widgets.net_revenue'))
         ->assertSee(__('app.widgets.total_collected'))
-        ->assertDontSee('fi-wi-stats-overview-stat-chart', false)
-        ->assertDontSeeHtml('<canvas');
+        ->assertSee(__('app.widgets.outstanding_payments'))
+        ->assertSee(__('app.widgets.profit'))
+        ->assertSeeHtml('data-financial-metrics')
+        ->assertSeeHtml('data-financial-trend')
+        ->assertSee('0%');
 });

@@ -6,6 +6,7 @@ use App\Enums\MemberActivityType;
 use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Models\Concerns\CascadesSoftDeletes;
+use Carbon\CarbonInterface;
 use Database\Factories\MemberFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,6 +39,7 @@ use Spatie\Activitylog\Models\Activity;
  * @property string|null $goal
  * @property Status|null $status
  * @property-read Collection<int, Subscription> $subscriptions
+ * @property-read Collection<int, Attendance> $attendances
  * @property-read Enquiry|null $enquiry
  * @property-read Collection<int, Activity> $activitiesAsSubject
  */
@@ -106,13 +108,37 @@ class Member extends Model
 
     /**
      * Get the subscriptions for the member.
-     */
-    /**
+     *
      * @return HasMany<Subscription, $this>
      */
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Find the membership that permits access on the given date.
+     */
+    public function currentSubscriptionAt(CarbonInterface $date): ?Subscription
+    {
+        return $this->subscriptions()
+            ->with('plan')
+            ->where('start_date', '<=', $date->toDateString())
+            ->where('end_date', '>=', $date->toDateString())
+            ->whereIn('status', [Status::Ongoing->value, Status::Expiring->value])
+            ->orderByDesc('end_date')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * Get the member's attendance history.
+     *
+     * @return HasMany<Attendance, $this>
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
     }
 
     /**

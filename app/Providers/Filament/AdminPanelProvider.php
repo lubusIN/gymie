@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Settings;
+use App\Filament\Resources\Attendances\AttendanceResource;
 use App\Filament\Resources\Enquiries\EnquiryResource;
 use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Filament\Resources\FollowUps\FollowUpResource;
@@ -158,11 +159,14 @@ class AdminPanelProvider extends PanelProvider
                     ->items($administration)
                     ->collapsed(false),
             ])
-            ->item(
-                NavigationItem::make(__('app.navigation.dashboard'))
-                    ->icon('heroicon-o-chart-bar')
-                    ->url(fn () => Dashboard::getUrl())
-                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.pages.dashboard'))
+            ->items(
+                [
+                    NavigationItem::make(__('app.navigation.dashboard'))
+                        ->icon('heroicon-o-chart-bar')
+                        ->url(fn () => Dashboard::getUrl())
+                        ->isActiveWhen(fn () => request()->routeIs('filament.admin.pages.dashboard')),
+                    ...AttendanceResource::getNavigationItems(),
+                ]
             );
     }
 

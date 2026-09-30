@@ -10,6 +10,9 @@ use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Carbon;
 
+/**
+ * Expense status totals for the expense workspace.
+ */
 class ExpenseOverviewWidget extends StatsOverviewWidget
 {
     /**
@@ -44,10 +47,13 @@ class ExpenseOverviewWidget extends StatsOverviewWidget
 
         return [
             Stat::make(__('app.widgets.paid_expenses_this_month'), Helpers::formatCurrency($paidThisMonth))
+                ->icon('heroicon-o-banknotes')
                 ->color('success'),
             Stat::make(__('app.widgets.pending_expenses'), Helpers::formatCurrency($pending))
+                ->icon('heroicon-o-clock')
                 ->color('warning'),
             Stat::make(__('app.widgets.overdue_expenses'), Helpers::formatCurrency($overdue))
+                ->icon('heroicon-o-exclamation-triangle')
                 ->color('danger'),
         ];
     }

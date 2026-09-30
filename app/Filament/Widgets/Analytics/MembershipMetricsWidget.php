@@ -105,14 +105,6 @@ HTML);
     }
 
     /**
-     * Tailwind selector classes that color the main stat icon using the panel primary color.
-     */
-    private function primaryStatIconClasses(): string
-    {
-        return '[&_.fi-wi-stats-overview-stat-label-ctn>.fi-icon]:text-primary-400 dark:[&_.fi-wi-stats-overview-stat-label-ctn>.fi-icon]:text-primary-400';
-    }
-
-    /**
      * @return array<int, Stat>
      */
     protected function getStats(): array
@@ -121,12 +113,7 @@ HTML);
         $service = app(AnalyticsService::class);
         $metrics = $service->membershipMetrics($range);
 
-        $days = $range->end->diffInDays($range->start) + 1;
-        $previousRange = new AnalyticsDateRange(
-            $range->start->subDays($days),
-            $range->end->subDays($days),
-        );
-        $previous = $service->membershipMetrics($previousRange);
+        $previous = $service->membershipMetrics($range->previous());
 
         $activeDelta = $this->deltaInline($metrics['active_members'], $previous['active_members']);
         $signupDelta = $this->deltaInline($metrics['new_signups'], $previous['new_signups']);
@@ -139,7 +126,6 @@ HTML);
                 $this->valueWithDelta((string) $metrics['active_members'], $activeDelta),
             )
                 ->icon('heroicon-o-user-group')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['active_members']]))
                 ->descriptionColor('gray'),
             Stat::make(
@@ -147,7 +133,6 @@ HTML);
                 $this->valueWithDelta((string) $metrics['new_signups'], $signupDelta),
             )
                 ->icon('heroicon-o-user-plus')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['new_signups']]))
                 ->descriptionColor('gray'),
             Stat::make(
@@ -155,7 +140,6 @@ HTML);
                 $this->valueWithDelta((string) $metrics['renewals'], $renewalDelta),
             )
                 ->icon('heroicon-o-arrow-path')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['renewals']]))
                 ->descriptionColor('gray'),
             Stat::make(
@@ -163,7 +147,6 @@ HTML);
                 $this->valueWithDelta((string) $metrics['expired_not_renewed'], $expiredDelta),
             )
                 ->icon('heroicon-o-x-circle')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['expired_not_renewed']]))
                 ->descriptionColor('gray'),
         ];

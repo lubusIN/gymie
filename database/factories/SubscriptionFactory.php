@@ -4,11 +4,12 @@ namespace Database\Factories;
 
 use App\Models\Member;
 use App\Models\Plan;
+use App\Models\Subscription;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Subscription>
+ * @extends Factory<Subscription>
  */
 class SubscriptionFactory extends Factory
 {
@@ -58,5 +59,16 @@ class SubscriptionFactory extends Factory
             'end_date' => $endDate->toDateString(),
             'status' => $status,
         ];
+    }
+
+    public function current(): static
+    {
+        $today = CarbonImmutable::today(config('app.timezone'));
+
+        return $this->state(fn (): array => [
+            'start_date' => $today->subMonth()->toDateString(),
+            'end_date' => $today->addMonth()->toDateString(),
+            'status' => 'ongoing',
+        ]);
     }
 }

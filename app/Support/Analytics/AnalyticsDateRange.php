@@ -2,6 +2,7 @@
 
 namespace App\Support\Analytics;
 
+use App\Support\AppConfig;
 use Carbon\CarbonImmutable;
 
 /**
@@ -30,7 +31,7 @@ final readonly class AnalyticsDateRange
     public static function fromFilters(?array $filters, ?string $timezone = null): self
     {
         $filters ??= [];
-        $timezone ??= \App\Support\AppConfig::timezone();
+        $timezone ??= AppConfig::timezone();
         $today = CarbonImmutable::today($timezone);
 
         $period = is_string($filters['period'] ?? null) ? $filters['period'] : '7days';
@@ -69,5 +70,20 @@ final readonly class AnalyticsDateRange
     public function referenceDateString(): string
     {
         return $this->end->toDateString();
+    }
+
+    /**
+     * Return the immediately preceding range with the same inclusive day count.
+     */
+    public function previous(): self
+    {
+        $days = (int) $this->start
+            ->startOfDay()
+            ->diffInDays($this->end->startOfDay()) + 1;
+
+        return new self(
+            $this->start->subDays($days),
+            $this->end->subDays($days),
+        );
     }
 }

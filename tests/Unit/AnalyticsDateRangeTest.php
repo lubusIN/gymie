@@ -40,3 +40,15 @@ it('swaps custom range when dates are reversed', function (): void {
     expect($range->start->toDateString())->toBe('2026-02-10');
     expect($range->end->toDateString())->toBe('2026-02-20');
 });
+
+it('returns the immediately preceding range with the same inclusive day count', function (): void {
+    $range = new AnalyticsDateRange(
+        CarbonImmutable::parse('2026-02-17 00:00:00', 'UTC'),
+        CarbonImmutable::parse('2026-02-23 23:59:59', 'UTC'),
+    );
+
+    $previous = $range->previous();
+
+    expect($previous->start->toDateTimeString())->toBe('2026-02-10 00:00:00')
+        ->and($previous->end->toDateTimeString())->toBe('2026-02-16 23:59:59');
+});

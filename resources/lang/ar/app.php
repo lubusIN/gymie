@@ -4,6 +4,11 @@ return [
     'api' => [
         'invalid_query' => 'معلمات الاستعلام غير صالحة.',
     ],
+    'validation' => [
+        'attendance_active_member' => 'يمكن تسجيل دخول الأعضاء النشطين فقط.',
+        'attendance_already_recorded_today' => 'تم تسجيل حضور هذا العضو اليوم بالفعل.',
+        'attendance_current_membership_required' => 'يلزم وجود عضوية حالية لتسجيل الدخول.',
+    ],
     'common' => [
         'all' => 'الكل',
         'available' => 'متاح',
@@ -92,6 +97,12 @@ return [
         'discount_with_rate' => 'الخصم (:rate%)',
         'password' => 'كلمة المرور',
         'password_confirmation' => 'تاكيد كلمة المرور',
+        'checked_in_at' => 'وقت الدخول',
+        'checked_in_by' => 'سجل الدخول بواسطة',
+        'membership_status' => 'حالة العضوية',
+        'last_visit' => 'آخر زيارة',
+        'visits_last_30_days' => 'الزيارات (30 يومًا)',
+        'visit_activity' => 'نشاط الزيارات',
     ],
     'placeholders' => [
         'na' => 'غير متوفر',
@@ -193,6 +204,10 @@ return [
             'singular' => 'مصروف',
             'plural' => 'المصروفات',
         ],
+        'attendance' => [
+            'singular' => 'الحضور',
+            'plural' => 'الحضور',
+        ],
         'users' => [
             'singular' => 'مستخدم',
             'plural' => 'المستخدمون',
@@ -226,10 +241,15 @@ return [
         'email_receipt' => 'ارسال الايصال',
         'view_pdf' => 'عرض PDF',
         'download' => 'تحميل',
+        'open' => 'فتح',
         'convert_to_member' => 'تحويل الى عضو',
         'view_member' => 'عرض العضو',
         'save' => 'حفظ',
         'save_add_another' => 'حفظ واضافة اخرى',
+        'check_in' => 'تسجيل الدخول',
+        'check_in_member' => 'تسجيل دخول عضو',
+        'attendance_qr' => 'رمز QR للحضور',
+        'download_qr' => 'تنزيل رمز QR',
     ],
     'empty' => [
         'no_records' => 'لا يوجد :records',
@@ -476,6 +496,7 @@ return [
         'subscription_status_update_body' => 'تم تحديث الاشتراكات: :summary.',
         'success' => 'نجاح',
         'success_settings_save' => 'تم حفظ الاعدادات بنجاح!',
+        'member_checked_in' => 'تم تسجيل دخول العضو',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'لا يمكن حذف :module',
@@ -485,6 +506,24 @@ return [
     'units' => [
         'day' => 'يوم',
         'days' => 'ايام',
+    ],
+    'attendance' => [
+        'no_current_membership' => 'لا توجد عضوية حالية',
+        'membership_summary' => ':plan · تنتهي في :date',
+        'no_visits' => 'لم يتم تسجيل حضور',
+        'no_visits_description' => 'سجل دخول عضو لبدء تسجيل الزيارات.',
+        'never_visited' => 'لم يزر مطلقًا',
+        'no_visit_for_days' => 'لا توجد زيارة خلال :days يومًا',
+        'qr_alt' => 'رمز QR لتسجيل الحضور',
+        'qr_description' => 'اطبع أو اعرض رمز QR المشترك. يمكن للأعضاء مسحه وإدخال رقم العضوية وتسجيل زيارة اليوم.',
+        'public_title' => 'تسجيل حضور العضو',
+        'public_description' => 'أدخل رقم عضويتك لتسجيل زيارة اليوم.',
+        'member_id' => 'رقم العضوية',
+        'member_id_placeholder' => 'مثال: GY-101',
+        'member_id_help' => 'استخدم رقم العضوية الظاهر في ملفك أو بطاقة العضوية.',
+        'public_check_in_success' => 'تم تسجيل الحضور. تمرينًا ممتعًا!',
+        'public_check_in_failed' => 'تعذر تسجيل حضورك. تحقق من رقم العضوية أو اطلب مساعدة الموظفين.',
+        'public_privacy_note' => 'يسجل هذا النموذج زيارتك فقط ولا يعرض أي بيانات للعضو.',
     ],
     'payment_methods' => [
         'cash' => 'نقداً',
@@ -526,6 +565,10 @@ return [
         'other' => 'اخرى',
     ],
     'widgets' => [
+        'financial_overview' => 'نظرة عامة مالية',
+        'today_check_ins' => 'تسجيلات الدخول اليوم',
+        'visits_last_7_days' => 'الزيارات خلال آخر 7 أيام',
+        'members_needing_follow_up' => 'أعضاء بلا زيارة منذ 14 يومًا',
         'paid_expenses_this_month' => 'المصروفات المدفوعة هذا الشهر',
         'pending_expenses' => 'المصروفات المعلقة',
         'overdue_expenses' => 'المصروفات المتأخرة',

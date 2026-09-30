@@ -6,19 +6,19 @@ use App\Helpers\Helpers;
 use App\Services\Analytics\AnalyticsService;
 use App\Support\Analytics\AnalyticsDateRange;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
-use Filament\Widgets\StatsOverviewWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
+use Filament\Widgets\Widget;
 
 /**
  * Financial overview widget for key revenue and expense KPIs.
  */
-class FinancialMetricsWidget extends StatsOverviewWidget
+class FinancialMetricsWidget extends Widget
 {
     use InteractsWithPageFilters;
 
     protected static ?int $sort = -40;
+
+    /** @var view-string */
+    protected string $view = 'filament.widgets.analytics.financial-metrics';
 
     /**
      * @var int | string | array<string, int | null>
@@ -29,150 +29,94 @@ class FinancialMetricsWidget extends StatsOverviewWidget
     ];
 
     /**
-     * @var int | array<string, ?int> | null
-     */
-    protected int|array|null $columns = 2;
-
-    /**
-     * Build an inline delta label for KPI cards.
+     * Build the compact comparison shown beside a financial metric.
      *
-     * @return array{label: string, icon: string|null, class: string}
+     * @return array{label: string, icon: string, color: 'gray'|'success'|'danger'}
      */
-    private function deltaInline(float $current, float $previous): array
+    private function trend(float $current, float $previous): array
     {
         if ($previous <= 0) {
             if ($current <= 0) {
                 return [
                     'label' => '0%',
                     'icon' => 'heroicon-o-minus',
-                    'class' => 'text-gray-500',
+                    'color' => 'gray',
                 ];
             }
 
             return [
                 'label' => '+'.Helpers::formatCurrency($current),
                 'icon' => 'heroicon-o-arrow-trending-up',
-                'class' => 'text-success-600 dark:text-success-400',
+                'color' => 'success',
             ];
         }
 
-        $pct = (($current - $previous) / $previous) * 100;
-        $pct = round($pct, 1);
+        $percentage = round((($current - $previous) / $previous) * 100, 1);
 
-        if ($pct === 0.0) {
+        if ($percentage === 0.0) {
             return [
                 'label' => '0%',
                 'icon' => 'heroicon-o-minus',
-                'class' => 'text-gray-500',
+                'color' => 'gray',
             ];
         }
 
-        if ($pct > 0) {
+        if ($percentage > 0) {
             return [
-                'label' => "+{$pct}%",
+                'label' => "+{$percentage}%",
                 'icon' => 'heroicon-o-arrow-trending-up',
-                'class' => 'text-success-600 dark:text-success-400',
+                'color' => 'success',
             ];
         }
-
-        $pct = abs($pct);
 
         return [
-            'label' => "-{$pct}%",
+            'label' => '-'.abs($percentage).'%',
             'icon' => 'heroicon-o-arrow-trending-down',
-            'class' => 'text-danger-600 dark:text-danger-400',
+            'color' => 'danger',
         ];
     }
 
     /**
-     * Render a KPI value with an inline delta.
-     *
-     * @param  array{label: string, icon: string|null, class: string}  $delta
+     * @return array{
+     *     heading: string,
+     *     metrics: array<int, array{
+     *         label: string,
+     *         value: string,
+     *         icon: string,
+     *         trend: array{label: string, icon: string, color: 'gray'|'success'|'danger'},
+     *         trendTitle: string
+     *     }>
+     * }
      */
-    private function valueWithDelta(string $value, array $delta): HtmlString
-    {
-        $value = e($value);
-        $deltaLabel = e($delta['label']);
-        $deltaClass = e($delta['class']);
-
-        $deltaIcon = null;
-        if (filled($delta['icon'])) {
-            $deltaIcon = Blade::render(
-                '<x-filament::icon :icon="$icon" class="h-4 w-4 text-current" />',
-                ['icon' => $delta['icon']],
-            );
-        }
-
-        return new HtmlString(<<<HTML
-<div class="flex items-baseline gap-2 my-2">
-    <span>{$value}</span>
-    <span class="text-sm font-semibold {$deltaClass} inline-flex items-center gap-1">{$deltaLabel}{$deltaIcon}</span>
-</div>
-HTML);
-    }
-
-    /**
-     * Tailwind selector classes that color the main stat icon using the panel primary color.
-     */
-    private function primaryStatIconClasses(): string
-    {
-        return '[&_.fi-wi-stats-overview-stat-label-ctn>.fi-icon]:text-primary-400 dark:[&_.fi-wi-stats-overview-stat-label-ctn>.fi-icon]:text-primary-400';
-    }
-
-    /**
-     * @return array<int, Stat>
-     */
-    protected function getStats(): array
+    protected function getViewData(): array
     {
         $range = AnalyticsDateRange::fromFilters($this->pageFilters);
         $service = app(AnalyticsService::class);
         $metrics = $service->financialMetrics($range);
 
-        $days = $range->end->diffInDays($range->start) + 1;
-        $previousRange = new AnalyticsDateRange(
-            $range->start->subDays($days),
-            $range->end->subDays($days),
-        );
-        $previous = $service->financialMetrics($previousRange);
+        $previous = $service->financialMetrics($range->previous());
 
-        $netRevenueDelta = $this->deltaInline($metrics['net_revenue'], $previous['net_revenue']);
-        $collectedDelta = $this->deltaInline($metrics['collected'], $previous['collected']);
-        $outstandingDelta = $this->deltaInline($metrics['outstanding'], $previous['outstanding']);
-        $profitDelta = $this->deltaInline($metrics['profit'], $previous['profit']);
+        $definitions = [
+            ['key' => 'net_revenue', 'label' => __('app.widgets.net_revenue'), 'icon' => 'heroicon-o-banknotes'],
+            ['key' => 'collected', 'label' => __('app.widgets.total_collected'), 'icon' => 'heroicon-o-arrow-down-tray'],
+            ['key' => 'outstanding', 'label' => __('app.widgets.outstanding_payments'), 'icon' => 'heroicon-o-clock'],
+            ['key' => 'profit', 'label' => __('app.widgets.profit'), 'icon' => 'heroicon-o-chart-bar-square'],
+        ];
 
         return [
-            Stat::make(
-                __('app.widgets.net_revenue'),
-                $this->valueWithDelta(Helpers::formatCurrency($metrics['net_revenue']), $netRevenueDelta),
-            )
-                ->icon('heroicon-o-banknotes')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
-                ->description(__('app.widgets.vs_previous_period', ['count' => Helpers::formatCurrency($previous['net_revenue'])]))
-                ->descriptionColor('gray'),
-            Stat::make(
-                __('app.widgets.total_collected'),
-                $this->valueWithDelta(Helpers::formatCurrency($metrics['collected']), $collectedDelta),
-            )
-                ->icon('heroicon-o-arrow-down-tray')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
-                ->description(__('app.widgets.vs_previous_period', ['count' => Helpers::formatCurrency($previous['collected'])]))
-                ->descriptionColor('gray'),
-            Stat::make(
-                __('app.widgets.outstanding_payments'),
-                $this->valueWithDelta(Helpers::formatCurrency($metrics['outstanding']), $outstandingDelta),
-            )
-                ->icon('heroicon-o-clock')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
-                ->description(__('app.widgets.vs_previous_period', ['count' => Helpers::formatCurrency($previous['outstanding'])]))
-                ->descriptionColor('gray'),
-            Stat::make(
-                __('app.widgets.profit'),
-                $this->valueWithDelta(Helpers::formatCurrency($metrics['profit']), $profitDelta),
-            )
-                ->icon('heroicon-o-chart-bar-square')
-                ->extraAttributes(['class' => $this->primaryStatIconClasses()])
-                ->description(__('app.widgets.vs_previous_period', ['count' => Helpers::formatCurrency($previous['profit'])]))
-                ->descriptionColor('gray'),
+            'heading' => __('app.widgets.financial_overview'),
+            'metrics' => array_map(fn (array $definition): array => [
+                'label' => $definition['label'],
+                'value' => Helpers::formatCurrency($metrics[$definition['key']]),
+                'icon' => $definition['icon'],
+                'trend' => $this->trend(
+                    $metrics[$definition['key']],
+                    $previous[$definition['key']],
+                ),
+                'trendTitle' => __('app.widgets.vs_previous_period', [
+                    'count' => Helpers::formatCurrency($previous[$definition['key']]),
+                ]),
+            ], $definitions),
         ];
     }
 }

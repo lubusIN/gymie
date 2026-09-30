@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Members\Tables;
 
 use App\Enums\Status;
 use App\Models\Member;
+use App\Support\AppConfig;
 use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -21,6 +22,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +35,12 @@ class MemberTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+                ->withMax('attendances as last_visit_at', 'checked_in_at')
+                ->withCount([
+                    'attendances as visits_last_30_days' => fn (Builder $query): Builder => $query
+                        ->where('visited_on', '>=', Carbon::now(AppConfig::timezone())->subDays(29)->toDateString()),
+                ]))
             ->columns([
                 TextColumn::make('id')
                     ->sortable()
@@ -55,6 +63,15 @@ class MemberTable
                 TextColumn::make('contact')
                     ->searchable()
                     ->label(__('app.fields.contact')),
+                TextColumn::make('last_visit_at')
+                    ->label(__('app.fields.last_visit'))
+                    ->dateTime('d M Y, h:i A')
+                    ->placeholder(__('app.attendance.never_visited'))
+                    ->sortable(),
+                TextColumn::make('visits_last_30_days')
+                    ->label(__('app.fields.visits_last_30_days'))
+                    ->numeric()
+                    ->sortable(),
                 TextColumn::make('emergency_contact')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)
@@ -127,6 +144,35 @@ class MemberTable
             ])
             ->filters([
                 TrashedFilter::make(),
+                SelectFilter::make('attendance_recency')
+                    ->label(__('app.fields.visit_activity'))
+                    ->options([
+                        '7' => __('app.attendance.no_visit_for_days', ['days' => 7]),
+                        '14' => __('app.attendance.no_visit_for_days', ['days' => 14]),
+                        '30' => __('app.attendance.no_visit_for_days', ['days' => 30]),
+                        'never' => __('app.attendance.never_visited'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+
+                        if ($value === 'never') {
+                            return $query->whereDoesntHave('attendances');
+                        }
+
+                        if (! is_numeric($value)) {
+                            return $query;
+                        }
+
+                        $cutoff = Carbon::now(AppConfig::timezone())
+                            ->subDays((int) $value)
+                            ->toDateString();
+
+                        return $query->whereDoesntHave(
+                            'attendances',
+                            fn (Builder $attendanceQuery): Builder => $attendanceQuery
+                                ->where('visited_on', '>=', $cutoff),
+                        );
+                    }),
                 Filter::make('date')
                     ->schema([
                         DatePicker::make('date_from')

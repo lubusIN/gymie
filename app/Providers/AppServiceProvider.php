@@ -65,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
         if (str_starts_with(Data::string(config('app.url')), 'https://') || $request->isSecure()) {
             URL::forceScheme('https');
         }
-        $this->configureApiRateLimiting();
+        $this->configureRateLimiting();
         $this->configureScrambleApiDocs();
 
         FilamentAsset::register([
@@ -219,12 +219,12 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure API rate limiters used by the `api` middleware group.
+     * Configure rate limiters for public and API entry points.
      *
      * Defining these explicitly prevents "throttle:api" from relying on
      * framework defaults that can vary between versions.
      */
-    private function configureApiRateLimiting(): void
+    private function configureRateLimiting(): void
     {
         RateLimiter::for('api', function (Request $request): Limit {
             $key = $request->user()?->getAuthIdentifier() ?? $request->ip();
@@ -233,6 +233,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('api-login', function (Request $request): Limit {
+            return Limit::perMinute(10)->by((string) $request->ip());
+        });
+
+        RateLimiter::for('attendance-check-in', function (Request $request): Limit {
             return Limit::perMinute(10)->by((string) $request->ip());
         });
     }

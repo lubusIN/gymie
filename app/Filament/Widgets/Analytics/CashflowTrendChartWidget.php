@@ -5,6 +5,7 @@ namespace App\Filament\Widgets\Analytics;
 use App\Helpers\Helpers;
 use App\Services\Analytics\AnalyticsService;
 use App\Support\Analytics\AnalyticsDateRange;
+use App\Support\AppConfig;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
@@ -72,7 +73,7 @@ class CashflowTrendChartWidget extends ChartWidget
     {
         $rangeKey = $this->filter ?? '7days';
 
-        $today = CarbonImmutable::today(\App\Support\AppConfig::timezone());
+        $today = CarbonImmutable::today(AppConfig::timezone());
 
         [$start, $end] = match ($rangeKey) {
             '30days' => [$today->subDays(29), $today],
@@ -95,6 +96,7 @@ class CashflowTrendChartWidget extends ChartWidget
      * - Ensures tooltip dataset markers match the dataset color.
      * - Adds spacing between tooltip items for readability.
      * - Adds a bit more vertical breathing room via padding and axis styling.
+     * - Omits the year from compact axis labels while retaining it in tooltips.
      */
     protected function getOptions(): array|RawJs|null
     {
@@ -112,7 +114,16 @@ class CashflowTrendChartWidget extends ChartWidget
     },
     scales: {
         x: {
-            ticks: { maxRotation: 0 },
+            ticks: {
+                maxRotation: 0,
+                callback: function (value) {
+                    const label = this.getLabelForValue(value);
+
+                    return typeof label === 'string'
+                        ? label.replace(/\s+\d{4}$/, '')
+                        : label;
+                },
+            },
             grid: { display: false },
         },
         y: {

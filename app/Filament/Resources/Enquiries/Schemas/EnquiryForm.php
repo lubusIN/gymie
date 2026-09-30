@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Enquiries\Schemas;
 
 use App\Filament\Resources\FollowUps\Schemas\FollowUpForm;
+use App\Models\Enquiry;
 use App\Models\Service;
 use App\Models\User;
+use App\Support\Filament\DuplicateContactLink;
 use App\Support\Filament\LocationSection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
@@ -12,6 +14,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Blade;
 
@@ -36,13 +39,23 @@ class EnquiryForm
                             ->label(__('app.fields.email'))
                             ->email()
                             ->required()
-                            ->live()
+                            ->live(onBlur: true)
                             ->placeholder(__('app.placeholders.example_email'))
-                            ->unique('enquiries', 'email', ignoreRecord: true),
+                            ->belowContent(fn (Get $get, ?Enquiry $record): array => DuplicateContactLink::make(
+                                field: 'email',
+                                value: $get->string('email', isNullable: true),
+                                record: $record,
+                            )),
                         TextInput::make('contact')
                             ->label(__('app.fields.contact'))
                             ->tel()
-                            ->required(),
+                            ->required()
+                            ->live(onBlur: true)
+                            ->belowContent(fn (Get $get, ?Enquiry $record): array => DuplicateContactLink::make(
+                                field: 'contact',
+                                value: $get->string('contact', isNullable: true),
+                                record: $record,
+                            )),
                         DatePicker::make('dob')
                             ->required()
                             ->label(__('app.fields.dob')),

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('photo')->nullable();
             $table->string('code')->nullable()->unique();
             $table->string('name')->nullable();
-            $table->string('email')->unique()->nullable();
-            $table->string('contact')->nullable();
+            $table->string('email')->nullable()->index();
+            $table->string('contact')->nullable()->index();
             $table->string('emergency_contact')->nullable();
             $table->string('health_issue')->nullable();
             $table->enum('gender', ['male', 'female', 'other'])->default('other')->nullable();

@@ -637,6 +637,10 @@ return [
             'footer_tagline' => 'Alimentez votre potentiel | :domain',
         ],
     ],
+    'duplicates' => [
+        'description' => 'Ce champ :field correspond à un enregistrement existant. Vérifiez-le avant de continuer.',
+        'check_record' => 'Vérifier la fiche',
+    ],
     'emails' => [
         'greeting' => 'Bonjour :name,',
         'there' => 'là',

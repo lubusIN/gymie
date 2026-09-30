@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name')->nullable();
-            $table->string('email')->unique()->nullable();
-            $table->string('contact')->nullable();
+            $table->string('email')->nullable()->index();
+            $table->string('contact')->nullable()->index();
             $table->date('date')->nullable()->default(now());
             $table->enum('gender', ['male', 'female', 'other'])->default('male')->nullable();
             $table->date('dob')->nullable();

@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\Members\Schemas;
 
+use App\Filament\Resources\Members\Pages\CreateMember;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
 use App\Helpers\Helpers;
 use App\Models\Member;
+use App\Support\Filament\DuplicateContactLink;
 use App\Support\Filament\LocationSection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -70,19 +72,31 @@ class MemberForm
                                 TextInput::make('email')
                                     ->label(__('app.fields.email'))
                                     ->email()
-                                    ->live()
+                                    ->live(onBlur: true)
                                     ->maxLength(255)
                                     ->required()
                                     ->placeholder(__('app.placeholders.example_email'))
-                                    ->unique('members', 'email', ignoreRecord: true),
+                                    ->belowContent(fn (Get $get, Component $livewire, ?Member $record): array => DuplicateContactLink::make(
+                                        field: 'email',
+                                        value: $get->string('email', isNullable: true),
+                                        record: $record,
+                                        sourceEnquiryId: $livewire instanceof CreateMember ? $livewire->enquiryId : null,
+                                    )),
                                 TextInput::make('contact')
                                     ->label(__('app.fields.contact'))
                                     ->tel()
+                                    ->live(onBlur: true)
                                     ->maxLength(20)
                                     ->regex('/^\+?[0-9\s\-\(\)]+$/') // Allows +, digits, spaces, dashes, and parentheses
                                     ->required()
                                     ->hintIcon('heroicon-o-question-mark-circle')
-                                    ->hintIconTooltip(__('app.help.phone_format')),
+                                    ->hintIconTooltip(__('app.help.phone_format'))
+                                    ->belowContent(fn (Get $get, Component $livewire, ?Member $record): array => DuplicateContactLink::make(
+                                        field: 'contact',
+                                        value: $get->string('contact', isNullable: true),
+                                        record: $record,
+                                        sourceEnquiryId: $livewire instanceof CreateMember ? $livewire->enquiryId : null,
+                                    )),
                                 TextInput::make('emergency_contact')
                                     ->label(__('app.fields.emergency_contact'))
                                     ->tel()

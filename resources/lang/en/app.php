@@ -638,6 +638,10 @@ return [
             'footer_tagline' => 'Fueling your potential | :domain',
         ],
     ],
+    'duplicates' => [
+        'description' => 'This :field matches an existing record. Review it before continuing.',
+        'check_record' => 'Check record',
+    ],
     'emails' => [
         'greeting' => 'Hi :name,',
         'there' => 'there',

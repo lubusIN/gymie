@@ -6,7 +6,6 @@ use App\Enums\Status;
 use App\Models\Enquiry;
 use App\Models\User;
 use App\Rules\ModelExists;
-use App\Rules\ModelUnique;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -52,7 +51,7 @@ final class EnquirySchema
         return [
             'user_id' => ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', new ModelUnique(Enquiry::class, 'email')],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'contact' => ['required', 'string', 'max:20'],
             'date' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
@@ -83,7 +82,7 @@ final class EnquirySchema
         return [
             'user_id' => ['sometimes', 'integer', new ModelExists(User::class)],
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'string', 'email', 'max:255', new ModelUnique(Enquiry::class, 'email', $enquiryId)],
+            'email' => ['sometimes', 'string', 'email', 'max:255'],
             'contact' => ['sometimes', 'string', 'max:20'],
             'date' => ['sometimes', 'nullable', 'date'],
             'gender' => ['sometimes', 'nullable', 'string', Rule::in(['male', 'female', 'other'])],

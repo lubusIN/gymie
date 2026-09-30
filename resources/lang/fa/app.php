@@ -637,6 +637,10 @@ return [
             'footer_tagline' => 'افزایش‌دهنده پتانسیل شما | :domain',
         ],
     ],
+    'duplicates' => [
+        'description' => 'این :field با یک رکورد موجود مطابقت دارد. پیش از ادامه آن را بررسی کنید.',
+        'check_record' => 'بررسی رکورد',
+    ],
     'emails' => [
         'greeting' => 'سلام :name،',
         'there' => 'عزیز',

@@ -637,6 +637,10 @@ return [
             'footer_tagline' => 'نساعدك على تحقيق هدفك | :domain',
         ],
     ],
+    'duplicates' => [
+        'description' => 'يطابق :field هذا سجلاً موجودًا. راجعه قبل المتابعة.',
+        'check_record' => 'تحقق من السجل',
+    ],
     'emails' => [
         'greeting' => 'مرحبا :name،',
         'there' => 'بك',

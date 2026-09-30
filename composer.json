@@ -80,7 +80,7 @@
             "@php artisan shield:generate --all --panel=admin --ansi"
         ],
         "test": "php artisan test --compact",
-        "audit": "composer audit --locked --no-interaction"
+        "security-audit": "composer audit --locked --no-interaction"
     },
     "extra": {
         "laravel": {

@@ -6,6 +6,8 @@ use App\Contracts\SequenceRepository;
 use App\Contracts\SettingsRepository;
 use App\Contracts\TenantContext;
 use App\Helpers\Helpers;
+use App\Models\User;
+use App\Observers\UserObserver;
 use App\Services\Api\Docs\AddIndexQueryParametersTransformer;
 use App\Services\JsonSequenceRepository;
 use App\Services\JsonSettingsRepository;
@@ -59,6 +61,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(Request $request): void
     {
+        User::observe(UserObserver::class);
+
         if (str_starts_with(Data::string(config('app.url')), 'https://') || $request->isSecure()) {
             URL::forceScheme('https');
         }

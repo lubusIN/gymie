@@ -40,7 +40,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Audit PHP dependencies
-        run: composer audit --locked --no-interaction
+        run: composer run security-audit
 
       - name: Prepare application
         run: |

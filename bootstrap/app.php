@@ -27,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
             SetAppLocale::class,
             ForceJsonResponse::class,
         ]);
+
+        $middleware->api(append: [
+            \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->dontReportDuplicates();

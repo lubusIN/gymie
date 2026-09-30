@@ -26,8 +26,10 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -44,6 +46,7 @@ class InvoiceTable
                 TextColumn::make('id')
                     ->sortable()
                     ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->hiddenOn(InvoicesRelationManager::class),
                 TextColumn::make('number')
                     ->label(__('app.fields.invoice_number'))
@@ -65,20 +68,34 @@ class InvoiceTable
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
                 TextColumn::make('discount_amount')
                     ->label(__('app.fields.discount'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
-                    ->visibleOn(InvoicesRelationManager::class),
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
                 TextColumn::make('paid_amount')
                     ->label(__('app.fields.paid'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->summarize(
+                        Sum::make('paid')
+                            ->label(__('app.summaries.paid'))
+                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ),
                 TextColumn::make('tax')
                     ->label(__('app.fields.tax'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
                 TextColumn::make('total_amount')
                     ->label(__('app.fields.total'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->summarize(
+                        Sum::make('total_invoiced')
+                            ->label(__('app.summaries.total_invoiced'))
+                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ),
                 TextColumn::make('due_amount')
                     ->label(__('app.fields.due'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->summarize(
+                        Sum::make('outstanding')
+                            ->label(__('app.summaries.outstanding'))
+                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ),
                 TextColumn::make('status')
                     ->badge(),
             ])
@@ -99,6 +116,14 @@ class InvoiceTable
                                 fn (Builder $query, $date): Builder => $query->where('date', '<=', $date),
                             );
                     }),
+                SelectFilter::make('member')
+                    ->label(__('app.fields.member'))
+                    ->relationship('subscription.member', 'name')
+                    ->searchable(),
+                SelectFilter::make('plan')
+                    ->label(__('app.fields.plan'))
+                    ->relationship('subscription.plan', 'name')
+                    ->searchable(),
             ])
             ->emptyStateIcon(
                 ! Subscription::exists()

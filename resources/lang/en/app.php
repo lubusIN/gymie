@@ -250,6 +250,7 @@ return [
         'check_in_member' => 'Check in member',
         'attendance_qr' => 'Attendance QR',
         'download_qr' => 'Download QR',
+        'export_csv' => 'Export CSV',
     ],
     'empty' => [
         'no_records' => 'No :records',
@@ -596,6 +597,12 @@ return [
         'renewals' => 'Renewals',
         'expired_not_renewed' => 'Expired / Not Renewed',
         'vs_previous_period' => 'vs :count previous period',
+    ],
+    'summaries' => [
+        'total_invoiced' => 'Total invoiced',
+        'paid' => 'Paid',
+        'outstanding' => 'Outstanding',
+        'total_expense' => 'Total expense',
     ],
     'invoices' => [
         'error' => [

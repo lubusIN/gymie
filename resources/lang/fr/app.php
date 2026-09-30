@@ -250,6 +250,7 @@ return [
         'check_in_member' => 'Enregistrer l’arrivée du membre',
         'attendance_qr' => 'QR de présence',
         'download_qr' => 'Télécharger le QR',
+        'export_csv' => 'Exporter en CSV',
     ],
     'empty' => [
         'no_records' => 'Aucun :records',
@@ -595,6 +596,12 @@ return [
         'renewals' => 'Renouvellements',
         'expired_not_renewed' => 'Expirés / Non renouvelés',
         'vs_previous_period' => 'vs :count période précédente',
+    ],
+    'summaries' => [
+        'total_invoiced' => 'Total facturé',
+        'paid' => 'Payé',
+        'outstanding' => 'Impayé',
+        'total_expense' => 'Total des dépenses',
     ],
     'invoices' => [
         'error' => [

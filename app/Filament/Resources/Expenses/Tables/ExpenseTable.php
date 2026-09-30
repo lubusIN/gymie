@@ -24,6 +24,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -49,7 +50,12 @@ class ExpenseTable
                     ->label(__('app.fields.amount'))
                     ->numeric(decimalPlaces: 2)
                     ->prefix(Helpers::getCurrencySymbol())
-                    ->sortable(),
+                    ->sortable()
+                    ->summarize(
+                        Sum::make('total_expense')
+                            ->label(__('app.summaries.total_expense'))
+                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ),
                 TextColumn::make('category')
                     ->label(__('app.fields.category'))
                     ->searchable()
@@ -111,6 +117,9 @@ class ExpenseTable
                         ->pluck('vendor', 'vendor')
                         ->all())
                     ->searchable(),
+                SelectFilter::make('payment_method')
+                    ->label(__('app.fields.payment_method'))
+                    ->options(ExpensePaymentMethod::class),
             ])
             ->recordActions([
                 ActionGroup::make([

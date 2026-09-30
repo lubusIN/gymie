@@ -2,15 +2,20 @@
 
 namespace App\Filament\Resources\Expenses\Pages;
 
+use App\Enums\ExpensePaymentMethod;
 use App\Enums\Status;
 use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Filament\Widgets\ExpenseOverviewWidget;
+use App\Helpers\Helpers;
 use App\Models\Expense;
+use App\Services\Reporting\CsvDownloadService;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ListExpenses extends ListRecords
 {
@@ -27,6 +32,11 @@ class ListExpenses extends ListRecords
                 ->modalWidth(Width::ScreenLarge)
                 ->closeModalByClickingAway(false)
                 ->hidden(! Expense::exists()),
+            Action::make('export_csv')
+                ->label(__('app.actions.export_csv'))
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->action(fn (): StreamedResponse => $this->exportCsv()),
         ];
     }
 
@@ -69,5 +79,40 @@ class ListExpenses extends ListRecords
                 ->badgeColor(Status::Cancelled->getColor())
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'cancelled')),
         ];
+    }
+
+    /**
+     * Export the expenses represented by the active table state.
+     */
+    private function exportCsv(): StreamedResponse
+    {
+        return app(CsvDownloadService::class)->download(
+            query: $this->getTableQueryForExport(),
+            filename: 'expenses-'.now()->toDateString().'.csv',
+            headings: [
+                __('app.fields.expense_name'),
+                __('app.fields.category'),
+                __('app.fields.vendor'),
+                __('app.fields.date'),
+                __('app.fields.due_date'),
+                __('app.fields.paid_at'),
+                __('app.fields.status'),
+                __('app.fields.amount'),
+                __('app.fields.payment_method'),
+                __('app.fields.payment_reference'),
+            ],
+            row: fn (Expense $expense): array => [
+                $expense->name,
+                Helpers::getExpenseCategoryLabel($expense->category),
+                $expense->vendor,
+                $expense->date?->toDateString(),
+                $expense->due_date?->toDateString(),
+                $expense->paid_at?->format('Y-m-d H:i:s'),
+                $expense->status?->getLabel(),
+                (float) $expense->amount,
+                ExpensePaymentMethod::tryFrom((string) $expense->payment_method)?->getLabel(),
+                $expense->payment_reference,
+            ],
+        );
     }
 }

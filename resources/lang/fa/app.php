@@ -250,6 +250,7 @@ return [
         'check_in_member' => 'ثبت ورود عضو',
         'attendance_qr' => 'کد QR حضور',
         'download_qr' => 'دانلود کد QR',
+        'export_csv' => 'خروجی CSV',
     ],
     'empty' => [
         'no_records' => 'هیچ داده‌ای برای :records یافت نشد.',
@@ -595,6 +596,12 @@ return [
         'renewals' => 'تمدیدها',
         'expired_not_renewed' => 'منقضی شده / تمدید نشده',
         'vs_previous_period' => 'در مقایسه با دوره زمانی گذشته (:count)',
+    ],
+    'summaries' => [
+        'total_invoiced' => 'مجموع فاکتورها',
+        'paid' => 'پرداخت‌شده',
+        'outstanding' => 'باقی‌مانده',
+        'total_expense' => 'مجموع هزینه‌ها',
     ],
     'invoices' => [
         'error' => [

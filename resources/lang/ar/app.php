@@ -250,6 +250,7 @@ return [
         'check_in_member' => 'تسجيل دخول عضو',
         'attendance_qr' => 'رمز QR للحضور',
         'download_qr' => 'تنزيل رمز QR',
+        'export_csv' => 'تصدير CSV',
     ],
     'empty' => [
         'no_records' => 'لا يوجد :records',
@@ -595,6 +596,12 @@ return [
         'renewals' => 'التجديدات',
         'expired_not_renewed' => 'منتهي / غير مجدد',
         'vs_previous_period' => 'مقارنة بالفترة السابقة :count',
+    ],
+    'summaries' => [
+        'total_invoiced' => 'إجمالي الفواتير',
+        'paid' => 'المدفوع',
+        'outstanding' => 'المستحق',
+        'total_expense' => 'إجمالي المصروفات',
     ],
     'invoices' => [
         'error' => [

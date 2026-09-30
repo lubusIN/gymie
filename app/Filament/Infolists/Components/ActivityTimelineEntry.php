@@ -150,6 +150,11 @@ class ActivityTimelineEntry extends Entry
                 'amount' => $this->currencyLabel($properties['amount'] ?? null),
                 'invoice' => $this->valueOrFallback($properties['invoice'] ?? null),
             ]),
+            SubscriptionActivityType::PaymentReminderQueued->value => __('app.activity.events.payment_reminder_queued', [
+                'actor' => $actor,
+                'amount' => $this->currencyLabel($properties['amount'] ?? null),
+                'invoice' => $this->valueOrFallback($properties['invoice'] ?? null),
+            ]),
             SubscriptionActivityType::RefundRecorded->value => __('app.activity.events.refund_recorded', [
                 'actor' => $actor,
                 'amount' => $this->currencyLabel($properties['amount'] ?? null),
@@ -174,6 +179,7 @@ class ActivityTimelineEntry extends Entry
             EnquiryActivityType::FollowUpCompleted->value => $properties['outcome'] ?? null,
             EnquiryActivityType::MarkedLost->value => $properties['reason'] ?? null,
             SubscriptionActivityType::PaymentRecorded->value,
+            SubscriptionActivityType::PaymentReminderQueued->value,
             SubscriptionActivityType::RefundRecorded->value => $properties['note'] ?? null,
             default => null,
         };
@@ -224,6 +230,7 @@ class ActivityTimelineEntry extends Entry
             SubscriptionActivityType::InvoiceCreated->value => 'heroicon-o-document-plus',
             SubscriptionActivityType::InvoiceStatusChanged->value => 'heroicon-o-document-check',
             SubscriptionActivityType::PaymentRecorded->value => 'heroicon-o-banknotes',
+            SubscriptionActivityType::PaymentReminderQueued->value => 'heroicon-o-envelope',
             SubscriptionActivityType::RefundRecorded->value => 'heroicon-o-arrow-uturn-left',
             default => 'heroicon-o-clock',
         };
@@ -240,6 +247,7 @@ class ActivityTimelineEntry extends Entry
             SubscriptionActivityType::InvoiceCreated->value,
             SubscriptionActivityType::PaymentRecorded->value => 'success',
             EnquiryActivityType::MarkedLost->value => 'danger',
+            SubscriptionActivityType::PaymentReminderQueued->value,
             SubscriptionActivityType::RefundRecorded->value => 'warning',
             EnquiryActivityType::LeadCreated->value,
             EnquiryActivityType::LeadOwnerChanged->value,

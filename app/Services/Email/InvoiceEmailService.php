@@ -6,6 +6,7 @@ use App\Contracts\SettingsRepository;
 use App\Helpers\Helpers;
 use App\Jobs\SendInvoiceIssuedEmail;
 use App\Jobs\SendInvoicePaymentReceiptEmail;
+use App\Jobs\SendInvoicePaymentReminderEmail;
 use App\Mail\InvoiceIssuedMail;
 use App\Mail\InvoicePaymentReceiptMail;
 use App\Mail\TestEmail;
@@ -42,6 +43,19 @@ final class InvoiceEmailService
     public function queueInvoiceIssuedEmail(int $invoiceId, string $toEmail, ?string $note = null, ?int $actorId = null): void
     {
         SendInvoiceIssuedEmail::dispatch(
+            invoiceId: $invoiceId,
+            toEmail: $toEmail,
+            note: $note,
+            actorId: $actorId,
+        )->afterCommit();
+    }
+
+    /**
+     * Queue a payment reminder for an invoice with an outstanding balance.
+     */
+    public function queuePaymentReminderEmail(int $invoiceId, string $toEmail, ?string $note = null, ?int $actorId = null): void
+    {
+        SendInvoicePaymentReminderEmail::dispatch(
             invoiceId: $invoiceId,
             toEmail: $toEmail,
             note: $note,
@@ -117,10 +131,53 @@ final class InvoiceEmailService
      */
     public function sendInvoiceIssuedEmail(int $invoiceId, string $toEmail, ?string $note = null): void
     {
+        $this->sendInvoiceDocumentEmail(
+            invoiceId: $invoiceId,
+            toEmail: $toEmail,
+            note: $note,
+        );
+    }
+
+    /**
+     * Send a payment reminder with the latest invoice PDF attached.
+     */
+    public function sendPaymentReminderEmail(int $invoiceId, string $toEmail, ?string $note = null): void
+    {
+        $this->sendInvoiceDocumentEmail(
+            invoiceId: $invoiceId,
+            toEmail: $toEmail,
+            note: $note,
+            isPaymentReminder: true,
+        );
+    }
+
+    /**
+     * Send an invoice document email using the requested message purpose.
+     */
+    private function sendInvoiceDocumentEmail(
+        int $invoiceId,
+        string $toEmail,
+        ?string $note = null,
+        bool $isPaymentReminder = false,
+    ): void {
         $invoice = InvoiceDocument::loadForRendering(Invoice::query()->findOrFail($invoiceId));
         $memberName = $invoice->subscription && $invoice->subscription->member
             ? (string) $invoice->subscription->member->name
             : '';
+
+        if (
+            $isPaymentReminder
+            && (
+                (float) ($invoice->due_amount ?? 0) <= 0
+                || ! in_array($invoice->status?->value, ['issued', 'partial', 'overdue'], true)
+            )
+        ) {
+            Log::info('Skipping payment reminder email: invoice no longer has an outstanding balance.', [
+                'invoice_id' => $invoiceId,
+            ]);
+
+            return;
+        }
 
         if (! $this->isValidRecipientEmail($toEmail, [
             'invoice_id' => $invoiceId,
@@ -130,13 +187,18 @@ final class InvoiceEmailService
 
         $settings = $this->settingsRepository->get();
 
-        $this->withLocaleFromSettings($settings, function () use ($settings, $invoice, $toEmail, $note, $memberName): void {
+        $this->withLocaleFromSettings($settings, function () use ($settings, $invoice, $toEmail, $note, $memberName, $isPaymentReminder): void {
             $gym = $this->gymIdentityFromSettings($settings);
             $gymName = $gym['name'] !== '' ? $gym['name'] : 'Gymie';
-            $subjectTemplate = Data::string(data_get($settings,
-                'notifications.email.invoice_subject_template',
-                'Invoice {invoice_number} - {status}',
-            ));
+            $subjectTemplate = $isPaymentReminder
+                ? __('app.emails.payment_reminder_subject')
+                : Data::string(data_get($settings,
+                    'notifications.email.invoice_subject_template',
+                    'Invoice {invoice_number} - {status}',
+                ));
+            $messageNote = $isPaymentReminder && blank($note)
+                ? __('app.emails.payment_reminder_note')
+                : $note;
 
             $pdfBytes = $this->renderer->render($invoice);
             $subject = $this->renderSubjectTemplate(
@@ -152,7 +214,7 @@ final class InvoiceEmailService
                 gymEmail: $gym['email'],
                 gymContact: $gym['contact'],
                 memberName: $memberName,
-                note: $note,
+                note: $messageNote,
                 pdfBytes: $pdfBytes,
             );
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\Tables;
 
 use App\Enums\Status;
+use App\Enums\SubscriptionActivityType;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Subscriptions\RelationManagers\InvoicesRelationManager;
 use App\Helpers\Helpers;
@@ -356,6 +357,81 @@ class InvoiceTable
                             ->label(__('app.actions.record_actions'))
                             ->disabled()
                             ->color('gray'),
+                        Action::make('send_payment_reminder')
+                            ->label(__('app.actions.send_payment_reminder'))
+                            ->icon('heroicon-o-bell-alert')
+                            ->color('warning')
+                            ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
+                            ->requiresConfirmation()
+                            ->modalHeading(__('app.titles.send_payment_reminder'))
+                            ->modalDescription(__('app.help.payment_reminder_confirmation'))
+                            ->modalWidth('md')
+                            ->modalSubmitActionLabel(__('app.actions.send_reminder'))
+                            ->schema([
+                                TextEntry::make('payment_reminder_member')
+                                    ->label(__('app.fields.member'))
+                                    ->state(fn (Invoice $record): string => (string) ($record->subscription->member->name ?? __('app.placeholders.na'))),
+                                TextEntry::make('payment_reminder_invoice')
+                                    ->label(__('app.fields.invoice_number'))
+                                    ->state(fn (Invoice $record): string => (string) ($record->number ?? __('app.placeholders.na'))),
+                                TextEntry::make('payment_reminder_due')
+                                    ->label(__('app.fields.due_amount'))
+                                    ->state(fn (Invoice $record): string => Helpers::formatCurrency((float) ($record->due_amount ?? 0))),
+                                TextEntry::make('payment_reminder_due_date')
+                                    ->label(__('app.fields.due_date'))
+                                    ->state(fn (Invoice $record): string => $record->due_date?->translatedFormat('d M Y') ?? __('app.placeholders.na')),
+                                TextEntry::make('payment_reminder_recipient')
+                                    ->label(__('app.fields.to'))
+                                    ->state(fn (Invoice $record): string => (string) ($record->subscription->member->email ?? __('app.placeholders.na'))),
+                                Textarea::make('note')
+                                    ->label(__('app.fields.note'))
+                                    ->rows(2)
+                                    ->placeholder(__('app.placeholders.optional_note')),
+                            ])
+                            ->action(function (Invoice $record, array $data, InvoiceEmailService $emailService): void {
+                                $record->loadMissing('subscription.member');
+                                $email = Data::string($record->subscription?->member?->email);
+                                $note = Data::nullableString($data['note'] ?? null);
+
+                                $emailService->queuePaymentReminderEmail(
+                                    invoiceId: Data::int($record->getKey()),
+                                    toEmail: $email,
+                                    note: $note,
+                                    actorId: is_int(auth()->id()) ? auth()->id() : null,
+                                );
+
+                                $record->subscription?->recordActivity(
+                                    SubscriptionActivityType::PaymentReminderQueued,
+                                    [
+                                        'invoice' => $record->number,
+                                        'amount' => (float) ($record->due_amount ?? 0),
+                                        'due_date' => $record->due_date?->toDateString(),
+                                        'note' => $note,
+                                    ],
+                                );
+
+                                Notification::make()
+                                    ->title(__('app.notifications.payment_reminder_queued'))
+                                    ->body(__('app.notifications.payment_reminder_queued_to', ['email' => $email]))
+                                    ->success()
+                                    ->send();
+                            })
+                            ->disabled(fn (Invoice $record): bool => ! filled($record->subscription->member->email ?? null)
+                                || ! filled($record->number)
+                                || (float) ($record->total_amount ?? 0) <= 0)
+                            ->tooltip(function (Invoice $record): ?string {
+                                if (! filled($record->subscription->member->email ?? null)) {
+                                    return __('app.tooltips.member_email_missing');
+                                }
+
+                                if (! filled($record->number) || (float) ($record->total_amount ?? 0) <= 0) {
+                                    return __('app.tooltips.invoice_document_missing');
+                                }
+
+                                return null;
+                            })
+                            ->visible(fn (Invoice $record): bool => (float) ($record->due_amount ?? 0) > 0
+                                && in_array($record->status?->value, ['issued', 'partial', 'overdue'], true)),
                         Action::make('email_invoice')
                             ->label(__('app.actions.email_invoice'))
                             ->icon('heroicon-o-envelope')

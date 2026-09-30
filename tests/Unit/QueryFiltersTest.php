@@ -27,6 +27,6 @@ it('uses direct comparisons for indexed date-only filters', function (): void {
     QueryFilters::applyIndexFilters($query, $request, 'invoices');
 
     expect($query->toSql())
-        ->toContain('"date" = ?')
+        ->toMatch('/[`"]date[`"] = \?/')
         ->not->toContain('strftime');
 });

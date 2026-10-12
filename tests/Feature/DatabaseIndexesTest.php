@@ -11,6 +11,7 @@ it('provides indexes for recurring billing and membership queries', function ():
     $transactions = collect(Schema::getIndexes('invoice_transactions'))->pluck('columns');
     $expenses = collect(Schema::getIndexes('expenses'))->pluck('columns');
     $attendances = collect(Schema::getIndexes('attendances'))->pluck('columns');
+    $staffAttendances = collect(Schema::getIndexes('staff_attendances'))->pluck('columns');
 
     expect($subscriptions)
         ->toContain(['start_date'])
@@ -33,5 +34,10 @@ it('provides indexes for recurring billing and membership queries', function ():
     expect($attendances)
         ->toContain(['member_id', 'visited_on'])
         ->toContain(['member_id', 'checked_in_at'])
+        ->toContain(['visited_on', 'checked_in_at']);
+
+    expect($staffAttendances)
+        ->toContain(['staff_id', 'visited_on'])
+        ->toContain(['staff_id', 'checked_in_at'])
         ->toContain(['visited_on', 'checked_in_at']);
 });

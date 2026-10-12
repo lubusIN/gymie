@@ -7,6 +7,8 @@ return [
     'validation' => [
         'attendance_active_member' => 'Only active members can check in.',
         'attendance_already_recorded_today' => 'Attendance has already been recorded for this member today.',
+        'attendance_active_staff' => 'Only active staff members can check in.',
+        'staff_attendance_already_recorded_today' => 'Attendance has already been recorded for this staff member today.',
         'attendance_current_membership_required' => 'A current membership is required to check in.',
     ],
     'common' => [
@@ -208,6 +210,10 @@ return [
             'singular' => 'Attendance',
             'plural' => 'Attendance',
         ],
+        'staff_attendance' => [
+            'singular' => 'Staff attendance',
+            'plural' => 'Staff attendance',
+        ],
         'users' => [
             'singular' => 'User',
             'plural' => 'Users',
@@ -250,6 +256,7 @@ return [
         'save_add_another' => 'Save & add another',
         'check_in' => 'Check in',
         'check_in_member' => 'Check in member',
+        'check_in_staff' => 'Check in staff',
         'attendance_qr' => 'Attendance QR',
         'download_qr' => 'Download QR',
         'export_csv' => 'Export CSV',
@@ -506,6 +513,7 @@ return [
         'success' => 'Success',
         'success_settings_save' => 'Settings saved successfully!',
         'member_checked_in' => 'Member checked in',
+        'staff_checked_in' => 'Staff member checked in',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'Cannot delete :module',
@@ -517,6 +525,8 @@ return [
         'days' => 'days',
     ],
     'attendance' => [
+        'members' => 'Members',
+        'staff' => 'Staff',
         'no_current_membership' => 'No current membership',
         'membership_summary' => ':plan · Ends :date',
         'no_visits' => 'No attendance recorded',
@@ -533,6 +543,11 @@ return [
         'public_check_in_success' => 'Attendance recorded. Have a great workout!',
         'public_check_in_failed' => 'We could not record your attendance. Check your member ID or ask staff for help.',
         'public_privacy_note' => 'This form only records your visit. No member details are displayed.',
+    ],
+    'staff_attendance' => [
+        'staff_member' => 'Staff member',
+        'no_attendance' => 'No staff attendance recorded',
+        'no_attendance_description' => 'Check in a staff member to start recording attendance.',
     ],
     'payment_methods' => [
         'cash' => 'Cash',

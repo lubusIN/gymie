@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Filament\Resources\StaffAttendances\StaffAttendanceResource;
+
 return [
 
     /*
@@ -183,7 +185,7 @@ return [
             ],
         ],
         'exclude' => [
-            //
+            StaffAttendanceResource::class,
         ],
     ],
 

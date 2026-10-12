@@ -7,6 +7,8 @@ return [
     'validation' => [
         'attendance_active_member' => 'Seuls les membres actifs peuvent être enregistrés.',
         'attendance_already_recorded_today' => 'La présence de ce membre a déjà été enregistrée aujourd’hui.',
+        'attendance_active_staff' => 'Seuls les membres actifs du personnel peuvent être enregistrés.',
+        'staff_attendance_already_recorded_today' => 'La présence de ce membre du personnel a déjà été enregistrée aujourd’hui.',
         'attendance_current_membership_required' => 'Un abonnement en cours est requis pour enregistrer l’arrivée.',
     ],
     'common' => [
@@ -208,6 +210,10 @@ return [
             'singular' => 'Présence',
             'plural' => 'Présences',
         ],
+        'staff_attendance' => [
+            'singular' => 'Présence du personnel',
+            'plural' => 'Présence du personnel',
+        ],
         'users' => [
             'singular' => 'Utilisateur',
             'plural' => 'Utilisateurs',
@@ -250,6 +256,7 @@ return [
         'save_add_another' => 'Enregistrer et ajouter',
         'check_in' => 'Enregistrer l’arrivée',
         'check_in_member' => 'Enregistrer l’arrivée du membre',
+        'check_in_staff' => 'Enregistrer le personnel',
         'attendance_qr' => 'QR de présence',
         'download_qr' => 'Télécharger le QR',
         'export_csv' => 'Exporter en CSV',
@@ -505,6 +512,7 @@ return [
         'success' => 'Succès',
         'success_settings_save' => 'Paramètres enregistrés.',
         'member_checked_in' => 'Arrivée du membre enregistrée',
+        'staff_checked_in' => 'Arrivée du membre du personnel enregistrée',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'Suppression impossible :module',
@@ -516,6 +524,8 @@ return [
         'days' => 'jours',
     ],
     'attendance' => [
+        'members' => 'Membres',
+        'staff' => 'Personnel',
         'no_current_membership' => 'Aucun abonnement en cours',
         'membership_summary' => ':plan · Se termine le :date',
         'no_visits' => 'Aucune présence enregistrée',
@@ -532,6 +542,11 @@ return [
         'public_check_in_success' => 'Présence enregistrée. Bon entraînement !',
         'public_check_in_failed' => 'Impossible d’enregistrer votre présence. Vérifiez votre identifiant ou demandez de l’aide au personnel.',
         'public_privacy_note' => 'Ce formulaire enregistre uniquement votre visite. Aucune donnée de membre n’est affichée.',
+    ],
+    'staff_attendance' => [
+        'staff_member' => 'Membre du personnel',
+        'no_attendance' => 'Aucune présence du personnel enregistrée',
+        'no_attendance_description' => 'Enregistrez un membre du personnel pour commencer à suivre les présences.',
     ],
     'payment_methods' => [
         'cash' => 'Espèces',

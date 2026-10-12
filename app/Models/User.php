@@ -84,6 +84,14 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     }
 
     /**
+     * Get attendance recorded for this staff member.
+     */
+    public function staffAttendances(): HasMany
+    {
+        return $this->hasMany(StaffAttendance::class, 'staff_id');
+    }
+
+    /**
      * Get the URL for the user's Filament avatar.
      *
      * @return string|null The URL of the user's avatar or null if not set.

@@ -7,6 +7,8 @@ return [
     'validation' => [
         'attendance_active_member' => 'يمكن تسجيل دخول الأعضاء النشطين فقط.',
         'attendance_already_recorded_today' => 'تم تسجيل حضور هذا العضو اليوم بالفعل.',
+        'attendance_active_staff' => 'يمكن تسجيل دخول الموظفين النشطين فقط.',
+        'staff_attendance_already_recorded_today' => 'تم تسجيل حضور هذا الموظف اليوم بالفعل.',
         'attendance_current_membership_required' => 'يلزم وجود عضوية حالية لتسجيل الدخول.',
     ],
     'common' => [
@@ -208,6 +210,10 @@ return [
             'singular' => 'الحضور',
             'plural' => 'الحضور',
         ],
+        'staff_attendance' => [
+            'singular' => 'حضور الموظفين',
+            'plural' => 'حضور الموظفين',
+        ],
         'users' => [
             'singular' => 'مستخدم',
             'plural' => 'المستخدمون',
@@ -250,6 +256,7 @@ return [
         'save_add_another' => 'حفظ واضافة اخرى',
         'check_in' => 'تسجيل الدخول',
         'check_in_member' => 'تسجيل دخول عضو',
+        'check_in_staff' => 'تسجيل دخول موظف',
         'attendance_qr' => 'رمز QR للحضور',
         'download_qr' => 'تنزيل رمز QR',
         'export_csv' => 'تصدير CSV',
@@ -505,6 +512,7 @@ return [
         'success' => 'نجاح',
         'success_settings_save' => 'تم حفظ الاعدادات بنجاح!',
         'member_checked_in' => 'تم تسجيل دخول العضو',
+        'staff_checked_in' => 'تم تسجيل دخول الموظف',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'لا يمكن حذف :module',
@@ -516,6 +524,8 @@ return [
         'days' => 'ايام',
     ],
     'attendance' => [
+        'members' => 'الأعضاء',
+        'staff' => 'الموظفون',
         'no_current_membership' => 'لا توجد عضوية حالية',
         'membership_summary' => ':plan · تنتهي في :date',
         'no_visits' => 'لم يتم تسجيل حضور',
@@ -532,6 +542,11 @@ return [
         'public_check_in_success' => 'تم تسجيل الحضور. تمرينًا ممتعًا!',
         'public_check_in_failed' => 'تعذر تسجيل حضورك. تحقق من رقم العضوية أو اطلب مساعدة الموظفين.',
         'public_privacy_note' => 'يسجل هذا النموذج زيارتك فقط ولا يعرض أي بيانات للعضو.',
+    ],
+    'staff_attendance' => [
+        'staff_member' => 'الموظف',
+        'no_attendance' => 'لم يتم تسجيل حضور الموظفين',
+        'no_attendance_description' => 'سجل دخول موظف لبدء تتبع الحضور.',
     ],
     'payment_methods' => [
         'cash' => 'نقداً',

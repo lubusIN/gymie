@@ -16,6 +16,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Utilities\Get;
@@ -144,6 +145,12 @@ class ListAttendances extends ListRecords
     public function getBreadcrumbs(): array
     {
         return [];
+    }
+
+    /** @return array<NavigationItem> */
+    public function getSubNavigation(): array
+    {
+        return AttendanceResource::getWorkspaceNavigationItems();
     }
 
     private function membershipSummary(mixed $memberId, mixed $checkedInAt): string

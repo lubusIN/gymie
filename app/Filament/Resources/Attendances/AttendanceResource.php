@@ -4,8 +4,11 @@ namespace App\Filament\Resources\Attendances;
 
 use App\Filament\Resources\Attendances\Pages\ListAttendances;
 use App\Filament\Resources\Attendances\Tables\AttendanceTable;
+use App\Filament\Resources\StaffAttendances\StaffAttendanceResource;
 use App\Models\Attendance;
 use BackedEnum;
+use Filament\Navigation\NavigationItem;
+use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +22,8 @@ class AttendanceResource extends Resource
     protected static ?string $recordTitleAttribute = 'checked_in_at';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
+
+    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 
     public static function getModelLabel(): string
     {
@@ -66,6 +71,30 @@ class AttendanceResource extends Resource
     {
         return [
             'index' => ListAttendances::route('/'),
+        ];
+    }
+
+    /** @return array<NavigationItem> */
+    public static function getWorkspaceNavigationItems(): array
+    {
+        return [
+            NavigationItem::make(__('app.attendance.members'))
+                ->icon('heroicon-o-user-group')
+                ->url(static::getUrl())
+                ->isActiveWhen(fn (): bool => request()->routeIs(static::getRouteBaseName().'.*')),
+            NavigationItem::make(__('app.attendance.staff'))
+                ->icon('heroicon-o-identification')
+                ->url(StaffAttendanceResource::getUrl())
+                ->isActiveWhen(fn (): bool => request()->routeIs(StaffAttendanceResource::getRouteBaseName().'.*')),
+        ];
+    }
+
+    /** @return array<string> */
+    public static function getNavigationItemActiveRoutePattern(): array
+    {
+        return [
+            static::getRouteBaseName().'.*',
+            StaffAttendanceResource::getRouteBaseName().'.*',
         ];
     }
 

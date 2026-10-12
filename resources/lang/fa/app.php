@@ -7,6 +7,8 @@ return [
     'validation' => [
         'attendance_active_member' => 'فقط اعضای فعال می‌توانند وارد شوند.',
         'attendance_already_recorded_today' => 'حضور این عضو امروز قبلاً ثبت شده است.',
+        'attendance_active_staff' => 'فقط کارکنان فعال می‌توانند وارد شوند.',
+        'staff_attendance_already_recorded_today' => 'حضور این کارمند امروز قبلاً ثبت شده است.',
         'attendance_current_membership_required' => 'برای ثبت ورود، عضویت فعال لازم است.',
     ],
     'common' => [
@@ -208,6 +210,10 @@ return [
             'singular' => 'حضور و غیاب',
             'plural' => 'حضور و غیاب',
         ],
+        'staff_attendance' => [
+            'singular' => 'حضور کارکنان',
+            'plural' => 'حضور کارکنان',
+        ],
         'users' => [
             'singular' => 'کاربر',
             'plural' => 'کاربران',
@@ -250,6 +256,7 @@ return [
         'save_add_another' => 'ذخیره و ایجاد یکی دیگر',
         'check_in' => 'ثبت ورود',
         'check_in_member' => 'ثبت ورود عضو',
+        'check_in_staff' => 'ثبت ورود کارمند',
         'attendance_qr' => 'کد QR حضور',
         'download_qr' => 'دانلود کد QR',
         'export_csv' => 'خروجی CSV',
@@ -505,6 +512,7 @@ return [
         'success' => 'موفقیت‌آمیز',
         'success_settings_save' => 'تنظیمات با موفقیت ذخیره شد!',
         'member_checked_in' => 'ورود عضو ثبت شد',
+        'staff_checked_in' => 'ورود کارمند ثبت شد',
     ],
     'deletion_prevention' => [
         'cannot_delete_title' => 'عدم امکان حذف بخش :module',
@@ -516,6 +524,8 @@ return [
         'days' => 'روز',
     ],
     'attendance' => [
+        'members' => 'اعضا',
+        'staff' => 'کارکنان',
         'no_current_membership' => 'عضویت فعالی وجود ندارد',
         'membership_summary' => ':plan · پایان در :date',
         'no_visits' => 'حضوری ثبت نشده است',
@@ -532,6 +542,11 @@ return [
         'public_check_in_success' => 'حضور شما ثبت شد. تمرین خوبی داشته باشید!',
         'public_check_in_failed' => 'ثبت حضور انجام نشد. شناسه عضویت را بررسی کنید یا از کارکنان کمک بگیرید.',
         'public_privacy_note' => 'این فرم فقط مراجعه شما را ثبت می‌کند و هیچ اطلاعات عضوی نمایش داده نمی‌شود.',
+    ],
+    'staff_attendance' => [
+        'staff_member' => 'کارمند',
+        'no_attendance' => 'هیچ حضور کارکنانی ثبت نشده است',
+        'no_attendance_description' => 'برای شروع ثبت حضور، ورود یک کارمند را ثبت کنید.',
     ],
     'payment_methods' => [
         'cash' => 'نقدی',

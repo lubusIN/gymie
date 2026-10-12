@@ -132,7 +132,6 @@ class PlanTable
                     ->hidden(fn () => Service::exists()),
                 CreateAction::make()
                     ->icon('heroicon-o-plus')
-                    ->label(__('app.actions.new', ['resource' => __('app.resources.plans.singular')]))
                     ->modalAlignment('center')
                     ->modalWidth('xl')
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.plans.singular')]))

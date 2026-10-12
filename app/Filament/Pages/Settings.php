@@ -21,7 +21,6 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -242,36 +241,11 @@ class Settings extends Page implements HasForms
                                 ]),
                         ]),
                     Fieldset::make(__('app.settings.sections.email'))
-                        ->columns(['default' => 1, 'md' => 5])
+                        ->columns(1)
                         ->schema([
-                            Group::make()
-                                ->schema([
-                                    TextInput::make('notifications.email.invoice_subject_template')
-                                        ->label(__('app.settings.fields.email_invoice_subject'))
-                                        ->placeholder(__('app.settings.placeholders.invoice_email_subject'))
-                                        ->helperText(__('app.settings.hints.tokens_invoice')),
-                                    TextInput::make('notifications.email.receipt_subject_template')
-                                        ->label(__('app.settings.fields.email_receipt_subject'))
-                                        ->placeholder(__('app.settings.placeholders.receipt_email_subject'))
-                                        ->helperText(__('app.settings.hints.tokens_receipt')),
-                                ])->columnSpan(['default' => 1, 'md' => 3]),
-                            Group::make()
-                                ->schema([
-                                    Toggle::make('notifications.email.enabled')
-                                        ->label(__('app.settings.fields.email_enabled'))
-                                        ->default(false)
-                                        ->inlineLabel(),
-                                    Toggle::make('notifications.email.auto_send_invoice_issued')
-                                        ->label(__('app.settings.fields.auto_send_invoice_issued'))
-                                        ->default(false)
-                                        ->inlineLabel(),
-                                    Toggle::make('notifications.email.auto_send_payment_receipt')
-                                        ->label(__('app.settings.fields.auto_send_payment_receipt'))
-                                        ->default(false)
-                                        ->inlineLabel(),
-                                ])
-                                ->columns(1)
-                                ->columnSpan(['default' => 1, 'md' => 2]),
+                            Toggle::make('notifications.email.enabled')
+                                ->label(__('app.settings.fields.email_enabled'))
+                                ->default(false),
                         ]),
                 ]);
     }

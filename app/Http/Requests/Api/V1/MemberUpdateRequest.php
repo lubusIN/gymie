@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\V1;
 
 use App\Http\Requests\Concerns\ResolvesRouteKey;
 use App\Services\Api\Schemas\MemberSchema;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -24,11 +25,13 @@ class MemberUpdateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $memberId = $this->routeKey('member');
+        $memberId = $this->route('member') === null
+            ? 0
+            : $this->routeKey('member');
 
         return MemberSchema::updateRules($memberId);
     }

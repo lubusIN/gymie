@@ -2,6 +2,7 @@
 
 use App\Enums\MemberActivityType;
 use App\Enums\Status;
+use App\Filament\Resources\Members\Pages\EditMember;
 use App\Filament\Resources\Members\Pages\ViewMember;
 use App\Filament\Resources\Members\RelationManagers\SubscriptionsRelationManager;
 use App\Models\Member;
@@ -39,6 +40,22 @@ it('shows member subscriptions through the relation manager', function (): void 
         'ownerRecord' => $member,
         'pageClass' => ViewMember::class,
     ])->assertCanSeeTableRecords([$subscription]);
+});
+
+it('lets staff disable email communication for a member', function (): void {
+    $member = Member::factory()->create([
+        'source' => 'promotions',
+        'goal' => 'fitness',
+        'state' => null,
+        'city' => null,
+    ]);
+
+    Livewire::test(EditMember::class, ['record' => $member->getRouteKey()])
+        ->fillForm(['email_communication_enabled' => false])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($member->refresh()->email_communication_enabled)->toBeFalse();
 });
 
 it('records member and subscription lifecycle activity', function (): void {

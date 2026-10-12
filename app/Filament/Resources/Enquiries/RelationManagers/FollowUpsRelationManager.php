@@ -48,7 +48,6 @@ class FollowUpsRelationManager extends RelationManager
             ->columns(FollowUpTable::getColumns())
             ->headerActions([
                 CreateAction::make()
-                    ->label(__('app.actions.new_follow_up'))
                     ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new_follow_up'))
                     ->modalWidth('sm')

@@ -7,6 +7,7 @@ use App\Filament\Resources\Members\Pages\ViewMember;
 use App\Filament\Resources\Members\RelationManagers\AttendancesRelationManager;
 use App\Filament\Resources\Members\RelationManagers\SubscriptionsRelationManager;
 use App\Models\Member;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Group;
@@ -122,6 +123,9 @@ class MemberInfolist
                         TextEntry::make('name')->label(__('app.fields.name')),
                         TextEntry::make('gender')->label(__('app.fields.gender')),
                         TextEntry::make('email')->label(__('app.fields.email')),
+                        IconEntry::make('email_communication_enabled')
+                            ->label(__('app.communication.email_communication'))
+                            ->boolean(),
                         TextEntry::make('contact')->label(__('app.fields.contact')),
                         TextEntry::make('emergency_contact')->label(__('app.fields.emergency_contact'))->placeholder(__('app.placeholders.na')),
                         TextEntry::make('dob')

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Members\Tables;
 use App\Enums\Status;
 use App\Models\Member;
 use App\Support\AppConfig;
+use App\Support\Filament\MemberCommunicationActions;
 use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -139,7 +140,6 @@ class MemberTable
             ->emptyStateActions([
                 CreateAction::make()
                     ->icon('heroicon-o-plus')
-                    ->label(__('app.actions.new', ['resource' => __('app.resources.members.singular')]))
                     ->hidden(fn (): bool => Member::exists()),
             ])
             ->filters([
@@ -233,6 +233,8 @@ class MemberTable
                             ->label(__('app.actions.record_actions'))
                             ->disabled()
                             ->color('gray'),
+                        MemberCommunicationActions::sendWelcome()
+                            ->hiddenLabel(),
                         ViewAction::make(),
                         EditAction::make()->hiddenLabel(),
                         DeleteAction::make()->hiddenLabel(),

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Services\Communication\CommunicationDeliveryTracker;
 use App\Services\Email\InvoiceEmailService;
 use App\Support\Invoices\InvoiceDocumentNotRenderable;
 use Illuminate\Bus\Queueable;
@@ -28,6 +29,8 @@ class SendInvoicePaymentReminderEmail implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 60;
 
+    public bool $failOnTimeout = true;
+
     /**
      * Prevent repeated reminders to the same recipient within the retry window.
      */
@@ -41,6 +44,7 @@ class SendInvoicePaymentReminderEmail implements ShouldBeUnique, ShouldQueue
         public readonly string $toEmail,
         public readonly ?string $note = null,
         public readonly ?int $actorId = null,
+        public readonly ?int $deliveryId = null,
     ) {}
 
     /**
@@ -53,8 +57,10 @@ class SendInvoicePaymentReminderEmail implements ShouldBeUnique, ShouldQueue
                 invoiceId: $this->invoiceId,
                 toEmail: $this->toEmail,
                 note: $this->note,
+                deliveryId: $this->deliveryId,
             );
         } catch (InvoiceDocumentNotRenderable $exception) {
+            app(CommunicationDeliveryTracker::class)->failed($this->deliveryId, $exception);
             Log::warning('Skipping payment reminder email: missing required invoice data.', [
                 'invoice_id' => $this->invoiceId,
                 'missing' => $exception->viewData['missing'],
@@ -72,6 +78,8 @@ class SendInvoicePaymentReminderEmail implements ShouldBeUnique, ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        app(CommunicationDeliveryTracker::class)->failed($this->deliveryId, $exception);
+
         Log::error('Invoice payment reminder email job failed permanently.', [
             'invoice_id' => $this->invoiceId,
             'actor_id' => $this->actorId,

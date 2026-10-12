@@ -16,7 +16,6 @@ class ListServices extends ListRecords
         return [
             CreateAction::make()
                 ->icon('heroicon-o-plus')
-                ->label(__('app.actions.new', ['resource' => ServiceResource::getModelLabel()]))
                 ->modalHeading(__('app.actions.new', ['resource' => ServiceResource::getModelLabel()]))
                 ->modalWidth('sm')
                 ->createAnother(false)

@@ -1,19 +1,8 @@
-@php
-    /** @var \App\Models\Invoice $invoice */
-    $statusLabel = method_exists($invoice, 'getDisplayStatusLabel')
-        ? $invoice->getDisplayStatusLabel()
-        : (string) ($invoice->status?->value ?? $invoice->status ?? __('app.status.issued'));
-@endphp
-
 @extends('emails.invoices.layout')
 
 @section('content')
-    <div style="font-size: 14px; color: #111827;">
-        {{ __('app.emails.greeting', ['name' => filled($memberName) ? $memberName : __('app.emails.there')]) }}
-    </div>
-
-    <div style="font-size: 14px; color: #111827; margin-top: 12px;">
-        {!! __('app.emails.invoice_status_line', ['invoice_number' => e($invoice->number), 'status' => e($statusLabel)]) !!}
+    <div style="font-size: 14px; color: #111827; line-height: 1.5;">
+        {!! nl2br(e($messageBody)) !!}
     </div>
 
     @if (filled($note))

@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Member;
 use Database\Factories\Concerns\WithSynchronizedLocation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Member>
+ * @extends Factory<Member>
  */
 class MemberFactory extends Factory
 {
@@ -27,6 +28,7 @@ class MemberFactory extends Factory
             'code' => $this->faker->unique()->bothify('MEM###'),
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
+            'email_communication_enabled' => true,
             'contact' => $location['contact'],
             'emergency_contact' => $location['emergency_contact'],
             'health_issue' => $this->faker->optional()->sentence(),

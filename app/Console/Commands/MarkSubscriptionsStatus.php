@@ -134,7 +134,7 @@ class MarkSubscriptionsStatus extends Command
         $updatedCount = 0;
         $query
             ->with([
-                'member:id',
+                'member:id,name,email,code',
                 'plan:id,name',
             ])
             ->chunkById(

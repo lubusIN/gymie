@@ -2,9 +2,11 @@
 
 namespace App\Observers;
 
-use App\Contracts\SettingsRepository;
-use App\Jobs\SendInvoiceIssuedEmail;
+use App\Enums\CommunicationTemplateKey;
+use App\Enums\Status;
 use App\Models\Invoice;
+use App\Services\Communication\CommunicationAutomationService;
+use App\Services\Email\InvoiceEmailService;
 use App\Support\Data;
 use Illuminate\Support\Facades\Log;
 
@@ -15,19 +17,17 @@ use Illuminate\Support\Facades\Log;
  */
 class InvoiceObserver
 {
-    public function __construct(private readonly SettingsRepository $settingsRepository) {}
+    public function __construct(
+        private readonly CommunicationAutomationService $automationService,
+        private readonly InvoiceEmailService $invoiceEmailService,
+    ) {}
 
     /**
      * Handle the Invoice "created" event.
      */
     public function created(Invoice $invoice): void
     {
-        $settings = $this->settingsRepository->get();
-
-        if (
-            ! (bool) data_get($settings, 'notifications.email.enabled', false) ||
-            ! (bool) data_get($settings, 'notifications.email.auto_send_invoice_issued', false)
-        ) {
+        if (! $this->automationService->shouldSend(CommunicationTemplateKey::InvoiceIssued)) {
             return;
         }
 
@@ -46,11 +46,36 @@ class InvoiceObserver
             return;
         }
 
-        SendInvoiceIssuedEmail::dispatch(
+        $this->invoiceEmailService->queueInvoiceIssuedEmail(
             invoiceId: Data::int($invoice->getKey()),
             toEmail: $email,
-        )->afterCommit();
+        );
     }
 
-    // Other lifecycle events intentionally left unhandled for v1.
+    /** Queue one overdue notice when an invoice first enters the overdue state. */
+    public function becameOverdue(Invoice $invoice): void
+    {
+        if (
+            $invoice->status !== Status::Overdue
+            || ! $this->automationService->shouldSend(CommunicationTemplateKey::InvoiceOverdue)
+        ) {
+            return;
+        }
+
+        $invoice->loadMissing('subscription.member');
+        $email = (string) ($invoice->subscription?->member?->email ?? '');
+
+        if (! filled($email)) {
+            Log::info('Skipping overdue invoice email: member email missing.', [
+                'invoice_id' => $invoice->getKey(),
+            ]);
+
+            return;
+        }
+
+        $this->invoiceEmailService->queueOverdueReminderEmail(
+            invoiceId: Data::int($invoice->getKey()),
+            toEmail: $email,
+        );
+    }
 }

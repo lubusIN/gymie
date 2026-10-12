@@ -158,7 +158,6 @@ class SubscriptionTable
             ->emptyStateActions([
                 CreateAction::make()
                     ->icon('heroicon-o-plus')
-                    ->label(__('app.actions.new', ['resource' => __('app.resources.subscriptions.singular')]))
                     ->visible(fn () => Member::exists() && Plan::exists()),
                 Action::make('create_member')
                     ->icon('heroicon-o-plus')

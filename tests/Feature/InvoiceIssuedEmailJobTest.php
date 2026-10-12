@@ -1,7 +1,10 @@
 <?php
 
+use App\Enums\CommunicationTemplateKey;
 use App\Helpers\Helpers;
 use App\Jobs\SendInvoiceIssuedEmail;
+use App\Models\CommunicationAutomation;
+use App\Models\CommunicationTemplate;
 use App\Models\Invoice;
 use App\Models\Member;
 use App\Models\Plan;
@@ -17,6 +20,10 @@ afterEach(function (): void {
 
 it('dispatches the invoice issued email job when enabled in settings', function (): void {
     Queue::fake();
+    config([
+        'mail.default' => 'smtp',
+        'mail.from.address' => 'notifications@gymie.test',
+    ]);
 
     Helpers::setTestSettingsOverride([
         'general' => [
@@ -31,10 +38,16 @@ it('dispatches the invoice issued email job when enabled in settings', function 
         'notifications' => [
             'email' => [
                 'enabled' => true,
-                'auto_send_invoice_issued' => true,
-                'auto_send_payment_receipt' => false,
             ],
         ],
+    ]);
+
+    CommunicationAutomation::query()->create([
+        'event' => CommunicationTemplateKey::InvoiceIssued,
+        'communication_template_id' => CommunicationTemplate::query()
+            ->where('key', CommunicationTemplateKey::InvoiceIssued->value)
+            ->value('id'),
+        'is_enabled' => true,
     ]);
 
     $member = Member::factory()->create([
@@ -67,6 +80,7 @@ it('dispatches the invoice issued email job when enabled in settings', function 
             && $job->toEmail === $member->email
             && $job->tries === 3
             && $job->timeout === 60
+            && $job->failOnTimeout
             && $job->uniqueFor === 3600
             && $job->uniqueId() === "{$invoice->id}:member@example.com"
             && $job->backoff === [10, 60, 300]

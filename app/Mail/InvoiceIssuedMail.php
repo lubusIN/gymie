@@ -27,6 +27,7 @@ class InvoiceIssuedMail extends Mailable
     public function __construct(
         public readonly Invoice $invoice,
         public readonly string $subjectLine,
+        public readonly string $messageBody,
         public readonly string $fromAddress,
         public readonly string $gymName,
         public readonly string $gymEmail,
@@ -63,6 +64,7 @@ class InvoiceIssuedMail extends Mailable
                 'gymEmail' => $this->gymEmail,
                 'gymContact' => $this->gymContact,
                 'memberName' => $this->memberName,
+                'messageBody' => $this->messageBody,
                 'note' => $this->note,
             ],
         );

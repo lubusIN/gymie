@@ -29,6 +29,11 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->travelTo(CarbonImmutable::parse('2026-09-30 10:00:00'));
 
+    config([
+        'mail.default' => 'smtp',
+        'mail.from.address' => 'notifications@gymie.test',
+    ]);
+
     Helpers::setTestSettingsOverride([
         'general' => [
             'gym_name' => 'Demo Gym',
@@ -53,6 +58,23 @@ beforeEach(function (): void {
     $this->user = User::factory()->create()->assignRole('super_admin');
     $this->actingAs($this->user);
     Filament::setCurrentPanel('admin');
+});
+
+it('disables payment reminders when outbound email is unavailable', function (): void {
+    config(['mail.default' => 'log']);
+    $member = Member::factory()->create(['email' => 'taylor@example.com']);
+    $plan = Plan::factory()->create();
+    $subscription = Subscription::factory()->for($member)->for($plan)->current()->create();
+    $invoice = Invoice::factory()->for($subscription)->create([
+        'due_date' => '2026-10-07',
+        'subscription_fee' => 100,
+        'discount_amount' => 0,
+        'paid_amount' => 0,
+    ])->refresh();
+
+    Livewire::test(ListInvoices::class)
+        ->assertTableActionVisible('send_payment_reminder', $invoice)
+        ->assertTableActionDisabled('send_payment_reminder', $invoice);
 });
 
 afterEach(function (): void {
@@ -104,6 +126,7 @@ it('queues an outstanding payment reminder and records it on the subscription ti
             && $job->actorId === $this->user->getKey()
             && $job->tries === 3
             && $job->timeout === 60
+            && $job->failOnTimeout
             && $job->uniqueFor === 3600
             && $job->backoff === [10, 60, 300]
             && $job->afterCommit === true;

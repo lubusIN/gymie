@@ -20,7 +20,6 @@ class ListFollowUps extends ListRecords
         return [
             CreateAction::make()
                 ->icon('heroicon-o-plus')
-                ->label(__('app.actions.new_follow_up'))
                 ->modalWidth('sm')
                 ->modalHeading(__('app.actions.new_follow_up'))
                 ->createAnother(false)

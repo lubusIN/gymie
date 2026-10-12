@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Invoice;
 use App\Support\AppConfig;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 
 class MarkInvoiceOverdue extends Command
@@ -36,12 +37,24 @@ class MarkInvoiceOverdue extends Command
 
         $today = Carbon::today(AppConfig::timezone());
 
-        $updatedCount = Invoice::query()
+        $updatedCount = 0;
+        Invoice::query()
             ->whereIn('status', ['issued', 'partial'])
             ->whereNotNull('due_date')
             ->where('due_date', '<', $today->toDateString())
             ->where('due_amount', '>', 0)
-            ->update(['status' => 'overdue']);
+            ->with('subscription.member')
+            ->chunkById(
+                500,
+                /** @param Collection<int, Invoice> $invoices */
+                function (Collection $invoices) use (&$updatedCount): void {
+                    foreach ($invoices as $invoice) {
+                        if ($invoice->update(['status' => 'overdue'])) {
+                            $updatedCount++;
+                        }
+                    }
+                },
+            );
 
         $this->info("{$updatedCount} invoice(s) marked as overdue.");
 

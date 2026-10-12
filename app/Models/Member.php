@@ -6,8 +6,10 @@ use App\Enums\MemberActivityType;
 use App\Enums\Status;
 use App\Helpers\Helpers;
 use App\Models\Concerns\CascadesSoftDeletes;
+use App\Observers\MemberCommunicationObserver;
 use Carbon\CarbonInterface;
 use Database\Factories\MemberFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,7 @@ use Spatie\Activitylog\Models\Activity;
  * @property string $code
  * @property string $name
  * @property string|null $email
+ * @property bool $email_communication_enabled
  * @property string|null $contact
  * @property string|null $emergency_contact
  * @property string|null $health_issue
@@ -43,6 +46,7 @@ use Spatie\Activitylog\Models\Activity;
  * @property-read Enquiry|null $enquiry
  * @property-read Collection<int, Activity> $activitiesAsSubject
  */
+#[ObservedBy(MemberCommunicationObserver::class)]
 class Member extends Model
 {
     /** @use HasFactory<MemberFactory> */
@@ -59,6 +63,7 @@ class Member extends Model
         'code',
         'name',
         'email',
+        'email_communication_enabled',
         'contact',
         'emergency_contact',
         'health_issue',
@@ -79,6 +84,7 @@ class Member extends Model
         'photo',
         'name',
         'email',
+        'email_communication_enabled',
         'contact',
         'emergency_contact',
         'health_issue',
@@ -102,8 +108,15 @@ class Member extends Model
     {
         return [
             'dob' => 'date',
+            'email_communication_enabled' => 'boolean',
             'status' => Status::class,
         ];
+    }
+
+    /** Determine whether staff may send email communication to this member. */
+    public function allowsEmailCommunication(): bool
+    {
+        return $this->email_communication_enabled;
     }
 
     /**
@@ -123,9 +136,7 @@ class Member extends Model
     {
         return $this->subscriptions()
             ->with('plan')
-            ->where('start_date', '<=', $date->toDateString())
-            ->where('end_date', '>=', $date->toDateString())
-            ->whereIn('status', [Status::Ongoing->value, Status::Expiring->value])
+            ->currentAt($date)
             ->orderByDesc('end_date')
             ->orderByDesc('id')
             ->first();

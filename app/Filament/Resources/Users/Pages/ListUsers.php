@@ -18,8 +18,7 @@ class ListUsers extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-o-plus')
-                ->label(__('app.actions.new', ['resource' => UserResource::getModelLabel()])),
+                ->icon('heroicon-o-plus'),
         ];
     }
 

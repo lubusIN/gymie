@@ -5,8 +5,13 @@ namespace App\Models;
 use App\Enums\MemberActivityType;
 use App\Enums\Status;
 use App\Enums\SubscriptionActivityType;
+use App\Observers\SubscriptionCommunicationObserver;
 use App\Support\AppConfig;
+use Carbon\CarbonInterface;
 use Database\Factories\SubscriptionFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +39,7 @@ use Spatie\Activitylog\Models\Activity;
  * @property-read Invoice|null $invoice
  * @property-read Collection<int, Activity> $activitiesAsSubject
  */
+#[ObservedBy(SubscriptionCommunicationObserver::class)]
 class Subscription extends Model
 {
     /** @use HasFactory<SubscriptionFactory> */
@@ -65,6 +71,16 @@ class Subscription extends Model
             'end_date' => 'date',
             'status' => Status::class,
         ];
+    }
+
+    /** Constrain subscriptions that grant access on the given business date. */
+    #[Scope]
+    protected function currentAt(Builder $query, CarbonInterface $date): Builder
+    {
+        return $query
+            ->where('start_date', '<=', $date->toDateString())
+            ->where('end_date', '>=', $date->toDateString())
+            ->whereIn('status', [Status::Ongoing->value, Status::Expiring->value]);
     }
 
     /**

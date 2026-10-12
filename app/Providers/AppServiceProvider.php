@@ -6,6 +6,18 @@ use App\Contracts\SequenceRepository;
 use App\Contracts\SettingsRepository;
 use App\Contracts\TenantContext;
 use App\Helpers\Helpers;
+use App\Models\Attendance;
+use App\Models\Enquiry;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\InvoiceTransaction;
+use App\Models\Member;
+use App\Models\Plan;
+use App\Models\Service;
+use App\Models\StaffAttendance;
+use App\Models\Subscription;
+use App\Models\User;
+use App\Observers\StaffActivityObserver;
 use App\Services\Api\Docs\AddIndexQueryParametersTransformer;
 use App\Services\JsonSequenceRepository;
 use App\Services\JsonSettingsRepository;
@@ -67,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
         }
         $this->configureRateLimiting();
         $this->configureScrambleApiDocs();
+        $this->configureStaffActivityLogging();
 
         FilamentAsset::register([
             Css::make('gymie-styles', __DIR__.'/../../resources/css/custom.css'),
@@ -89,10 +102,12 @@ class AppServiceProvider extends ServiceProvider
         TagsInput::configureUsing(fn (TagsInput $field) => $field->live()->afterStateUpdated($resetError));
 
         /**
-         * Configure the CreateAction globally to use a specific icon.
+         * Configure the CreateAction globally to use a consistent label and icon.
          */
         CreateAction::configureUsing(function (CreateAction $action) {
-            $action->icon(Heroicon::OutlinedPlus);
+            $action
+                ->label(fn (): string => __('app.actions.new_label'))
+                ->icon(Heroicon::OutlinedPlus);
         });
 
         /**
@@ -184,6 +199,26 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->configureDeletionPrevention();
+    }
+
+    /** Register one safe audit observer for core business records. */
+    private function configureStaffActivityLogging(): void
+    {
+        foreach ([
+            Attendance::class,
+            Enquiry::class,
+            Expense::class,
+            Invoice::class,
+            InvoiceTransaction::class,
+            Member::class,
+            Plan::class,
+            Service::class,
+            StaffAttendance::class,
+            Subscription::class,
+            User::class,
+        ] as $model) {
+            $model::observe(StaffActivityObserver::class);
+        }
     }
 
     /**

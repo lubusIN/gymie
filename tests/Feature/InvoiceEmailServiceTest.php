@@ -18,7 +18,10 @@ afterEach(function (): void {
 });
 
 it('sends invoice issued email with reply-to when gym email is configured', function (): void {
-    config(['mail.from.address' => 'notifications@gymie.test']);
+    config([
+        'mail.default' => 'smtp',
+        'mail.from.address' => 'notifications@gymie.test',
+    ]);
 
     Helpers::setTestSettingsOverride([
         'general' => [

@@ -2,9 +2,10 @@
 
 namespace App\Observers;
 
-use App\Contracts\SettingsRepository;
-use App\Jobs\SendInvoicePaymentReceiptEmail;
+use App\Enums\CommunicationTemplateKey;
 use App\Models\InvoiceTransaction;
+use App\Services\Communication\CommunicationAutomationService;
+use App\Services\Email\InvoiceEmailService;
 use App\Support\Data;
 use Illuminate\Support\Facades\Log;
 
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Log;
  */
 class InvoiceTransactionObserver
 {
-    public function __construct(private readonly SettingsRepository $settingsRepository) {}
+    public function __construct(
+        private readonly CommunicationAutomationService $automationService,
+        private readonly InvoiceEmailService $invoiceEmailService,
+    ) {}
 
     /**
      * Handle the InvoiceTransaction "created" event.
@@ -30,12 +34,7 @@ class InvoiceTransactionObserver
             return;
         }
 
-        $settings = $this->settingsRepository->get();
-
-        if (
-            ! (bool) data_get($settings, 'notifications.email.enabled', false) ||
-            ! (bool) data_get($settings, 'notifications.email.auto_send_payment_receipt', false)
-        ) {
+        if (! $this->automationService->shouldSend(CommunicationTemplateKey::PaymentReceipt)) {
             return;
         }
 
@@ -61,11 +60,11 @@ class InvoiceTransactionObserver
             return;
         }
 
-        SendInvoicePaymentReceiptEmail::dispatch(
+        $this->invoiceEmailService->queuePaymentReceiptEmail(
             invoiceId: Data::int($invoiceId),
-            invoiceTransactionId: Data::int($invoiceTransaction->getKey()),
+            transactionId: Data::int($invoiceTransaction->getKey()),
             toEmail: $email,
-        )->afterCommit();
+        );
     }
 
     // Other lifecycle events intentionally left unhandled for v1.

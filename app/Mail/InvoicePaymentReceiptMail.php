@@ -29,6 +29,7 @@ class InvoicePaymentReceiptMail extends Mailable
         public readonly Invoice $invoice,
         public readonly InvoiceTransaction $transaction,
         public readonly string $subjectLine,
+        public readonly string $messageBody,
         public readonly string $fromAddress,
         public readonly string $gymName,
         public readonly string $gymEmail,
@@ -66,6 +67,7 @@ class InvoicePaymentReceiptMail extends Mailable
                 'gymEmail' => $this->gymEmail,
                 'gymContact' => $this->gymContact,
                 'memberName' => $this->memberName,
+                'messageBody' => $this->messageBody,
                 'note' => $this->note,
             ],
         );

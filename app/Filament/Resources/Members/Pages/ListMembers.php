@@ -3,9 +3,13 @@
 namespace App\Filament\Resources\Members\Pages;
 
 use App\Enums\Status;
+use App\Filament\Exports\MemberExporter;
+use App\Filament\Imports\MemberImporter;
 use App\Filament\Resources\Members\MemberResource;
 use App\Models\Member;
 use Filament\Actions\CreateAction;
+use Filament\Actions\ExportAction;
+use Filament\Actions\ImportAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,8 +23,22 @@ class ListMembers extends ListRecords
         return [
             CreateAction::make()
                 ->icon('heroicon-o-plus')
-                ->label(__('app.actions.new', ['resource' => MemberResource::getModelLabel()]))
                 ->hidden(! Member::exists()),
+            ImportAction::make()
+                ->importer(MemberImporter::class)
+                ->label(__('app.actions.import'))
+                ->icon('heroicon-o-arrow-up-tray')
+                ->color('gray')
+                ->maxRows(5000)
+                ->authorize('Import:Member'),
+            ExportAction::make()
+                ->exporter(MemberExporter::class)
+                ->label(__('app.actions.export'))
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->maxRows(10000)
+                ->authorize('Export:Member')
+                ->columnMappingColumns(3),
         ];
     }
 

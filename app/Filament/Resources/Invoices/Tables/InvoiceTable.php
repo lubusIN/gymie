@@ -10,6 +10,7 @@ use App\Helpers\Helpers;
 use App\Models\Invoice;
 use App\Models\InvoiceTransaction;
 use App\Models\Subscription;
+use App\Services\Communication\CommunicationPreferenceService;
 use App\Services\Email\InvoiceEmailService;
 use App\Services\Invoices\InvoiceTransactionService;
 use App\Support\AppConfig;
@@ -416,12 +417,22 @@ class InvoiceTable
                                     ->success()
                                     ->send();
                             })
-                            ->disabled(fn (Invoice $record): bool => ! filled($record->subscription->member->email ?? null)
+                            ->disabled(fn (Invoice $record, InvoiceEmailService $emailService, CommunicationPreferenceService $preferenceService): bool => ! $emailService->isMailDeliveryConfigured()
+                                || $preferenceService->emailOptOutReason($record) !== null
+                                || ! filled($record->subscription->member->email ?? null)
                                 || ! filled($record->number)
                                 || (float) ($record->total_amount ?? 0) <= 0)
-                            ->tooltip(function (Invoice $record): ?string {
+                            ->tooltip(function (Invoice $record, InvoiceEmailService $emailService, CommunicationPreferenceService $preferenceService): ?string {
+                                if (! $emailService->isMailDeliveryConfigured()) {
+                                    return __('app.notifications.mail_not_configured');
+                                }
+
                                 if (! filled($record->subscription->member->email ?? null)) {
                                     return __('app.tooltips.member_email_missing');
+                                }
+
+                                if ($reason = $preferenceService->emailOptOutReason($record)) {
+                                    return $reason;
                                 }
 
                                 if (! filled($record->number) || (float) ($record->total_amount ?? 0) <= 0) {
@@ -463,14 +474,26 @@ class InvoiceTable
                                     ->success()
                                     ->send();
                             })
-                            ->disabled(function (Invoice $record): bool {
+                            ->disabled(function (Invoice $record, InvoiceEmailService $emailService, CommunicationPreferenceService $preferenceService): bool {
                                 $email = (string) ($record->subscription->member->email ?? '');
 
-                                return ! filled($email) || ! filled($record->number) || (float) ($record->total_amount ?? 0) <= 0;
+                                return ! $emailService->isMailDeliveryConfigured()
+                                    || $preferenceService->emailOptOutReason($record) !== null
+                                    || ! filled($email)
+                                    || ! filled($record->number)
+                                    || (float) ($record->total_amount ?? 0) <= 0;
                             })
-                            ->tooltip(function (Invoice $record): ?string {
+                            ->tooltip(function (Invoice $record, InvoiceEmailService $emailService, CommunicationPreferenceService $preferenceService): ?string {
+                                if (! $emailService->isMailDeliveryConfigured()) {
+                                    return __('app.notifications.mail_not_configured');
+                                }
+
                                 if (! filled($record->subscription->member->email ?? null)) {
                                     return __('app.tooltips.member_email_missing');
+                                }
+
+                                if ($reason = $preferenceService->emailOptOutReason($record)) {
+                                    return $reason;
                                 }
 
                                 if (! filled($record->number) || (float) ($record->total_amount ?? 0) <= 0) {
@@ -538,14 +561,27 @@ class InvoiceTable
                                     ->success()
                                     ->send();
                             })
-                            ->disabled(function (Invoice $record): bool {
+                            ->disabled(function (Invoice $record, InvoiceEmailService $emailService, CommunicationPreferenceService $preferenceService): bool {
                                 $email = (string) ($record->subscription->member->email ?? '');
 
-                                return ! filled($email) || ! filled($record->number) || (float) ($record->total_amount ?? 0) <= 0 || (float) ($record->paid_amount ?? 0) <= 0;
+                                return ! $emailService->isMailDeliveryConfigured()
+                                    || $preferenceService->emailOptOutReason($record) !== null
+                                    || ! filled($email)
+                                    || ! filled($record->number)
+                                    || (float) ($record->total_amount ?? 0) <= 0
+                                    || (float) ($record->paid_amount ?? 0) <= 0;
                             })
-                            ->tooltip(function (Invoice $record): ?string {
+                            ->tooltip(function (Invoice $record, InvoiceEmailService $emailService, CommunicationPreferenceService $preferenceService): ?string {
+                                if (! $emailService->isMailDeliveryConfigured()) {
+                                    return __('app.notifications.mail_not_configured');
+                                }
+
                                 if (! filled($record->subscription->member->email ?? null)) {
                                     return __('app.tooltips.member_email_missing');
+                                }
+
+                                if ($reason = $preferenceService->emailOptOutReason($record)) {
+                                    return $reason;
                                 }
 
                                 if ((float) ($record->paid_amount ?? 0) <= 0) {

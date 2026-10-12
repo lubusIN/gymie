@@ -48,4 +48,10 @@ if ((bool) config('gymie-tenancy.enabled', false)) {
         ->withoutOverlapping(30)
         ->onOneServer()
         ->dailyAt('00:00');
+
+    Schedule::command('gymie:inactive-members')
+        ->name('gymie-inactive-members')
+        ->withoutOverlapping(30)
+        ->onOneServer()
+        ->dailyAt('09:00');
 }

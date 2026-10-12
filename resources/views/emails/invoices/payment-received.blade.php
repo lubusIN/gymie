@@ -6,12 +6,8 @@
 @extends('emails.invoices.layout')
 
 @section('content')
-    <div style="font-size: 14px; color: #111827;">
-        {{ __('app.emails.greeting', ['name' => filled($memberName) ? $memberName : __('app.emails.there')]) }}
-    </div>
-
-    <div style="font-size: 14px; color: #111827; margin-top: 12px;">
-        {!! __('app.emails.payment_received_line', ['invoice_number' => e($invoice->number)]) !!}
+    <div style="font-size: 14px; color: #111827; line-height: 1.5;">
+        {!! nl2br(e($messageBody)) !!}
     </div>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top: 18px; border-top: 1px solid #e5e7eb;">

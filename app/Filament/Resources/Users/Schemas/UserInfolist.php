@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Schemas;
 
 use App\Enums\Status;
 use App\Filament\Resources\Users\Pages\ViewUser;
+use App\Filament\Resources\Users\RelationManagers\StaffActivitiesRelationManager;
 use App\Filament\Resources\Users\RelationManagers\StaffAttendancesRelationManager;
 use App\Models\User;
 use Filament\Infolists\Components\ImageEntry;
@@ -39,6 +40,22 @@ class UserInfolist
                             ->schema([
                                 self::staffInformationSection(),
                                 self::locationSection(),
+                            ]),
+                        Tab::make(__('app.activity.title'))
+                            ->key('activity_tab')
+                            ->icon('heroicon-o-clock')
+                            ->visible(fn (User $record): bool => StaffActivitiesRelationManager::canViewForRecord(
+                                $record,
+                                ViewUser::class,
+                            ))
+                            ->schema([
+                                LivewireComponent::make(
+                                    StaffActivitiesRelationManager::class,
+                                    fn (User $record): array => [
+                                        'ownerRecord' => $record,
+                                        'pageClass' => ViewUser::class,
+                                    ],
+                                )->key('staff_activities_relation_manager'),
                             ]),
                         Tab::make(__('app.resources.attendance.plural'))
                             ->key('attendance_tab')

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\Analytics\CashflowTrendChartWidget;
 use App\Filament\Widgets\Analytics\ExpenseCategoriesDoughnutChartWidget;
+use App\Filament\Widgets\Analytics\FailedCommunicationDeliveriesTableWidget;
 use App\Filament\Widgets\Analytics\FinancialMetricsWidget;
 use App\Filament\Widgets\Analytics\MembershipMetricsWidget;
 use App\Filament\Widgets\Analytics\MembershipOverviewSubscriptionsTableWidget;
@@ -156,6 +157,11 @@ class Dashboard extends \Filament\Pages\Dashboard
                 ...$this->getWidgetsSchemaComponents([
                     MembershipOverviewSubscriptionsTableWidget::class,
                     RecentTransactionsTableWidget::class,
+                ]),
+            ]),
+            Grid::make($columns)->schema([
+                ...$this->getWidgetsSchemaComponents([
+                    FailedCommunicationDeliveriesTableWidget::class,
                 ]),
             ]),
             Grid::make($columns)->schema(

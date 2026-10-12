@@ -9,6 +9,7 @@ use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -81,6 +82,15 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function enquiries(): HasMany
     {
         return $this->hasMany(Enquiry::class);
+    }
+
+    /**
+     * Get activity recorded for actions performed by this staff member.
+     */
+    public function staffActivities(): MorphMany
+    {
+        return $this->morphMany(StaffActivity::class, 'causer')
+            ->where('log_name', StaffActivity::LOG_NAME);
     }
 
     /**

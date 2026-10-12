@@ -19,7 +19,6 @@ class ListSubscriptions extends ListRecords
         return [
             CreateAction::make()
                 ->icon('heroicon-o-plus')
-                ->label(__('app.actions.new', ['resource' => SubscriptionResource::getModelLabel()]))
                 ->visible(Subscription::exists()),
         ];
     }

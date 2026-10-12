@@ -49,10 +49,18 @@ it('supports core CRUD flows for integrations', function (): void {
     $member = $this->postJson('/api/v1/members', [
         'name' => 'Alex',
         'email' => 'alex@example.com',
+        'email_communication_enabled' => false,
         'contact' => '+91 9000000000',
         'gender' => 'male',
         'status' => 'active',
     ])->assertSuccessful()->json('data');
+
+    expect($member['email_communication_enabled'])->toBeFalse();
+
+    $this->patchJson("/api/v1/members/{$member['id']}", [
+        'email_communication_enabled' => true,
+    ])->assertSuccessful()
+        ->assertJsonPath('data.email_communication_enabled', true);
 
     $subscriptionResponse = $this->postJson('/api/v1/subscriptions', [
         'member_id' => $member['id'],

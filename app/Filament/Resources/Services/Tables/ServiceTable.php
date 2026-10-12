@@ -43,7 +43,6 @@ class ServiceTable
             ->emptyStateActions([
                 CreateAction::make()
                     ->icon('heroicon-o-plus')
-                    ->label(__('app.actions.new', ['resource' => __('app.resources.services.singular')]))
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.services.singular')]))
                     ->modalWidth('sm')
                     ->createAnother(false)

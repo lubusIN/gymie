@@ -14,6 +14,7 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -82,6 +83,11 @@ class MemberForm
                                         record: $record,
                                         sourceEnquiryId: $livewire instanceof CreateMember ? $livewire->enquiryId : null,
                                     )),
+                                Toggle::make('email_communication_enabled')
+                                    ->label(__('app.communication.email_communication'))
+                                    ->helperText(__('app.communication.email_communication_help'))
+                                    ->default(true)
+                                    ->inline(false),
                                 TextInput::make('contact')
                                     ->label(__('app.fields.contact'))
                                     ->tel()

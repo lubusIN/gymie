@@ -5,6 +5,8 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Settings;
 use App\Filament\Resources\Attendances\AttendanceResource;
+use App\Filament\Resources\CommunicationDeliveries\CommunicationDeliveryResource;
+use App\Filament\Resources\CommunicationTemplates\CommunicationTemplateResource;
 use App\Filament\Resources\Enquiries\EnquiryResource;
 use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Filament\Resources\FollowUps\FollowUpResource;
@@ -130,6 +132,11 @@ class AdminPanelProvider extends PanelProvider
             ...ExpenseResource::getNavigationItems(),
         ];
 
+        $communication = [
+            ...CommunicationTemplateResource::getNavigationItems(),
+            ...CommunicationDeliveryResource::getNavigationItems(),
+        ];
+
         $memberships = [
             ...MemberResource::getNavigationItems(),
             ...PlanResource::getNavigationItems(),
@@ -152,6 +159,11 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make(__('app.navigation.groups.billing'))
                     ->icon('heroicon-o-document-text')
                     ->items($billing)
+                    ->collapsed(false),
+
+                NavigationGroup::make(__('app.navigation.groups.communication'))
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->items($communication)
                     ->collapsed(false),
 
                 NavigationGroup::make(__('app.navigation.groups.administration'))

@@ -159,7 +159,6 @@ class FollowUpTable
                     ->hidden(fn () => Enquiry::exists()),
                 CreateAction::make()
                     ->icon('heroicon-o-plus')
-                    ->label(__('app.actions.new_follow_up'))
                     ->createAnother(false)
                     ->modalHeading(__('app.actions.new_follow_up'))
                     ->modalWidth('sm')

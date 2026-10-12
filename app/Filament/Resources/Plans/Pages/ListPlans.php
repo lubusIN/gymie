@@ -21,7 +21,6 @@ class ListPlans extends ListRecords
                 ->icon('heroicon-o-plus')
                 ->modalAlignment('center')
                 ->modalWidth('xl')
-                ->label(__('app.actions.new', ['resource' => PlanResource::getModelLabel()]))
                 ->modalHeading(__('app.actions.new', ['resource' => PlanResource::getModelLabel()]))
                 ->createAnother(false)
                 ->visible(Plan::exists()),

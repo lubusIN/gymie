@@ -197,10 +197,6 @@ class JsonSettingsRepository implements SettingsRepository
 
         foreach ([
             'enabled' => false,
-            'auto_send_invoice_issued' => false,
-            'auto_send_payment_receipt' => false,
-            'invoice_subject_template' => 'Invoice {invoice_number} - {status}',
-            'receipt_subject_template' => 'Payment received - {invoice_number}',
         ] as $key => $default) {
             if (! array_key_exists($key, $emailSettings)) {
                 $emailSettings[$key] = $default;

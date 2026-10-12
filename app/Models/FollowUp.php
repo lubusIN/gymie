@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Enums\EnquiryActivityType;
 use App\Enums\Status;
+use App\Observers\FollowUpCommunicationObserver;
 use Database\Factories\FollowUpFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property-read Enquiry|null $enquiry
  * @property-read User|null $user
  */
+#[ObservedBy(FollowUpCommunicationObserver::class)]
 class FollowUp extends Model
 {
     /** @use HasFactory<FollowUpFactory> */

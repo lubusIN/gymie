@@ -43,6 +43,9 @@ class Invoice extends Model
     /** @use HasFactory<InvoiceFactory> */
     use HasFactory, SoftDeletes;
 
+    /** @var list<string> */
+    protected $observables = ['becameOverdue'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -184,6 +187,10 @@ class Invoice extends Model
                 'old' => $previousStatus,
                 'new' => $currentStatus,
             ]);
+
+            if ($currentStatus === Status::Overdue->value) {
+                $this->fireModelEvent('becameOverdue', false);
+            }
         }
     }
 
@@ -253,6 +260,10 @@ class Invoice extends Model
                     'old' => $invoice->getRawOriginal('status'),
                     'new' => $invoice->status?->value,
                 ]);
+
+                if ($invoice->status === Status::Overdue) {
+                    $invoice->fireModelEvent('becameOverdue', false);
+                }
             }
 
             $invoice->syncFromTransactions();

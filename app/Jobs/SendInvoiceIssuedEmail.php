@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Services\Communication\CommunicationDeliveryTracker;
 use App\Services\Email\InvoiceEmailService;
 use App\Support\Invoices\InvoiceDocumentNotRenderable;
 use Illuminate\Bus\Queueable;
@@ -28,6 +29,8 @@ class SendInvoiceIssuedEmail implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 60;
 
+    public bool $failOnTimeout = true;
+
     /**
      * Keep duplicate delivery requests locked for longer than the retry window.
      */
@@ -44,6 +47,7 @@ class SendInvoiceIssuedEmail implements ShouldBeUnique, ShouldQueue
         public readonly string $toEmail,
         public readonly ?string $note = null,
         public readonly ?int $actorId = null,
+        public readonly ?int $deliveryId = null,
     ) {}
 
     /**
@@ -56,8 +60,10 @@ class SendInvoiceIssuedEmail implements ShouldBeUnique, ShouldQueue
                 invoiceId: $this->invoiceId,
                 toEmail: $this->toEmail,
                 note: $this->note,
+                deliveryId: $this->deliveryId,
             );
         } catch (InvoiceDocumentNotRenderable $exception) {
+            app(CommunicationDeliveryTracker::class)->failed($this->deliveryId, $exception);
             Log::warning('Skipping invoice email: missing required invoice data.', [
                 'invoice_id' => $this->invoiceId,
                 'missing' => $exception->viewData['missing'],
@@ -75,6 +81,8 @@ class SendInvoiceIssuedEmail implements ShouldBeUnique, ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        app(CommunicationDeliveryTracker::class)->failed($this->deliveryId, $exception);
+
         Log::error('Invoice issued email job failed permanently.', [
             'invoice_id' => $this->invoiceId,
             'actor_id' => $this->actorId,

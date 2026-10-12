@@ -10,7 +10,7 @@ use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-it('uses a title-cased label for follow-up creation', function (): void {
+it('uses a short label and descriptive heading for follow-up creation', function (): void {
     Role::findOrCreate('super_admin', 'web');
     $this->actingAs(User::factory()->create()->assignRole('super_admin'));
     Filament::setCurrentPanel('admin');
@@ -23,9 +23,9 @@ it('uses a title-cased label for follow-up creation', function (): void {
         ->first(fn ($action): bool => $action->getName() === 'create');
 
     expect($headerAction)->toBeInstanceOf(CreateAction::class)
-        ->and($headerAction->getLabel())->toBe('New Follow Up')
+        ->and($headerAction->getLabel())->toBe('New')
         ->and($headerAction->getModalHeading())->toBe('New Follow Up')
         ->and($emptyStateAction)->toBeInstanceOf(CreateAction::class)
-        ->and($emptyStateAction->getLabel())->toBe('New Follow Up')
+        ->and($emptyStateAction->getLabel())->toBe('New')
         ->and($emptyStateAction->getModalHeading())->toBe('New Follow Up');
 });

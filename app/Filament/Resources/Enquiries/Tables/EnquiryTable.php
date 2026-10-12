@@ -115,7 +115,6 @@ class EnquiryTable
             ->emptyStateActions([
                 CreateAction::make()
                     ->icon('heroicon-o-plus')
-                    ->label(__('app.actions.new', ['resource' => __('app.resources.enquiries.singular')]))
                     ->hidden(fn (): bool => Enquiry::exists()),
             ])
             ->filters([

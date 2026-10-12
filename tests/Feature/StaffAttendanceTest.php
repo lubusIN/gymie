@@ -5,6 +5,7 @@ use App\Filament\Resources\StaffAttendances\Pages\ListStaffAttendances;
 use App\Filament\Resources\StaffAttendances\StaffAttendanceResource;
 use App\Filament\Resources\Users\Pages\ViewUser;
 use App\Filament\Resources\Users\RelationManagers\StaffAttendancesRelationManager;
+use App\Models\StaffActivity;
 use App\Models\StaffAttendance;
 use App\Models\User;
 use App\Services\AttendanceService;
@@ -71,7 +72,12 @@ it('records staff attendance from the attendance workspace', function (): void {
         ->assertHasNoActionErrors();
 
     $attendance = StaffAttendance::query()->whereBelongsTo($staff, 'staff')->sole();
-    expect($attendance->checked_in_at->format('Y-m-d H:i:s'))->toBe('2026-10-07 08:00:00');
+    $activity = StaffActivity::query()
+        ->whereMorphedTo('subject', $attendance)
+        ->sole();
+
+    expect($attendance->checked_in_at->format('Y-m-d H:i:s'))->toBe('2026-10-07 08:00:00')
+        ->and($activity->causer_id)->toBe($this->user->id);
 });
 
 it('shows staff attendance on the individual staff profile', function (): void {

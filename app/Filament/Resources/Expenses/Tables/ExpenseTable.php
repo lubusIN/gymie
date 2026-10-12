@@ -170,7 +170,6 @@ class ExpenseTable
             ->emptyStateDescription(__('app.empty.create_to_get_started', ['resource' => __('app.resources.expenses.singular')]))
             ->emptyStateActions([
                 CreateAction::make()
-                    ->label(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))
                     ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))
                     ->createAnother(false)

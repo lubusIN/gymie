@@ -410,6 +410,7 @@ return [
         'actions' => [
             'save_settings' => 'ذخیره تنظیمات',
             'send_test_email' => 'ارسال ایمیل آزمایشی',
+            'manage_communication_templates' => 'مدیریت قالب‌های ارتباطی',
         ],
         'tabs' => [
             'gym_info' => 'اطلاعات باشگاه',
@@ -424,6 +425,7 @@ return [
             'address' => 'نشانی',
             'contact_information' => 'اطلاعات تماس',
             'email' => 'ایمیل سیستم',
+            'email_delivery' => 'تنظیم ارسال ایمیل',
         ],
         'fields' => [
             'gym_name' => 'نام باشگاه',
@@ -443,6 +445,9 @@ return [
             'last_number' => 'آخرین شماره فاکتور',
             'name_type' => 'نوع نمایش نام',
             'email_enabled' => 'فعال‌سازی ارتباط ایمیلی',
+            'email_delivery_status' => 'سرویس ارسال',
+            'email_sender_address' => 'آدرس فرستنده',
+            'email_reply_to_address' => 'آدرس پاسخ',
             'auto_send_invoice_issued' => 'ارسال خودکار ایمیل هنگام صدور فاکتور',
             'auto_send_payment_receipt' => 'ارسال خودکار ایمیل رسید پرداخت',
             'auto_send_member_welcome' => 'ارسال خودکار ایمیل خوش‌آمدگویی عضو',
@@ -457,12 +462,17 @@ return [
                 'gym_name' => 'نام باشگاه',
                 'gym_logo' => 'لوگوی باشگاه',
             ],
+            'email_delivery' => [
+                'configured' => 'پیکربندی شده',
+                'not_configured' => 'پیکربندی نشده',
+            ],
         ],
         'hints' => [
             'press_enter_to_add' => 'برای افزودن، کلید اینتر (Enter) را فشار دهید',
             'type_discount' => 'درصد تخفیف را تایپ کنید',
             'type_category' => 'نام دسته‌بندی را تایپ کنید',
             'gym_email_reply_to' => 'پاسخ اعضا به ایمیل‌های تراکنشی به این آدرس ارسال می‌شود.',
+            'email_enabled' => 'این کلید اصلی به رویدادهای ارتباطی فعال اجازه ارسال ایمیل می‌دهد. اطلاعات سرویس ارسال همچنان در محیط برنامه پیکربندی می‌شود.',
             'test_email' => 'برای بررسی سرویس ارسال و هویت فرستنده، اکنون یک پیام آزمایشی ارسال کنید.',
         ],
         'placeholders' => [

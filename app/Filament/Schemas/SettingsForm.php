@@ -2,8 +2,11 @@
 
 namespace App\Filament\Schemas;
 
+use App\Filament\Resources\CommunicationTemplates\CommunicationTemplateResource;
 use App\Helpers\Helpers;
+use App\Services\Communication\EmailDeliveryContext;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -11,6 +14,8 @@ use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -52,8 +57,7 @@ final class SettingsForm
                                     ->label(__('app.settings.fields.gym_name')),
                                 Select::make('general.currency')
                                     ->label(__('app.settings.fields.currency'))
-                                    ->options(Helpers::getCurrencies())
-                                    ->searchable(),
+                                    ->options(Helpers::getCurrencies()),
                                 FileUpload::make('general.gym_logo')
                                     ->label(__('app.settings.fields.gym_logo'))
                                     ->disk('public')
@@ -70,7 +74,6 @@ final class SettingsForm
                                     ->maxSize(2048)
                                     ->columnSpanFull(),
                                 DatePicker::make('general.financial_year_start')
-                                    ->native(false)
                                     ->label(__('app.settings.fields.financial_year_start'))
                                     ->helperText('Rounded to the first day of that month.')
                                     ->live()
@@ -87,7 +90,6 @@ final class SettingsForm
                                         $set('general.financial_year_end', $start->copy()->addYear()->subDay()->toDateString());
                                     }),
                                 DatePicker::make('general.financial_year_end')
-                                    ->native(false)
                                     ->label(__('app.settings.fields.financial_year_end'))
                                     ->helperText('Auto calculated based on the start month.')
                                     ->readOnly(),
@@ -107,7 +109,6 @@ final class SettingsForm
                                 Select::make('general.country')
                                     ->label(__('app.settings.fields.country'))
                                     ->options(Helpers::getCountries())
-                                    ->searchable()
                                     ->live()
                                     ->afterStateUpdated(function (Set $set): void {
                                         $set('general.state', null);
@@ -116,12 +117,10 @@ final class SettingsForm
                                 Select::make('general.state')
                                     ->label(__('app.settings.fields.state'))
                                     ->options(fn (Get $get): array => Helpers::getStates($get('general.country')))
-                                    ->searchable()
                                     ->live(),
                                 Select::make('general.city')
                                     ->label(__('app.settings.fields.city'))
-                                    ->options(fn (Get $get): array => Helpers::getCities($get('general.state')))
-                                    ->searchable(),
+                                    ->options(fn (Get $get): array => Helpers::getCities($get('general.state'))),
                                 TextInput::make('general.zip')
                                     ->label(__('app.settings.fields.zip'))
                                     ->maxLength(10),
@@ -163,7 +162,6 @@ final class SettingsForm
                             ->label(__('app.settings.fields.last_number'))
                             ->maxLength(10),
                         Select::make('invoice.name_type')
-                            ->native(false)
                             ->label(__('app.settings.fields.name_type'))
                             ->options([
                                 'gym_name' => __('app.settings.options.name_type.gym_name'),
@@ -175,7 +173,42 @@ final class SettingsForm
                     ->schema([
                         Toggle::make('notifications.email.enabled')
                             ->label(__('app.settings.fields.email_enabled'))
-                            ->default(false),
+                            ->helperText(__('app.settings.hints.email_enabled'))
+                            ->default(false)
+                            ->live(),
+                        Section::make(__('app.settings.sections.email_delivery'))
+                            ->key('email_delivery_settings')
+                            ->columns(3)
+                            ->visible(fn (Get $get): bool => (bool) $get('notifications.email.enabled'))
+                            ->schema([
+                                TextEntry::make('email_delivery_status')
+                                    ->label(__('app.settings.fields.email_delivery_status'))
+                                    ->state(fn (): string => app(EmailDeliveryContext::class)->isDeliveryConfigured()
+                                        ? __('app.settings.options.email_delivery.configured')
+                                        : __('app.settings.options.email_delivery.not_configured'))
+                                    ->badge()
+                                    ->color(fn (): string => app(EmailDeliveryContext::class)->isDeliveryConfigured()
+                                        ? 'success'
+                                        : 'danger'),
+                                TextEntry::make('email_sender_address')
+                                    ->label(__('app.settings.fields.email_sender_address'))
+                                    ->state(fn (): string => filter_var(config('mail.from.address'), FILTER_VALIDATE_EMAIL)
+                                        ? (string) config('mail.from.address')
+                                        : __('app.placeholders.na')),
+                                TextEntry::make('email_reply_to_address')
+                                    ->label(__('app.settings.fields.email_reply_to_address'))
+                                    ->state(fn (Get $get): string => filled($get('general.gym_email'))
+                                        ? (string) $get('general.gym_email')
+                                        : __('app.placeholders.na')),
+                                Actions::make([
+                                    Action::make('manage_communication_templates')
+                                        ->label(__('app.settings.actions.manage_communication_templates'))
+                                        ->icon('heroicon-o-envelope')
+                                        ->color('gray')
+                                        ->url(CommunicationTemplateResource::getUrl('index'))
+                                        ->visible(fn (): bool => CommunicationTemplateResource::canViewAny()),
+                                ])->columnSpanFull(),
+                            ]),
                     ]),
             ]);
     }

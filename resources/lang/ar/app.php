@@ -410,6 +410,7 @@ return [
         'actions' => [
             'save_settings' => 'حفظ الاعدادات',
             'send_test_email' => 'إرسال بريد تجريبي',
+            'manage_communication_templates' => 'إدارة قوالب التواصل',
         ],
         'tabs' => [
             'gym_info' => 'معلومات النادي',
@@ -424,6 +425,7 @@ return [
             'address' => 'العنوان',
             'contact_information' => 'معلومات التواصل',
             'email' => 'البريد الالكتروني',
+            'email_delivery' => 'إعداد إرسال البريد الإلكتروني',
         ],
         'fields' => [
             'gym_name' => 'اسم النادي',
@@ -443,6 +445,9 @@ return [
             'last_number' => 'اخر رقم',
             'name_type' => 'نوع الاسم',
             'email_enabled' => 'تفعيل التواصل عبر البريد الإلكتروني',
+            'email_delivery_status' => 'خدمة الإرسال',
+            'email_sender_address' => 'عنوان المرسل',
+            'email_reply_to_address' => 'عنوان الرد',
             'auto_send_invoice_issued' => 'ارسال الفاتورة تلقائيا عند الاصدار',
             'auto_send_payment_receipt' => 'ارسال ايصال الدفع تلقائيا',
             'auto_send_member_welcome' => 'إرسال رسالة ترحيب للعضو تلقائيا',
@@ -457,12 +462,17 @@ return [
                 'gym_name' => 'اسم النادي',
                 'gym_logo' => 'شعار النادي',
             ],
+            'email_delivery' => [
+                'configured' => 'مهيأ',
+                'not_configured' => 'غير مهيأ',
+            ],
         ],
         'hints' => [
             'press_enter_to_add' => 'اضغط Enter للاضافة',
             'type_discount' => 'اكتب نسبة الخصم %',
             'type_category' => 'اكتب اسم الفئة',
             'gym_email_reply_to' => 'سيتم إرسال ردود الأعضاء على رسائل المعاملات إلى هذا العنوان.',
+            'email_enabled' => 'يسمح هذا المفتاح الرئيسي لأحداث التواصل المفعّلة بإرسال البريد الإلكتروني. تبقى بيانات خدمة الإرسال مهيأة في بيئة التطبيق.',
             'test_email' => 'أرسل رسالة الآن للتحقق من خدمة الإرسال وهوية المرسل.',
         ],
         'placeholders' => [

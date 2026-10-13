@@ -9,7 +9,7 @@ use App\Models\FollowUp;
 use App\Models\User;
 use App\Support\Data;
 use App\Support\Filament\StatusAction;
-use Carbon\Carbon;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -18,17 +18,16 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Blade;
 
 class FollowUpTable
@@ -62,11 +61,9 @@ class FollowUpTable
             TextColumn::make('schedule_date')
                 ->searchable()
                 ->date('d-m-Y')
-                ->label(__('app.fields.schedule_date'))
-                ->toggleable(isToggledHiddenByDefault: false),
+                ->label(__('app.fields.schedule_date')),
             TextColumn::make('status')
-                ->badge()
-                ->toggleable(isToggledHiddenByDefault: false),
+                ->badge(),
             TextColumn::make('outcome')
                 ->toggleable(isToggledHiddenByDefault: true)
                 ->placeholder(__('app.placeholders.na'))
@@ -94,62 +91,18 @@ class FollowUpTable
                 ! Enquiry::exists() ? 'heroicon-o-phone' : 'heroicon-o-arrow-path-rounded-square'
             )
             ->emptyStateHeading(function ($livewire): string {
-                // If no enquiry exist
                 if (! Enquiry::exists()) {
                     return __('app.empty.no_records', ['records' => __('app.resources.enquiries.plural')]);
                 }
 
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$from, $to] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-                $records = (string) __('app.resources.follow_ups.plural');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                if (! $from && ! $to) {
-                    return $status
-                        ? __('app.empty.no_status_records', ['status' => $status, 'records' => $records])
-                        : __('app.empty.no_records', ['records' => $records]);
-                }
-
-                if ($tab === 'all') {
-                    return __('app.empty.no_records_in_range', ['records' => $records]);
-                }
-
-                return FollowUp::where('status', $tab)->exists()
-                    ? __('app.empty.no_status_records_in_range', ['status' => $status, 'records' => $records])
-                    : __('app.empty.no_status_records', ['status' => $status, 'records' => $records]);
+                return TableUi::emptyStateHeading($livewire, FollowUp::class, 'follow_ups');
             })
             ->emptyStateDescription(function ($livewire): string {
-                // If no enquiries exist
                 if (! Enquiry::exists()) {
                     return __('app.empty.create_to_get_started', ['resource' => __('app.resources.enquiries.singular')]);
                 }
 
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$fromRaw, $toRaw] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-                $records = (string) __('app.resources.follow_ups.plural');
-                $record = (string) __('app.resources.follow_ups.singular');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                if (! $fromRaw && ! $toRaw) {
-                    return $status
-                        ? __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status])
-                        : __('app.empty.create_to_get_started', ['resource' => $record]);
-                }
-
-                $from = $fromRaw ? Carbon::parse($fromRaw)->format('d-m-Y') : (string) __('app.common.the_beginning');
-                $to = $toRaw ? Carbon::parse($toRaw)->format('d-m-Y') : (string) __('app.common.today');
-
-                if ($tab === 'all') {
-                    return __('app.empty.found_none_between', ['records' => $records, 'from' => $from, 'to' => $to]);
-                }
-
-                if (! FollowUp::where('status', $tab)->exists()) {
-                    return __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status]);
-                }
-
-                return __('app.empty.found_none_status_between', ['status' => $status, 'records' => $records, 'from' => $from, 'to' => $to]);
+                return TableUi::emptyStateDescription($livewire, FollowUp::class, 'follow_ups');
             })
             ->emptyStateActions([
                 Action::make('create_enquiry')
@@ -158,10 +111,9 @@ class FollowUpTable
                     ->icon('heroicon-o-plus')
                     ->hidden(fn () => Enquiry::exists()),
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->createAnother(false)
                     ->modalHeading(__('app.actions.new_follow_up'))
-                    ->modalWidth('sm')
+                    ->modalWidth(Width::Small)
                     ->visible(fn () => Enquiry::exists() && ! FollowUp::exists()),
             ])
             ->filters(static::getTableFilters())
@@ -182,22 +134,7 @@ class FollowUpTable
     {
         return [
             TrashedFilter::make(),
-            Filter::make('date')
-                ->schema([
-                    DatePicker::make('date_from')->label(__('app.fields.date_from')),
-                    DatePicker::make('date_to')->label(__('app.fields.date_to')),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    return $query
-                        ->when(
-                            $data['date_from'],
-                            fn (Builder $query, $date) => $query->whereDate('created_at', '>=', $date)
-                        )
-                        ->when(
-                            $data['date_to'],
-                            fn (Builder $query, $date) => $query->whereDate('created_at', '<=', $date)
-                        );
-                }),
+            TableUi::dateRangeFilter(),
         ];
     }
 
@@ -209,17 +146,13 @@ class FollowUpTable
     public static function getTableActions(): array
     {
         return [
-            ActionGroup::make([
-                ActionGroup::make([
-                    Action::make('heading_actions')
-                        ->label(__('app.fields.status'))
-                        ->visible(fn ($record) => in_array($record->status->value, ['pending']))
-                        ->disabled()
-                        ->color('gray'),
+            TableUi::actionGroup(
+                primaryLabel: __('app.fields.status'),
+                primaryActions: [
                     StatusAction::make('mark_as_done', Status::Done)
                         ->color('success')
                         ->label(__('app.actions.mark_as_done'))
-                        ->modalWidth('sm')
+                        ->modalWidth(Width::Small)
                         ->fillForm(fn (FollowUp $record): array => [
                             'user_id' => $record->user_id,
                             'outcome' => $record->outcome,
@@ -260,25 +193,22 @@ class FollowUpTable
                                 ->send();
                         })
                         ->visible(fn ($record) => $record->status->value === 'pending'),
-                ])->dropdown(false),
-                ActionGroup::make([
-                    Action::make('heading_actions')
-                        ->label(__('app.actions.record_actions'))
-                        ->disabled()
-                        ->color('gray'),
+                ],
+                recordActions: [
                     ViewAction::make()
-                        ->modalWidth('lg')
+                        ->modalWidth(Width::Large)
                         ->modalCancelAction(false)
                         ->modalAlignment('center')
                         ->schema(
                             fn (Schema $schema): Schema => FollowUpResource::infolist($schema)
                         ),
                     EditAction::make()
-                        ->modalWidth('sm')
+                        ->modalWidth(Width::Small)
                         ->hidden(fn ($record): bool => $record->status->value === 'done'),
                     DeleteAction::make(),
-                ])->dropdown(false),
-            ]),
+                ],
+                primaryVisible: fn (FollowUp $record): bool => $record->status === Status::Pending,
+            ),
         ];
     }
 }

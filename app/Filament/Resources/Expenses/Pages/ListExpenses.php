@@ -9,12 +9,11 @@ use App\Filament\Widgets\ExpenseOverviewWidget;
 use App\Helpers\Helpers;
 use App\Models\Expense;
 use App\Services\Reporting\CsvDownloadService;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Support\Enums\Width;
-use Illuminate\Database\Eloquent\Builder;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ListExpenses extends ListRecords
@@ -25,7 +24,6 @@ class ListExpenses extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-o-plus')
                 ->modalHeading(__('app.actions.new', ['resource' => ExpenseResource::getModelLabel()]))
                 ->createAnother(false)
                 ->modalWidth(Width::ScreenLarge)
@@ -59,25 +57,12 @@ class ListExpenses extends ListRecords
 
     public function getTabs(): array
     {
-        return [
-            'all' => Tab::make(__('app.common.all')),
-            'pending' => Tab::make(__('app.status.pending'))
-                ->badge(Expense::query()->where('status', 'pending')->count())
-                ->badgeColor(Status::Pending->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'pending')),
-            'paid' => Tab::make(__('app.status.paid'))
-                ->badge(Expense::query()->where('status', 'paid')->count())
-                ->badgeColor(Status::Paid->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'paid')),
-            'overdue' => Tab::make(__('app.status.overdue'))
-                ->badge(Expense::query()->where('status', 'overdue')->count())
-                ->badgeColor(Status::Overdue->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'overdue')),
-            'cancelled' => Tab::make(__('app.status.cancelled'))
-                ->badge(Expense::query()->where('status', 'cancelled')->count())
-                ->badgeColor(Status::Cancelled->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'cancelled')),
-        ];
+        return TableUi::statusTabs(Expense::class, [
+            Status::Pending,
+            Status::Paid,
+            Status::Overdue,
+            Status::Cancelled,
+        ]);
     }
 
     /**

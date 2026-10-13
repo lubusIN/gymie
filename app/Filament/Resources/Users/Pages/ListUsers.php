@@ -5,10 +5,9 @@ namespace App\Filament\Resources\Users\Pages;
 use App\Enums\Status;
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
+use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Schemas\Components\Tabs\Tab;
-use Illuminate\Database\Eloquent\Builder;
 
 class ListUsers extends ListRecords
 {
@@ -17,8 +16,7 @@ class ListUsers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
-                ->icon('heroicon-o-plus'),
+            CreateAction::make(),
         ];
     }
 
@@ -32,16 +30,6 @@ class ListUsers extends ListRecords
 
     public function getTabs(): array
     {
-        return [
-            'all' => Tab::make(__('app.common.all')),
-            'active' => Tab::make(__('app.status.active'))
-                ->badge(User::query()->where('status', 'active')->count())
-                ->badgeColor(Status::Active->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'active')),
-            'inactive' => Tab::make(__('app.status.inactive'))
-                ->badge(User::query()->where('status', 'inactive')->count())
-                ->badgeColor(Status::Inactive->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'inactive')),
-        ];
+        return TableUi::statusTabs(User::class, [Status::Active, Status::Inactive]);
     }
 }

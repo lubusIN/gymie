@@ -8,7 +8,6 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\ViewAction;
-use Filament\Support\Icons\Heroicon;
 
 final class RecordPageActions
 {
@@ -17,7 +16,7 @@ final class RecordPageActions
     public static function edit(): EditAction
     {
         return self::style(
-            EditAction::make()->icon(Heroicon::OutlinedPencilSquare),
+            EditAction::make(),
             'primary',
         );
     }
@@ -25,7 +24,7 @@ final class RecordPageActions
     public static function view(): ViewAction
     {
         return self::style(
-            ViewAction::make()->icon(Heroicon::OutlinedEye),
+            ViewAction::make(),
             'primary',
         );
     }
@@ -33,7 +32,7 @@ final class RecordPageActions
     public static function delete(): DeleteAction
     {
         return self::style(
-            DeleteAction::make()->icon(Heroicon::OutlinedTrash),
+            DeleteAction::make(),
             'danger',
         );
     }
@@ -41,7 +40,7 @@ final class RecordPageActions
     public static function forceDelete(): ForceDeleteAction
     {
         return self::style(
-            ForceDeleteAction::make()->icon(Heroicon::OutlinedTrash),
+            ForceDeleteAction::make(),
             'danger',
         );
     }
@@ -49,7 +48,7 @@ final class RecordPageActions
     public static function restore(): RestoreAction
     {
         return self::style(
-            RestoreAction::make()->icon(Heroicon::OutlinedArrowUturnLeft),
+            RestoreAction::make(),
             'success',
         );
     }

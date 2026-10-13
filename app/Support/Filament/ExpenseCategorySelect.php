@@ -23,7 +23,6 @@ final class ExpenseCategorySelect extends Select
         $this
             ->label(__('app.fields.category'))
             ->options(fn (): array => Helpers::getExpenseCategoryOptions())
-            ->searchable()
             ->createOptionForm([
                 TextInput::make('name')
                     ->label(__('app.fields.category'))

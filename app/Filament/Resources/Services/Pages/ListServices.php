@@ -6,6 +6,7 @@ use App\Filament\Resources\Services\ServiceResource;
 use App\Models\Service;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListServices extends ListRecords
 {
@@ -15,9 +16,8 @@ class ListServices extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-o-plus')
                 ->modalHeading(__('app.actions.new', ['resource' => ServiceResource::getModelLabel()]))
-                ->modalWidth('sm')
+                ->modalWidth(Width::Small)
                 ->createAnother(false)
                 ->visible(Service::exists()),
         ];

@@ -64,7 +64,6 @@ class InvoiceForm
                                     )
                                     ->hiddenOn(InvoicesRelationManager::class)
                                     ->getOptionLabelFromRecordUsing(fn (Subscription $record): string => self::formatSubscriptionOptionLabel($record))
-                                    ->searchable()
                                     ->afterStateUpdated(function (Get $get, Set $set): void {
                                         $subscription = self::subscriptionFromState($get);
 
@@ -91,7 +90,6 @@ class InvoiceForm
                                     ->required()
                                     ->reactive(),
                                 DiscountSelect::make('discount')
-                                    ->native(false)
                                     ->reactive()
                                     ->afterStateUpdated(function (Get $get, Set $set): void {
                                         $discountAmount = Helpers::getDiscountAmount(

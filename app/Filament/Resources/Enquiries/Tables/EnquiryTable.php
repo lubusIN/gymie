@@ -5,17 +5,13 @@ namespace App\Filament\Resources\Enquiries\Tables;
 use App\Enums\Status;
 use App\Models\Enquiry;
 use App\Support\Filament\EnquiryPipelineActions;
-use Carbon\Carbon;
-use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
+use App\Support\Filament\TableUi;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -59,62 +55,14 @@ class EnquiryTable
                 TextColumn::make('start_by')->date('d-m-Y')->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.start_by')),
                 TextColumn::make('status')
                     ->badge()
-                    ->label(__('app.fields.status'))
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->label(__('app.fields.status')),
             ])
             ->defaultSort('id', 'desc')
             ->emptyStateIcon('heroicon-o-phone')
-            ->emptyStateHeading(function ($livewire): string {
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$from, $to] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-                $records = (string) __('app.resources.enquiries.plural');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                if (! $from && ! $to) {
-                    return $status
-                        ? __('app.empty.no_status_records', ['status' => $status, 'records' => $records])
-                        : __('app.empty.no_records', ['records' => $records]);
-                }
-
-                if ($tab === 'all') {
-                    return __('app.empty.no_records_in_range', ['records' => $records]);
-                }
-
-                return Enquiry::where('status', $tab)->exists()
-                    ? __('app.empty.no_status_records_in_range', ['status' => $status, 'records' => $records])
-                    : __('app.empty.no_status_records', ['status' => $status, 'records' => $records]);
-            })
-            ->emptyStateDescription(function ($livewire): string {
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$fromRaw, $toRaw] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-                $records = (string) __('app.resources.enquiries.plural');
-                $record = (string) __('app.resources.enquiries.singular');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                if (! $fromRaw && ! $toRaw) {
-                    return $status
-                        ? __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status])
-                        : __('app.empty.create_to_get_started', ['resource' => $record]);
-                }
-
-                $from = $fromRaw ? Carbon::parse($fromRaw)->format('d-m-Y') : (string) __('app.common.the_beginning');
-                $to = $toRaw ? Carbon::parse($toRaw)->format('d-m-Y') : (string) __('app.common.today');
-
-                if ($tab === 'all') {
-                    return __('app.empty.found_none_between', ['records' => $records, 'from' => $from, 'to' => $to]);
-                }
-
-                if (! Enquiry::where('status', $tab)->exists()) {
-                    return __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status]);
-                }
-
-                return __('app.empty.found_none_status_between', ['status' => $status, 'records' => $records, 'from' => $from, 'to' => $to]);
-            })
+            ->emptyStateHeading(fn ($livewire): string => TableUi::emptyStateHeading($livewire, Enquiry::class, 'enquiries'))
+            ->emptyStateDescription(fn ($livewire): string => TableUi::emptyStateDescription($livewire, Enquiry::class, 'enquiries'))
             ->emptyStateActions([
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->hidden(fn (): bool => Enquiry::exists()),
             ])
             ->filters([
@@ -131,50 +79,27 @@ class EnquiryTable
                         'word_of_mouth' => __('app.options.source.word_of_mouth'),
                         'others' => __('app.options.source.others'),
                     ]),
-                Filter::make('date')
-                    ->schema([
-                        DatePicker::make('date_from')->label(__('app.fields.date_from')),
-                        DatePicker::make('date_to')->label(__('app.fields.date_to')),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['date_from'],
-                                fn (Builder $query, $date): Builder => $query->where('date', '>=', $date),
-                            )
-                            ->when(
-                                $data['date_to'],
-                                fn (Builder $query, $date): Builder => $query->where('date', '<=', $date),
-                            );
-                    }),
+                TableUi::dateRangeFilter('date'),
             ])
             ->recordActions([
-                ActionGroup::make([
-                    ActionGroup::make([
-                        Action::make('heading_actions')
-                            ->label(__('app.fields.status'))
-                            ->disabled()
-                            ->visible(fn (Enquiry $record): bool => ! in_array(
-                                $record->status,
-                                [Status::Member, Status::Lost],
-                                true,
-                            ))
-                            ->color('gray'),
+                TableUi::actionGroup(
+                    primaryLabel: __('app.fields.status'),
+                    primaryActions: [
                         EnquiryPipelineActions::scheduleFollowUp(),
                         EnquiryPipelineActions::convertToMember(),
                         EnquiryPipelineActions::markAsLost(),
-                    ])->dropdown(false),
-                    ActionGroup::make([
-                        Action::make('heading_actions')
-                            ->label(__('app.actions.record_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                    ],
+                    recordActions: [
                         EnquiryPipelineActions::viewMember(),
                         EditAction::make()->hiddenLabel(),
-                        DeleteAction::make()
-                            ->hiddenLabel(),
-                    ])->dropdown(false),
-                ]),
+                        DeleteAction::make()->hiddenLabel(),
+                    ],
+                    primaryVisible: fn (Enquiry $record): bool => ! in_array(
+                        $record->status,
+                        [Status::Member, Status::Lost],
+                        true,
+                    ),
+                ),
             ])->recordUrl(fn ($record): string => route('filament.admin.resources.enquiries.view', $record->id))
             ->toolbarActions([
                 BulkActionGroup::make([

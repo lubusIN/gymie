@@ -5,10 +5,9 @@ namespace App\Filament\Resources\Enquiries\Pages;
 use App\Enums\Status;
 use App\Filament\Resources\Enquiries\EnquiryResource;
 use App\Models\Enquiry;
+use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Schemas\Components\Tabs\Tab;
-use Illuminate\Database\Eloquent\Builder;
 
 class ListEnquiries extends ListRecords
 {
@@ -18,7 +17,6 @@ class ListEnquiries extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-o-plus')
                 ->hidden(! Enquiry::exists()),
         ];
     }
@@ -33,22 +31,11 @@ class ListEnquiries extends ListRecords
 
     public function getTabs(): array
     {
-        return [
-            'all' => Tab::make(__('app.common.all')),
-            Status::Lead->value => $this->statusTab(Status::Lead),
-            Status::FollowUpScheduled->value => $this->statusTab(Status::FollowUpScheduled),
-            Status::Member->value => $this->statusTab(Status::Member),
-            Status::Lost->value => $this->statusTab(Status::Lost),
-        ];
-    }
-
-    private function statusTab(Status $status): Tab
-    {
-        return Tab::make($status->getLabel())
-            ->badge(Enquiry::query()->where('status', $status->value)->count())
-            ->badgeColor($status->getColor())
-            ->modifyQueryUsing(
-                fn (Builder $query): Builder => $query->where('status', $status->value),
-            );
+        return TableUi::statusTabs(Enquiry::class, [
+            Status::Lead,
+            Status::FollowUpScheduled,
+            Status::Member,
+            Status::Lost,
+        ]);
     }
 }

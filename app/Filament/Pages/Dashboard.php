@@ -78,7 +78,6 @@ class Dashboard extends \Filament\Pages\Dashboard
             ->components([
                 Select::make('period')
                     ->hiddenLabel()
-                    ->native(false)
                     ->prefixIcon('heroicon-o-calendar-days')
                     ->options([
                         '7days' => __('app.dashboard.filters.periods.7days'),

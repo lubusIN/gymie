@@ -7,22 +7,19 @@ use App\Helpers\Helpers;
 use App\Models\Plan;
 use App\Models\Service;
 use App\Support\Filament\StatusAction;
-use Carbon\Carbon;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class PlanTable
 {
@@ -68,60 +65,14 @@ class PlanTable
                     return __('app.empty.no_records', ['records' => __('app.resources.services.plural')]);
                 }
 
-                $records = __('app.resources.plans.plural');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$from, $to] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-
-                if (! $from && ! $to) {
-                    return $status
-                        ? __('app.empty.no_status_records', ['status' => $status, 'records' => $records])
-                        : __('app.empty.no_records', ['records' => $records]);
-                }
-
-                if ($tab === 'all') {
-                    return __('app.empty.no_records_in_range', ['records' => $records]);
-                }
-
-                $base = __('app.empty.no_status_records', ['status' => $status, 'records' => $records]);
-
-                return Plan::where('status', $tab)->exists()
-                    ? __('app.empty.no_status_records_in_range', ['status' => $status, 'records' => $records])
-                    : $base;
+                return TableUi::emptyStateHeading($livewire, Plan::class, 'plans');
             })
             ->emptyStateDescription(function ($livewire): string {
                 if (! Service::exists()) {
                     return __('app.empty.go_to_services_to_create');
                 }
 
-                $records = (string) __('app.resources.plans.plural');
-                $record = (string) __('app.resources.plans.singular');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$fromRaw, $toRaw] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-
-                if (! $fromRaw && ! $toRaw) {
-                    return $status
-                        ? __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status])
-                        : __('app.empty.create_to_get_started', ['resource' => $record]);
-                }
-
-                $from = $fromRaw ? Carbon::parse($fromRaw)->format('d-m-Y') : (string) __('app.common.the_beginning');
-                $to = $toRaw ? Carbon::parse($toRaw)->format('d-m-Y') : (string) __('app.common.today');
-
-                if ($tab === 'all') {
-                    return __('app.empty.found_none_between', ['records' => $records, 'from' => $from, 'to' => $to]);
-                }
-
-                if (! Plan::where('status', $tab)->exists()) {
-                    return __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status]);
-                }
-
-                return __('app.empty.found_none_status_between', ['status' => $status, 'records' => $records, 'from' => $from, 'to' => $to]);
+                return TableUi::emptyStateDescription($livewire, Plan::class, 'plans');
             })
             ->emptyStateActions([
                 Action::make('manage_service')
@@ -131,39 +82,20 @@ class PlanTable
                     ->iconPosition('after')
                     ->hidden(fn () => Service::exists()),
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->modalAlignment('center')
-                    ->modalWidth('xl')
+                    ->modalWidth(Width::ExtraLarge)
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.plans.singular')]))
                     ->createAnother(false)
                     ->visible(fn () => Service::exists() && ! Plan::exists()),
             ])
             ->filters([
                 TrashedFilter::make(),
-                Filter::make('date')
-                    ->schema([
-                        DatePicker::make('date_from')->label(__('app.fields.date_from')),
-                        DatePicker::make('date_to')->label(__('app.fields.date_to')),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['date_from'],
-                                fn (Builder $query, $date) => $query->whereDate('created_at', '>=', $date)
-                            )
-                            ->when(
-                                $data['date_to'],
-                                fn (Builder $query, $date) => $query->whereDate('created_at', '<=', $date)
-                            );
-                    }),
+                TableUi::dateRangeFilter(),
             ])
             ->recordActions([
-                ActionGroup::make([
-                    ActionGroup::make([
-                        Action::make('heading_actions')
-                            ->label(__('app.fields.status'))
-                            ->disabled()
-                            ->color('gray'),
+                TableUi::actionGroup(
+                    primaryLabel: __('app.fields.status'),
+                    primaryActions: [
                         StatusAction::make('mark_as_active', Status::Active)
                             ->color('success')
                             ->label(__('app.actions.mark_as_active'))
@@ -188,22 +120,18 @@ class PlanTable
                                     ->send();
                             }))
                             ->visible(fn ($record) => $record->status->value === 'active'),
-                    ])->dropdown(false),
-                    ActionGroup::make([
-                        Action::make('heading_actions')
-                            ->label(__('app.actions.record_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                    ],
+                    recordActions: [
                         ViewAction::make()
-                            ->modalWidth('xl')
+                            ->modalWidth(Width::ExtraLarge)
                             ->modalCancelAction(false)
                             ->modalAlignment('center'),
                         EditAction::make()
                             ->modalAlignment('center')
-                            ->modalWidth('xl'),
+                            ->modalWidth(Width::ExtraLarge),
                         DeleteAction::make()->hiddenLabel(),
-                    ])->dropdown(false),
-                ]),
+                    ],
+                ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

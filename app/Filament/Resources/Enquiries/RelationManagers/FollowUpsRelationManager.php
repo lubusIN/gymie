@@ -10,6 +10,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -48,9 +49,8 @@ class FollowUpsRelationManager extends RelationManager
             ->columns(FollowUpTable::getColumns())
             ->headerActions([
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new_follow_up'))
-                    ->modalWidth('sm')
+                    ->modalWidth(Width::Small)
                     ->createAnother(false)
                     ->mutateDataUsing(fn (array $data): array => [
                         ...$data,

@@ -13,9 +13,9 @@ use App\Models\Subscription;
 use App\Services\Subscriptions\SubscriptionRenewalService;
 use App\Support\AppConfig;
 use App\Support\Filament\StatusAction;
+use App\Support\Filament\TableUi;
 use Carbon\Carbon;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -24,10 +24,9 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -99,26 +98,7 @@ class SubscriptionTable
                     return __('app.empty.no_records', ['records' => __('app.resources.plans.plural')]);
                 }
 
-                $records = (string) __('app.resources.subscriptions.plural');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$from, $to] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-
-                if (! $from && ! $to) {
-                    return $status
-                        ? __('app.empty.no_status_records', ['status' => $status, 'records' => $records])
-                        : __('app.empty.no_records', ['records' => $records]);
-                }
-
-                if ($tab === 'all') {
-                    return __('app.empty.no_records_in_range', ['records' => $records]);
-                }
-
-                return Subscription::where('status', $tab)->exists()
-                    ? __('app.empty.no_status_records_in_range', ['status' => $status, 'records' => $records])
-                    : __('app.empty.no_status_records', ['status' => $status, 'records' => $records]);
+                return TableUi::emptyStateHeading($livewire, Subscription::class, 'subscriptions');
             })
             ->emptyStateDescription(function ($livewire): string {
                 if (! Member::exists()) {
@@ -129,36 +109,10 @@ class SubscriptionTable
                     return __('app.empty.create_to_get_started', ['resource' => __('app.resources.plans.singular')]);
                 }
 
-                $records = __('app.resources.subscriptions.plural');
-                $record = __('app.resources.subscriptions.singular');
-                $tab = (string) ($livewire->activeTab ?? 'all');
-                $status = $tab !== 'all' ? (string) __('app.status.'.$tab) : null;
-
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$fromRaw, $toRaw] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-
-                if (! $fromRaw && ! $toRaw) {
-                    return $status
-                        ? __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status])
-                        : __('app.empty.create_to_get_started', ['resource' => $record]);
-                }
-
-                $from = $fromRaw ? Carbon::parse($fromRaw)->format('d-m-Y') : (string) __('app.common.the_beginning');
-                $to = $toRaw ? Carbon::parse($toRaw)->format('d-m-Y') : (string) __('app.common.today');
-
-                if ($tab === 'all') {
-                    return __('app.empty.found_none_between', ['records' => $records, 'from' => $from, 'to' => $to]);
-                }
-
-                if (! Subscription::where('status', $tab)->exists()) {
-                    return __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status]);
-                }
-
-                return __('app.empty.found_none_status_between', ['status' => $status, 'records' => $records, 'from' => $from, 'to' => $to]);
+                return TableUi::emptyStateDescription($livewire, Subscription::class, 'subscriptions');
             })
             ->emptyStateActions([
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->visible(fn () => Member::exists() && Plan::exists()),
                 Action::make('create_member')
                     ->icon('heroicon-o-plus')
@@ -178,37 +132,12 @@ class SubscriptionTable
                     ->relationship('plan', 'name')
                     ->searchable()
                     ->preload(),
-                Filter::make('date')
-                    ->schema([
-                        DatePicker::make('date_from')
-                            ->label(__('app.fields.date_from'))
-                            ->native(false)
-                            ->suffixIcon('heroicon-o-calendar-days'),
-                        DatePicker::make('date_to')
-                            ->label(__('app.fields.date_to'))
-                            ->native(false)
-                            ->suffixIcon('heroicon-o-calendar-days'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['date_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date),
-                            )
-                            ->when(
-                                $data['date_to'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
-                            );
-                    }),
+                TableUi::dateRangeFilter('end_date'),
             ])
             ->recordActions([
-                ActionGroup::make([
-                    ActionGroup::make([
-                        Action::make('heading')
-                            ->label(__('app.fields.status'))
-                            ->disabled()
-                            ->color('gray')
-                            ->hidden(fn ($record): bool => in_array($record->status?->value, ['expired', 'upcoming', 'renewed'], true)),
+                TableUi::actionGroup(
+                    primaryLabel: __('app.fields.status'),
+                    primaryActions: [
                         StatusAction::make('mark_expiring', Status::Expiring)
                             ->label(__('app.actions.mark_as_expiring'))
                             ->color('warning')
@@ -233,19 +162,15 @@ class SubscriptionTable
                                     ->send();
                             }))
                             ->visible(fn ($record): bool => in_array($record->status?->value, ['ongoing', 'expiring'], true)),
-                    ])->dropdown(false),
-                    ActionGroup::make([
-                        Action::make('heading_actions')
-                            ->label(__('app.actions.record_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                    ],
+                    recordActions: [
                         Action::make('renew')
                             ->label(__('app.actions.renew'))
                             ->icon('heroicon-o-arrow-path')
                             ->color('success')
                             ->modalHeading(__('app.actions.renew'))
                             ->modalSubmitActionLabel(__('app.actions.renew'))
-                            ->modalWidth('6xl')
+                            ->modalWidth(Width::SixExtraLarge)
                             ->closeModalByClickingAway(false)
                             ->visible(function (Subscription $record): bool {
                                 if (! in_array($record->status?->value, ['expiring', 'expired'], true)) {
@@ -274,8 +199,13 @@ class SubscriptionTable
                             ->hidden(fn ($record): bool => in_array($record->status?->value, ['expired', 'renewed'], true))
                             ->url(fn ($record) => SubscriptionResource::getUrl('edit', ['record' => $record])),
                         DeleteAction::make()->hiddenLabel(),
-                    ])->dropdown(false),
-                ]),
+                    ],
+                    primaryVisible: fn (Subscription $record): bool => ! in_array(
+                        $record->status?->value,
+                        ['expired', 'upcoming', 'renewed'],
+                        true,
+                    ),
+                ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

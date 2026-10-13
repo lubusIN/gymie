@@ -5,6 +5,7 @@ namespace App\Support\Filament;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 
 final class ActivityActions
@@ -18,7 +19,7 @@ final class ActivityActions
             ->icon('heroicon-o-chat-bubble-left-ellipsis')
             ->color('gray')
             ->authorize('update')
-            ->modalWidth('sm')
+            ->modalWidth(Width::Small)
             ->schema([
                 Textarea::make('note')
                     ->label(__('app.fields.note'))

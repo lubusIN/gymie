@@ -12,6 +12,7 @@ use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -99,7 +100,7 @@ class ExpiringSoonSubscriptionsTableWidget extends TableWidget
                         ->color('success')
                         ->modalHeading(__('app.titles.renew_subscription'))
                         ->modalSubmitActionLabel(__('app.actions.renew'))
-                        ->modalWidth('6xl')
+                        ->modalWidth(Width::SixExtraLarge)
                         ->closeModalByClickingAway(false)
                         ->visible(function (Subscription $record): bool {
                             if ($record->renewals()->exists()) {

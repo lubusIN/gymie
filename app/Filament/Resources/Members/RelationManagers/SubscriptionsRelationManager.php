@@ -6,6 +6,7 @@ use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -46,9 +47,8 @@ class SubscriptionsRelationManager extends RelationManager
         return SubscriptionResource::table($table)
             ->headerActions([
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.subscriptions.singular')]))
-                    ->modalWidth('6xl')
+                    ->modalWidth(Width::SixExtraLarge)
                     ->closeModalByClickingAway(false)
                     ->createAnother(false),
             ]);

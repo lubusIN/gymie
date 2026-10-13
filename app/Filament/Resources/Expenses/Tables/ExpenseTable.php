@@ -9,15 +9,14 @@ use App\Helpers\Helpers;
 use App\Models\Expense;
 use App\Support\AppConfig;
 use App\Support\Filament\StatusAction;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -26,10 +25,8 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class ExpenseTable
 {
@@ -89,20 +86,7 @@ class ExpenseTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Filter::make('date')
-                    ->schema([
-                        DatePicker::make('date_from')->label(__('app.fields.date_from')),
-                        DatePicker::make('date_to')->label(__('app.fields.date_to')),
-                    ])
-                    ->query(fn (Builder $query, array $data): Builder => $query
-                        ->when(
-                            $data['date_from'] ?? null,
-                            fn (Builder $query, string $date): Builder => $query->where('date', '>=', $date),
-                        )
-                        ->when(
-                            $data['date_to'] ?? null,
-                            fn (Builder $query, string $date): Builder => $query->where('date', '<=', $date),
-                        )),
+                TableUi::dateRangeFilter('date'),
                 SelectFilter::make('category')
                     ->label(__('app.fields.category'))
                     ->options(fn (): array => Helpers::getExpenseCategoryOptions())
@@ -122,24 +106,15 @@ class ExpenseTable
                     ->options(ExpensePaymentMethod::class),
             ])
             ->recordActions([
-                ActionGroup::make([
-                    ActionGroup::make([
-                        Action::make('heading_status')
-                            ->label(__('app.fields.status'))
-                            ->disabled()
-                            ->color('gray'),
+                TableUi::actionGroup(
+                    primaryLabel: __('app.fields.status'),
+                    primaryActions: [
                         self::statusAction(Status::Paid, [Status::Pending, Status::Overdue]),
                         self::statusAction(Status::Overdue, [Status::Pending]),
                         self::statusAction(Status::Pending, [Status::Overdue]),
                         self::statusAction(Status::Cancelled, [Status::Pending, Status::Overdue]),
-                    ])
-                        ->dropdown(false)
-                        ->visible(fn (Expense $record): bool => in_array($record->status, [Status::Pending, Status::Overdue], true)),
-                    ActionGroup::make([
-                        Action::make('heading_actions')
-                            ->label(__('app.actions.record_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                    ],
+                    recordActions: [
                         ViewAction::make()
                             ->modal()
                             ->url(null)
@@ -154,8 +129,13 @@ class ExpenseTable
                             ->modalWidth(Width::ScreenLarge)
                             ->closeModalByClickingAway(false),
                         DeleteAction::make(),
-                    ])->dropdown(false),
-                ])
+                    ],
+                    primaryVisible: fn (Expense $record): bool => in_array(
+                        $record->status,
+                        [Status::Pending, Status::Overdue],
+                        true,
+                    ),
+                )
                     ->label(__('app.actions.record_actions'))
                     ->icon('heroicon-o-ellipsis-vertical')
                     ->dropdown(),
@@ -170,7 +150,6 @@ class ExpenseTable
             ->emptyStateDescription(__('app.empty.create_to_get_started', ['resource' => __('app.resources.expenses.singular')]))
             ->emptyStateActions([
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))
                     ->createAnother(false)
                     ->modalWidth(Width::ScreenLarge)

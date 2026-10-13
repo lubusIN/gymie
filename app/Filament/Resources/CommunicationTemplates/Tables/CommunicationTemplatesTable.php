@@ -7,8 +7,8 @@ use App\Services\Communication\CommunicationAutomationService;
 use App\Services\Communication\CommunicationService;
 use App\Services\Communication\CommunicationTemplateRenderer;
 use App\Services\Communication\EmailDeliveryContext;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -63,12 +63,9 @@ class CommunicationTemplatesTable
                     ->sortable(),
             ])
             ->recordActions([
-                ActionGroup::make([
-                    ActionGroup::make([
-                        Action::make('heading_template_actions')
-                            ->label(__('app.communication.template_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                TableUi::actionGroup(
+                    primaryLabel: __('app.communication.template_actions'),
+                    primaryActions: [
                         Action::make('preview_and_test')
                             ->label(__('app.communication.preview_and_test'))
                             ->icon(Heroicon::OutlinedBeaker)
@@ -181,20 +178,16 @@ class CommunicationTemplatesTable
                                     ->success()
                                     ->send();
                             }),
-                    ])->dropdown(false),
-                    ActionGroup::make([
-                        Action::make('heading_record_actions')
-                            ->label(__('app.actions.record_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                    ],
+                    recordActions: [
                         ViewAction::make()
                             ->modalCancelAction(false)
                             ->modalWidth(Width::ThreeExtraLarge),
                         EditAction::make(),
                         DeleteAction::make()
                             ->visible(fn (CommunicationTemplate $record): bool => $record->canBeDeleted()),
-                    ])->dropdown(false),
-                ])
+                    ],
+                )
                     ->label(__('app.actions.record_actions'))
                     ->icon('heroicon-o-ellipsis-vertical')
                     ->dropdown(),

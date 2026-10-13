@@ -6,15 +6,12 @@ use App\Filament\Resources\Subscriptions\RelationManagers\InvoicesRelationManage
 use App\Helpers\Helpers;
 use App\Models\Invoice;
 use App\Models\Subscription;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
-use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 
 final class InvoiceTable
 {
@@ -79,22 +76,7 @@ final class InvoiceTable
                     ->badge(),
             ])
             ->filters([
-                Filter::make('date')
-                    ->schema([
-                        DatePicker::make('date_from')->label(__('app.fields.date_from')),
-                        DatePicker::make('date_to')->label(__('app.fields.date_to')),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['date_from'],
-                                fn (Builder $query, $date): Builder => $query->where('date', '>=', $date),
-                            )
-                            ->when(
-                                $data['date_to'],
-                                fn (Builder $query, $date): Builder => $query->where('date', '<=', $date),
-                            );
-                    }),
+                TableUi::dateRangeFilter('date'),
                 SelectFilter::make('member')
                     ->label(__('app.fields.member'))
                     ->relationship('subscription.member', 'name')
@@ -114,61 +96,24 @@ final class InvoiceTable
                     return __('app.empty.no_records', ['records' => __('app.resources.subscriptions.plural')]);
                 }
 
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$from, $to] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-                $tab = $livewire->activeTab;
-                $records = (string) __('app.resources.invoices.plural');
-                $statusKey = $tab === 'partial' ? 'partially_paid' : $tab;
-                $status = $tab !== 'all' ? (string) __('app.status.'.$statusKey) : null;
-                $heading = $status
-                    ? __('app.empty.no_status_records', ['status' => $status, 'records' => $records])
-                    : __('app.empty.no_records', ['records' => $records]);
-
-                if (! $from && ! $to) {
-                    return $heading;
-                }
-
-                if ($tab === 'all') {
-                    return __('app.empty.no_records_in_range', ['records' => $records]);
-                }
-
-                return Invoice::where('status', $tab)->exists()
-                    ? __('app.empty.no_status_records_in_range', ['status' => $status, 'records' => $records])
-                    : $heading;
+                return TableUi::emptyStateHeading(
+                    $livewire,
+                    Invoice::class,
+                    'invoices',
+                    ['partial' => __('app.status.partially_paid')],
+                );
             })
             ->emptyStateDescription(function ($livewire): string {
                 if (! Subscription::exists()) {
                     return __('app.empty.create_to_get_started', ['resource' => __('app.resources.subscriptions.singular')]);
                 }
 
-                $dates = $livewire->getTableFilterState('date') ?? [];
-                [$fromRaw, $toRaw] = [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
-                $tab = $livewire->activeTab;
-                $records = (string) __('app.resources.invoices.plural');
-                $record = (string) __('app.resources.invoices.singular');
-                $statusKey = $tab === 'partial' ? 'partially_paid' : $tab;
-                $status = $tab !== 'all' ? (string) __('app.status.'.$statusKey) : null;
-
-                if (! $fromRaw && ! $toRaw) {
-                    return $status
-                        ? __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status])
-                        : __('app.empty.create_to_get_started', ['resource' => $record]);
-                }
-
-                $from = $fromRaw ? Carbon::parse($fromRaw)->format('d-m-Y') : (string) __('app.common.the_beginning');
-                $to = $toRaw ? Carbon::parse($toRaw)->format('d-m-Y') : (string) __('app.common.today');
-
-                if ($tab === 'all') {
-                    return __('app.empty.found_none_between', ['records' => $records, 'from' => $from, 'to' => $to]);
-                }
-
-                if (! Invoice::where('status', $tab)->exists()) {
-                    return $status
-                        ? __('app.empty.no_records_marked_as', ['records' => $records, 'status' => $status])
-                        : __('app.empty.create_to_get_started', ['resource' => $record]);
-                }
-
-                return __('app.empty.found_none_status_between', ['status' => $status, 'records' => $records, 'from' => $from, 'to' => $to]);
+                return TableUi::emptyStateDescription(
+                    $livewire,
+                    Invoice::class,
+                    'invoices',
+                    ['partial' => __('app.status.partially_paid')],
+                );
             })
             ->emptyStateActions([
                 Action::make('create_subscription')

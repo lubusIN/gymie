@@ -15,6 +15,7 @@ use App\Support\AppConfig;
 use App\Support\Billing\PaymentMethod;
 use App\Support\Data;
 use App\Support\Filament\StatusAction;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
@@ -25,6 +26,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Width;
 
 final class InvoiceTableActions
 {
@@ -32,22 +34,14 @@ final class InvoiceTableActions
 
     public static function make(): ActionGroup
     {
-        return ActionGroup::make([
-            ActionGroup::make([
-                Action::make('heading_status')
-                    ->label(__('app.actions.manage_invoice'))
-                    ->disabled()
-                    ->color('gray')
-                    ->visible(fn (Invoice $record): bool => ! in_array($record->status?->value, ['refund', 'cancelled'], true)),
+        return TableUi::actionGroup(
+            primaryLabel: __('app.actions.manage_invoice'),
+            primaryActions: [
                 self::addPaymentAction(),
                 self::refundAction(),
                 self::cancelInvoiceAction(),
-            ])->dropdown(false),
-            ActionGroup::make([
-                Action::make('heading_actions')
-                    ->label(__('app.actions.record_actions'))
-                    ->disabled()
-                    ->color('gray'),
+            ],
+            recordActions: [
                 self::sendPaymentReminderAction(),
                 self::emailInvoiceAction(),
                 self::emailReceiptAction(),
@@ -58,8 +52,13 @@ final class InvoiceTableActions
                 EditAction::make()
                     ->hidden(fn (Invoice $record): bool => $record->status?->value !== 'issued')
                     ->url(fn (Invoice $record): string => InvoiceResource::getUrl('edit', ['record' => $record])),
-            ])->dropdown(false),
-        ]);
+            ],
+            primaryVisible: fn (Invoice $record): bool => ! in_array(
+                $record->status?->value,
+                ['refund', 'cancelled'],
+                true,
+            ),
+        );
     }
 
     private static function addPaymentAction(): Action
@@ -69,7 +68,7 @@ final class InvoiceTableActions
             ->color('info')
             ->icon('heroicon-o-banknotes')
             ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
-            ->modalWidth('md')
+            ->modalWidth(Width::Medium)
             ->schema([
                 TextInput::make('amount')
                     ->label(__('app.fields.amount_with_currency', ['currency' => Helpers::getCurrencyCode()]))
@@ -147,7 +146,7 @@ final class InvoiceTableActions
             ->color('warning')
             ->icon('heroicon-o-arrow-path')
             ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
-            ->modalWidth('md')
+            ->modalWidth(Width::Medium)
             ->schema([
                 TextEntry::make('refund_amount')
                     ->label(__('app.fields.refund_amount_with_currency', ['currency' => Helpers::getCurrencyCode()]))
@@ -230,7 +229,7 @@ final class InvoiceTableActions
             ->requiresConfirmation()
             ->modalHeading(__('app.titles.send_payment_reminder'))
             ->modalDescription(__('app.help.payment_reminder_confirmation'))
-            ->modalWidth('md')
+            ->modalWidth(Width::Medium)
             ->modalSubmitActionLabel(__('app.actions.send_reminder'))
             ->schema([
                 TextEntry::make('payment_reminder_member')
@@ -302,7 +301,7 @@ final class InvoiceTableActions
             ->icon('heroicon-o-envelope')
             ->color('info')
             ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
-            ->modalWidth('md')
+            ->modalWidth(Width::Medium)
             ->modalSubmitActionLabel(__('app.actions.send'))
             ->schema([
                 TextInput::make('to_email')
@@ -349,7 +348,7 @@ final class InvoiceTableActions
             ->icon('heroicon-o-envelope-open')
             ->color('gray')
             ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
-            ->modalWidth('md')
+            ->modalWidth(Width::Medium)
             ->modalSubmitActionLabel(__('app.actions.send'))
             ->schema([
                 TextInput::make('to_email')

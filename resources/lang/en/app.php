@@ -417,6 +417,7 @@ return [
         'actions' => [
             'save_settings' => 'Save settings',
             'send_test_email' => 'Send test email',
+            'manage_communication_templates' => 'Manage communication templates',
         ],
         'tabs' => [
             'gym_info' => 'Gym Info',
@@ -431,6 +432,7 @@ return [
             'address' => 'Address',
             'contact_information' => 'Contact Information',
             'email' => 'Email',
+            'email_delivery' => 'Email delivery setup',
         ],
         'fields' => [
             'gym_name' => 'Gym Name',
@@ -450,6 +452,9 @@ return [
             'last_number' => 'Last Number',
             'name_type' => 'Name Type',
             'email_enabled' => 'Enable email communication',
+            'email_delivery_status' => 'Delivery provider',
+            'email_sender_address' => 'Sender address',
+            'email_reply_to_address' => 'Reply-to address',
             'auto_send_invoice_issued' => 'Auto-send invoice email when issued',
             'auto_send_payment_receipt' => 'Auto-send payment receipt email',
             'auto_send_member_welcome' => 'Auto-send member welcome email',
@@ -464,12 +469,17 @@ return [
                 'gym_name' => 'Gym Name',
                 'gym_logo' => 'Gym Logo',
             ],
+            'email_delivery' => [
+                'configured' => 'Configured',
+                'not_configured' => 'Not configured',
+            ],
         ],
         'hints' => [
             'press_enter_to_add' => 'Press Enter to add',
             'type_discount' => 'Type discount %',
             'type_category' => 'Type category name',
             'gym_email_reply_to' => 'Member replies to transactional emails are sent to this address.',
+            'email_enabled' => 'This master switch allows enabled communication events to send email. Delivery credentials remain configured in the application environment.',
             'test_email' => 'Send a message now to verify the delivery provider and sender identity.',
         ],
         'placeholders' => [

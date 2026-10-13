@@ -7,12 +7,11 @@ use App\Filament\Exports\MemberExporter;
 use App\Filament\Imports\MemberImporter;
 use App\Filament\Resources\Members\MemberResource;
 use App\Models\Member;
+use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
 use Filament\Actions\ExportAction;
 use Filament\Actions\ImportAction;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Schemas\Components\Tabs\Tab;
-use Illuminate\Database\Eloquent\Builder;
 
 class ListMembers extends ListRecords
 {
@@ -22,7 +21,6 @@ class ListMembers extends ListRecords
     {
         return [
             CreateAction::make()
-                ->icon('heroicon-o-plus')
                 ->hidden(! Member::exists()),
             ImportAction::make()
                 ->importer(MemberImporter::class)
@@ -44,17 +42,7 @@ class ListMembers extends ListRecords
 
     public function getTabs(): array
     {
-        return [
-            'all' => Tab::make(__('app.common.all')),
-            'active' => Tab::make(__('app.status.active'))
-                ->badge(Member::query()->where('status', 'active')->count())
-                ->badgeColor(Status::Active->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'active')),
-            'inactive' => Tab::make(__('app.status.inactive'))
-                ->badge(Member::query()->where('status', 'inactive')->count())
-                ->badgeColor(Status::Inactive->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'inactive')),
-        ];
+        return TableUi::statusTabs(Member::class, [Status::Active, Status::Inactive]);
     }
 
     public function getBreadcrumbs(): array

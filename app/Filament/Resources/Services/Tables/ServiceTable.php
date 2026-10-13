@@ -9,6 +9,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -42,17 +43,16 @@ class ServiceTable
             ->emptyStateDescription(__('app.empty.create_to_get_started', ['resource' => __('app.resources.services.singular')]))
             ->emptyStateActions([
                 CreateAction::make()
-                    ->icon('heroicon-o-plus')
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.services.singular')]))
-                    ->modalWidth('sm')
+                    ->modalWidth(Width::Small)
                     ->createAnother(false)
                     ->hidden(fn (): bool => Service::exists()),
             ])
             ->recordActions([
                 ViewAction::make()
                     ->modalCancelAction(false)
-                    ->modalWidth('sm'),
-                EditAction::make()->modalWidth('sm'),
+                    ->modalWidth(Width::Small),
+                EditAction::make()->modalWidth(Width::Small),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

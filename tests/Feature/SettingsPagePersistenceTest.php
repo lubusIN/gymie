@@ -14,6 +14,18 @@ it('targets the save action while the form processes files', function (): void {
         ->assertSeeHtml('wire:target="save"');
 });
 
+it('reveals email delivery details when email communication is enabled', function (): void {
+    Livewire::test(Settings::class)
+        ->assertSchemaComponentHidden('email_delivery_settings')
+        ->fillForm([
+            'notifications.email.enabled' => true,
+        ])
+        ->assertSchemaComponentVisible('email_delivery_settings')
+        ->assertSee(__('app.settings.fields.email_delivery_status'))
+        ->assertSee(__('app.settings.fields.email_sender_address'))
+        ->assertSee(__('app.settings.fields.email_reply_to_address'));
+});
+
 it('persists settings via the settings repository when saving', function (): void {
     $repository = new class implements SettingsRepository
     {

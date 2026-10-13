@@ -416,6 +416,7 @@ return [
         'actions' => [
             'save_settings' => 'Enregistrer les paramètres',
             'send_test_email' => 'Envoyer un e-mail de test',
+            'manage_communication_templates' => 'Gérer les modèles de communication',
         ],
         'tabs' => [
             'gym_info' => 'Salle',
@@ -430,6 +431,7 @@ return [
             'address' => 'Adresse',
             'contact_information' => 'Contact',
             'email' => 'Email',
+            'email_delivery' => 'Configuration de l’envoi des e-mails',
         ],
         'fields' => [
             'gym_name' => 'Nom de la salle',
@@ -449,6 +451,9 @@ return [
             'last_number' => 'Dernier numéro',
             'name_type' => 'Type de nom',
             'email_enabled' => 'Activer les communications par e-mail',
+            'email_delivery_status' => 'Service d’envoi',
+            'email_sender_address' => 'Adresse de l’expéditeur',
+            'email_reply_to_address' => 'Adresse de réponse',
             'auto_send_invoice_issued' => 'Envoi auto de la facture à l\'émission',
             'auto_send_payment_receipt' => 'Envoi auto du reçu de paiement',
             'auto_send_member_welcome' => 'Envoi auto de l’e-mail de bienvenue au membre',
@@ -463,12 +468,17 @@ return [
                 'gym_name' => 'Nom de la salle',
                 'gym_logo' => 'Logo',
             ],
+            'email_delivery' => [
+                'configured' => 'Configuré',
+                'not_configured' => 'Non configuré',
+            ],
         ],
         'hints' => [
             'press_enter_to_add' => 'Appuyez sur Entrée pour ajouter',
             'type_discount' => 'Saisir la remise %',
             'type_category' => 'Saisir le nom de catégorie',
             'gym_email_reply_to' => 'Les réponses des membres aux e-mails transactionnels sont envoyées à cette adresse.',
+            'email_enabled' => 'Ce commutateur principal permet aux événements de communication activés d’envoyer des e-mails. Les identifiants d’envoi restent configurés dans l’environnement de l’application.',
             'test_email' => 'Envoyez un message maintenant pour vérifier le fournisseur d’envoi et l’identité de l’expéditeur.',
         ],
         'placeholders' => [

@@ -20,6 +20,7 @@ use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\Width;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -46,7 +47,7 @@ class ListAttendances extends ListRecords
                 ->color('gray')
                 ->authorize(fn (): bool => AttendanceResource::canCreate())
                 ->modalHeading(__('app.actions.attendance_qr'))
-                ->modalWidth('sm')
+                ->modalWidth(Width::Small)
                 ->modalSubmitAction(false)
                 ->modalCancelAction(false)
                 ->modalContent(function (): View {
@@ -72,7 +73,6 @@ class ListAttendances extends ListRecords
                                 ->where('status', Status::Active->value)
                                 ->find($value),
                         ))
-                        ->searchable()
                         ->preload()
                         ->live()
                         ->required(),
@@ -103,7 +103,7 @@ class ListAttendances extends ListRecords
                 ])
                 ->modalHeading(__('app.actions.check_in_member'))
                 ->modalSubmitActionLabel(__('app.actions.check_in'))
-                ->modalWidth('sm')
+                ->modalWidth(Width::Small)
                 ->action(function (array $data, AttendanceService $service, Action $action): void {
                     $user = auth()->user();
                     assert($user instanceof User);

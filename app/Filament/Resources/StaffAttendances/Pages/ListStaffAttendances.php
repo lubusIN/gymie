@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
@@ -39,7 +40,6 @@ class ListStaffAttendances extends ListRecords
                         ->getOptionLabelUsing(fn (mixed $value): ?string => User::query()
                             ->where('status', Status::Active->value)
                             ->find($value)?->name)
-                        ->searchable()
                         ->preload()
                         ->required(),
                     DateTimePicker::make('checked_in_at')
@@ -52,7 +52,7 @@ class ListStaffAttendances extends ListRecords
                 ])
                 ->modalHeading(__('app.actions.check_in_staff'))
                 ->modalSubmitActionLabel(__('app.actions.check_in'))
-                ->modalWidth('sm')
+                ->modalWidth(Width::Small)
                 ->action(function (array $data, AttendanceService $service, Action $action): void {
                     $recordedBy = auth()->user();
                     assert($recordedBy instanceof User);

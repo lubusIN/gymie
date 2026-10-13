@@ -6,10 +6,9 @@ use App\Enums\Status;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Models\Invoice;
 use App\Services\Reporting\CsvDownloadService;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Schemas\Components\Tabs\Tab;
-use Illuminate\Database\Eloquent\Builder;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ListInvoices extends ListRecords
@@ -29,34 +28,14 @@ class ListInvoices extends ListRecords
 
     public function getTabs(): array
     {
-        return [
-            'all' => Tab::make(__('app.common.all')),
-            'issued' => Tab::make(__('app.status.issued'))
-                ->badge(Invoice::query()->where('status', 'issued')->count())
-                ->badgeColor(Status::Issued->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'issued')),
-            'partial' => Tab::make(__('app.status.partially_paid'))
-                ->badge(Invoice::query()->where('status', 'partial')->count())
-                ->badgeColor(Status::Partial->getColor())
-                ->label(__('app.status.partial'))
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'partial')),
-            'overdue' => Tab::make(__('app.status.overdue'))
-                ->badge(Invoice::query()->where('status', 'overdue')->count())
-                ->badgeColor(Status::Overdue->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'overdue')),
-            'paid' => Tab::make(__('app.status.paid'))
-                ->badge(Invoice::query()->where('status', 'paid')->count())
-                ->badgeColor(Status::Paid->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'paid')),
-            'refund' => Tab::make(__('app.status.refund'))
-                ->badge(Invoice::query()->where('status', 'refund')->count())
-                ->badgeColor(Status::Refund->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'refund')),
-            'cancelled' => Tab::make(__('app.status.cancelled'))
-                ->badge(Invoice::query()->where('status', 'cancelled')->count())
-                ->badgeColor(Status::Cancelled->getColor())
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', 'cancelled')),
-        ];
+        return TableUi::statusTabs(Invoice::class, [
+            Status::Issued,
+            Status::Partial,
+            Status::Overdue,
+            Status::Paid,
+            Status::Refund,
+            Status::Cancelled,
+        ]);
     }
 
     public function getBreadcrumbs(): array

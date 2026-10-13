@@ -52,7 +52,6 @@ final class SubscriptionRenewalForm
                                 $plan->id => SubscriptionFormSupport::planOptionLabel($plan),
                             ])
                             ->all())
-                        ->searchable()
                         ->default($record->plan_id)
                         ->live()
                         ->afterStateUpdated(function (Get $get, Set $set): void {
@@ -69,8 +68,6 @@ final class SubscriptionRenewalForm
                         ->columnSpan(3),
                     DatePicker::make('start_date')
                         ->label(__('app.fields.start_date'))
-                        ->native(false)
-                        ->suffixIcon('heroicon-o-calendar-days')
                         ->default($defaultStartDate)
                         ->live()
                         ->afterStateUpdated(function (Get $get, Set $set): void {
@@ -81,8 +78,6 @@ final class SubscriptionRenewalForm
                         ->required(),
                     DatePicker::make('end_date')
                         ->label(__('app.fields.end_date'))
-                        ->native(false)
-                        ->suffixIcon('heroicon-o-calendar-days')
                         ->disabled()
                         ->dehydrated()
                         ->default(fn (Get $get): string => SubscriptionFormSupport::subscriptionEndDate($get))
@@ -108,8 +103,6 @@ final class SubscriptionRenewalForm
                                 )),
                             DatePicker::make('invoice_date')
                                 ->label(__('app.fields.invoice_date'))
-                                ->native(false)
-                                ->suffixIcon('heroicon-o-calendar-days')
                                 ->default($today)
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
@@ -126,8 +119,6 @@ final class SubscriptionRenewalForm
                                 ->required(),
                             DatePicker::make('invoice_due_date')
                                 ->label(__('app.fields.due_date'))
-                                ->native(false)
-                                ->suffixIcon('heroicon-o-calendar-days')
                                 ->default($today)
                                 ->required(),
                             DiscountSelect::make('discount')

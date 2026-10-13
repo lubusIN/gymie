@@ -11,6 +11,7 @@ use App\Models\Member;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Width;
 
 final class EnquiryPipelineActions
 {
@@ -32,7 +33,7 @@ final class EnquiryPipelineActions
             ->icon('heroicon-o-calendar-days')
             ->color('warning')
             ->authorize('update')
-            ->modalWidth('sm')
+            ->modalWidth(Width::Small)
             ->schema(FollowUpForm::scheduleFields())
             ->action(function (array $data, Enquiry $record): void {
                 $record->followUps()->create([
@@ -73,7 +74,7 @@ final class EnquiryPipelineActions
             ->color('danger')
             ->authorize('update')
             ->requiresConfirmation()
-            ->modalWidth('sm')
+            ->modalWidth(Width::Small)
             ->schema([
                 Textarea::make('lost_reason')
                     ->label(__('app.fields.lost_reason'))

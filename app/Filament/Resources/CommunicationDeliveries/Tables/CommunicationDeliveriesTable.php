@@ -7,8 +7,8 @@ use App\Models\CommunicationDelivery;
 use App\Services\Communication\EmailDeliveryContext;
 use App\Services\Communication\RetryCommunicationDelivery;
 use App\Support\Filament\CommunicationRelatedRecord;
+use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
@@ -62,12 +62,9 @@ class CommunicationDeliveriesTable
                         ->all()),
             ])
             ->recordActions([
-                ActionGroup::make([
-                    ActionGroup::make([
-                        Action::make('heading_delivery_actions')
-                            ->label(__('app.communication.delivery_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                TableUi::actionGroup(
+                    primaryLabel: __('app.communication.delivery_actions'),
+                    primaryActions: [
                         Action::make('retry')
                             ->label(__('app.actions.retry'))
                             ->icon(Heroicon::OutlinedArrowPath)
@@ -88,21 +85,16 @@ class CommunicationDeliveriesTable
                                     ->success()
                                     ->send();
                             }),
-                    ])
-                        ->dropdown(false)
-                        ->visible(fn (CommunicationDelivery $record): bool => $record->canBeRetried()
-                            && (auth()->user()?->can('update', $record) ?? false)),
-                    ActionGroup::make([
-                        Action::make('heading_record_actions')
-                            ->label(__('app.actions.record_actions'))
-                            ->disabled()
-                            ->color('gray'),
+                    ],
+                    recordActions: [
                         ViewAction::make()
                             ->modalCancelAction(false)
                             ->modalWidth(Width::ThreeExtraLarge),
                         DeleteAction::make(),
-                    ])->dropdown(false),
-                ])
+                    ],
+                    primaryVisible: fn (CommunicationDelivery $record): bool => $record->canBeRetried()
+                        && (auth()->user()?->can('update', $record) ?? false),
+                )
                     ->label(__('app.actions.record_actions'))
                     ->icon('heroicon-o-ellipsis-vertical')
                     ->dropdown(),

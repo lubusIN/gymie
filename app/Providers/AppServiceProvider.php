@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\GymContext;
 use App\Contracts\SequenceRepository;
 use App\Contracts\SettingsRepository;
-use App\Contracts\TenantContext;
 use App\Models\Attendance;
 use App\Models\Enquiry;
 use App\Models\Expense;
@@ -20,7 +20,7 @@ use App\Observers\StaffActivityObserver;
 use App\Services\Api\Docs\AddIndexQueryParametersTransformer;
 use App\Services\JsonSequenceRepository;
 use App\Services\JsonSettingsRepository;
-use App\Services\NullTenantContext;
+use App\Services\LocalGymContext;
 use App\Support\Data;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -40,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(SettingsRepository::class, JsonSettingsRepository::class);
         $this->app->singleton(SequenceRepository::class, JsonSequenceRepository::class);
-        $this->app->singletonIf(TenantContext::class, NullTenantContext::class);
+        $this->app->singletonIf(GymContext::class, LocalGymContext::class);
     }
 
     /**

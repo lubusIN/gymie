@@ -36,29 +36,54 @@ final class InvoiceTableActions
     {
         return TableUi::actionGroup(
             primaryLabel: __('app.actions.manage_invoice'),
-            primaryActions: [
-                self::addPaymentAction(),
-                self::refundAction(),
-                self::cancelInvoiceAction(),
-            ],
-            recordActions: [
-                self::sendPaymentReminderAction(),
-                self::emailInvoiceAction(),
-                self::emailReceiptAction(),
-                self::previewInvoiceAction(),
-                self::downloadInvoiceAction(),
-                ViewAction::make()
-                    ->url(fn (Invoice $record): string => InvoiceResource::getUrl('view', ['record' => $record])),
-                EditAction::make()
-                    ->hidden(fn (Invoice $record): bool => $record->status?->value !== 'issued')
-                    ->url(fn (Invoice $record): string => InvoiceResource::getUrl('edit', ['record' => $record])),
-            ],
+            primaryActions: self::primaryActions(),
+            recordActions: self::recordActions(includeNavigationActions: true),
             primaryVisible: fn (Invoice $record): bool => ! in_array(
                 $record->status?->value,
                 ['refund', 'cancelled'],
                 true,
             ),
         );
+    }
+
+    public static function forViewPage(): ActionGroup
+    {
+        return ActionGroup::make([
+            ...self::primaryActions(),
+            ...self::recordActions(includeNavigationActions: false),
+        ]);
+    }
+
+    /** @return list<Action> */
+    private static function primaryActions(): array
+    {
+        return [
+            self::addPaymentAction(),
+            self::refundAction(),
+            self::cancelInvoiceAction(),
+        ];
+    }
+
+    /** @return list<Action> */
+    private static function recordActions(bool $includeNavigationActions): array
+    {
+        $recordActions = [
+            self::sendPaymentReminderAction(),
+            self::emailInvoiceAction(),
+            self::emailReceiptAction(),
+            self::previewInvoiceAction(),
+            self::downloadInvoiceAction(),
+        ];
+
+        if ($includeNavigationActions) {
+            $recordActions[] = ViewAction::make()
+                ->url(fn (Invoice $record): string => InvoiceResource::getUrl('view', ['record' => $record]));
+            $recordActions[] = EditAction::make()
+                ->hidden(fn (Invoice $record): bool => $record->status?->value !== 'issued')
+                ->url(fn (Invoice $record): string => InvoiceResource::getUrl('edit', ['record' => $record]));
+        }
+
+        return $recordActions;
     }
 
     private static function addPaymentAction(): Action

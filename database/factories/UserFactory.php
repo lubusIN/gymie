@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Contracts\TenantContext;
+use App\Contracts\GymContext;
 use App\Models\User;
 use Database\Factories\Concerns\WithSynchronizedLocation;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -55,8 +55,8 @@ class UserFactory extends Factory
         ];
 
         if (Schema::hasColumn('users', 'gym_id')) {
-            $attributes['gym_id'] = app()->bound(TenantContext::class)
-                ? app(TenantContext::class)->gymId()
+            $attributes['gym_id'] = app()->bound(GymContext::class)
+                ? app(GymContext::class)->gymId()
                 : null;
         }
 

@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Invoices;
 use App\Filament\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
-use App\Filament\Resources\Invoices\RelationManagers\InvoiceTransactionsRelationManager;
 use App\Filament\Resources\Invoices\Schemas\InvoiceForm;
 use App\Filament\Resources\Invoices\Schemas\InvoiceInfolist;
 use App\Filament\Resources\Invoices\Tables\InvoiceTable;
@@ -112,16 +111,6 @@ class InvoiceResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return InvoiceInfolist::configure($schema);
-    }
-
-    /**
-     * Get the relation managers for the resource.
-     */
-    public static function getRelations(): array
-    {
-        return [
-            InvoiceTransactionsRelationManager::class,
-        ];
     }
 
     public static function getPages(): array

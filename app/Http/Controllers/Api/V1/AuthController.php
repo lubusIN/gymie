@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Contracts\TenantContext;
+use App\Contracts\GymContext;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Resources\V1\UserResource;
 use App\Models\User;
@@ -22,7 +22,7 @@ class AuthController extends ApiController
      *
      * @unauthenticated
      */
-    public function login(LoginRequest $request, TenantContext $tenantContext): JsonResponse
+    public function login(LoginRequest $request, GymContext $gymContext): JsonResponse
     {
         $user = User::query()
             ->where('email', $request->string('email')->toString())
@@ -36,7 +36,7 @@ class AuthController extends ApiController
 
         if (
             ! $user
-            || ($tenantContext->gymId() && Data::int($user->gym_id) !== $tenantContext->gymId())
+            || ($gymContext->gymId() && Data::int($user->gym_id) !== $gymContext->gymId())
             || ! Hash::check($request->string('password')->toString(), Data::string($user->password))
         ) {
             throw ValidationException::withMessages([

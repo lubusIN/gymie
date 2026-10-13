@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Update settings JSON payload.
  *
- * This stays permissive (array-shape only) so platform installs can extend
- * settings without changing OSS validation rules.
+ * This stays permissive so installations can extend the settings payload
+ * without changing the core validation rules.
  */
 class SettingsUpdateRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ class SettingsUpdateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\Pages;
 
 use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Invoices\Tables\InvoiceTableActions;
 use App\Models\Invoice;
 use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
@@ -24,6 +25,7 @@ class ViewInvoice extends ViewRecord
         return [
             RecordPageActions::edit()
                 ->hidden(fn (): bool => $this->record->status?->value !== 'issued'),
+            InvoiceTableActions::forViewPage(),
         ];
     }
 

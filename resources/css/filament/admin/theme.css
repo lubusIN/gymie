@@ -8,3 +8,7 @@
 .fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-label-ctn > .fi-icon {
     color: var(--gray-500);
 }
+
+.fi-in-entry .fi-in-entry-label {
+    @apply text-[13px] font-medium text-gray-500 dark:text-gray-400;
+}

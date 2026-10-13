@@ -16,7 +16,10 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Assets\Css;
+use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\TextSize;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -36,6 +39,7 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
 
         $this->configureActions();
         $this->configureFormsAndTables();
+        $this->configureInfolists();
         $this->configureDeletionPrevention();
     }
 
@@ -43,7 +47,7 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
     {
         CreateAction::configureUsing(function (CreateAction $action): void {
             $action
-                ->label(fn (): string => __('app.actions.new_label'))
+                ->label(fn(): string => __('app.actions.new_label'))
                 ->icon(Heroicon::OutlinedPlus);
         });
 
@@ -106,6 +110,15 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
                     ? Helpers::getPhonePlaceholder()
                     : null;
             });
+        });
+    }
+
+    private function configureInfolists(): void
+    {
+        TextEntry::configureUsing(function (TextEntry $entry): void {
+            $entry
+                ->size(15)
+                ->weight(FontWeight::Medium);
         });
     }
 
@@ -196,7 +209,7 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
             }
 
             $map[$class] = array_values(array_filter(array_map(
-                static fn (mixed $relation): string => Data::string($relation),
+                static fn(mixed $relation): string => Data::string($relation),
                 $relations,
             )));
         }

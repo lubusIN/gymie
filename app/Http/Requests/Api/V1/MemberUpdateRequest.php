@@ -29,10 +29,6 @@ class MemberUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        $memberId = $this->route('member') === null
-            ? 0
-            : $this->routeKey('member');
-
-        return MemberSchema::updateRules($memberId);
+        return MemberSchema::updateRules($this->routeKey('member'));
     }
 }

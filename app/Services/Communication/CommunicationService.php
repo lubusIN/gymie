@@ -3,6 +3,7 @@
 namespace App\Services\Communication;
 
 use App\Enums\CommunicationDeliveryStatus;
+use App\Enums\CommunicationRetryHandler;
 use App\Enums\CommunicationTemplateKey;
 use App\Jobs\SendCommunicationEmail;
 use App\Mail\CommunicationMail;
@@ -40,7 +41,7 @@ final class CommunicationService
             $related,
             $actorId,
             [
-                'handler' => RetryCommunicationDelivery::COMMUNICATION_HANDLER,
+                'handler' => CommunicationRetryHandler::Communication->value,
                 'variables' => $variables,
             ],
             $isTest,

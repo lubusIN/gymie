@@ -53,7 +53,7 @@ final class FollowUpSchema
     public static function nestedStoreRules(): array
     {
         return [
-            'user_id' => ['prohibited'],
+            'user_id' => ['prohibited', 'integer'],
             'schedule_date' => ['required', 'date'],
             'method' => ['required', 'string', Rule::in(['call', 'email', 'in_person', 'whatsapp', 'other'])],
             'outcome' => ['nullable', 'string'],
@@ -70,7 +70,7 @@ final class FollowUpSchema
     {
         return [
             'enquiry_id' => ['required', 'integer', new ModelExists(Enquiry::class)],
-            'user_id' => ['prohibited'],
+            'user_id' => ['prohibited', 'integer'],
             'schedule_date' => ['required', 'date'],
             'method' => ['required', 'string', Rule::in(['call', 'email', 'in_person', 'whatsapp', 'other'])],
             'outcome' => ['nullable', 'string'],

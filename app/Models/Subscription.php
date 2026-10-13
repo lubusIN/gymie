@@ -148,8 +148,7 @@ class Subscription extends Model
 
     /**
      * Get the invoices for the subscription.
-     */
-    /**
+     *
      * @return HasMany<Invoice, $this>
      */
     public function invoices(): HasMany
@@ -216,8 +215,7 @@ class Subscription extends Model
 
     /**
      * The member who owns this subscription.
-     */
-    /**
+     *
      * @return BelongsTo<Member, $this>
      */
     public function member(): BelongsTo
@@ -227,8 +225,7 @@ class Subscription extends Model
 
     /**
      * The plan this subscription is for.
-     */
-    /**
+     *
      * @return BelongsTo<Plan, $this>
      */
     public function plan(): BelongsTo

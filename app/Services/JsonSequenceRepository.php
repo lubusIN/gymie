@@ -4,8 +4,9 @@ namespace App\Services;
 
 use App\Contracts\SequenceRepository;
 use App\Contracts\SettingsRepository;
-use App\Helpers\Helpers;
 use App\Support\Data;
+use App\Support\Dates\FiscalYear;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -34,8 +35,8 @@ class JsonSequenceRepository implements SequenceRepository
         ?string $dateString = null,
         ?string $modelColumn = 'number',
     ): string {
-        $date = Helpers::parseDate($dateString);
-        [$start, $end] = Helpers::getFiscalSpan($date);
+        $date = filled($dateString) ? Carbon::parse($dateString) : Carbon::now();
+        [$start, $end] = $this->fiscalSpan($date);
         /** @var Model $model */
         $model = new $modelClass;
         $table = $model->getTable();
@@ -90,8 +91,8 @@ class JsonSequenceRepository implements SequenceRepository
         string $newNumber,
         ?string $date = null,
     ): void {
-        $date = Helpers::parseDate($date);
-        [$start, $end] = Helpers::getFiscalSpan($date);
+        $date = filled($date) ? Carbon::parse($date) : Carbon::now();
+        [$start, $end] = $this->fiscalSpan($date);
 
         if (! $date->between($start, $end)) {
             return;
@@ -147,6 +148,19 @@ class JsonSequenceRepository implements SequenceRepository
     private function lockName(string $type, string $periodStart): string
     {
         return "gymie-sequence:{$type}:{$periodStart}";
+    }
+
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    private function fiscalSpan(Carbon $date): array
+    {
+        $generalSettings = data_get($this->settingsRepository->get(), 'general', []);
+
+        return FiscalYear::spanForDate(
+            $date,
+            is_array($generalSettings) ? $generalSettings : [],
+        );
     }
 
     /**

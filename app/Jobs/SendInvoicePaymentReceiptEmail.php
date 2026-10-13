@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\Communication\CommunicationDeliveryTracker;
-use App\Services\Email\InvoiceEmailService;
+use App\Services\Email\InvoiceEmailSender;
 use App\Support\Invoices\InvoiceDocumentNotRenderable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -32,7 +32,7 @@ class SendInvoicePaymentReceiptEmail implements ShouldBeUnique, ShouldQueue
     public bool $failOnTimeout = true;
 
     /**
-     * Keep duplicate delivery requests locked for longer than the retry window.
+     * Prevent the same delivery record from being queued twice during the retry window.
      */
     public int $uniqueFor = 3600;
 
@@ -54,10 +54,10 @@ class SendInvoicePaymentReceiptEmail implements ShouldBeUnique, ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(InvoiceEmailService $service): void
+    public function handle(InvoiceEmailSender $sender): void
     {
         try {
-            $service->sendPaymentReceiptEmail(
+            $sender->sendPaymentReceiptEmail(
                 invoiceId: $this->invoiceId,
                 transactionId: $this->invoiceTransactionId,
                 toEmail: $this->toEmail,
@@ -69,16 +69,20 @@ class SendInvoicePaymentReceiptEmail implements ShouldBeUnique, ShouldQueue
             Log::warning('Skipping payment receipt email: missing required invoice data.', [
                 'invoice_id' => $this->invoiceId,
                 'invoice_transaction_id' => $this->invoiceTransactionId,
-                'missing' => $exception->viewData['missing'],
+                'missing' => $exception->missingFields(),
             ]);
         }
     }
 
     /**
-     * Identify one payment receipt delivery to one recipient.
+     * Identify the tracked delivery, with a fallback for untracked jobs.
      */
     public function uniqueId(): string
     {
+        if ($this->deliveryId !== null) {
+            return "delivery:{$this->deliveryId}";
+        }
+
         return "{$this->invoiceTransactionId}:".Str::lower(trim($this->toEmail));
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CommunicationDeliveryStatus;
+use App\Enums\CommunicationRetryHandler;
 use App\Enums\CommunicationTemplateKey;
 use App\Helpers\Helpers;
 use App\Jobs\SendCommunicationEmail;
@@ -11,7 +12,6 @@ use App\Models\CommunicationTemplate;
 use App\Models\Member;
 use App\Services\Communication\CommunicationDeliveryTracker;
 use App\Services\Communication\CommunicationService;
-use App\Services\Communication\RetryCommunicationDelivery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -46,7 +46,7 @@ it('queues the welcome template when member welcome automation is enabled', func
         ->and($delivery->status)->toBe(CommunicationDeliveryStatus::Queued)
         ->and($delivery->related->is($member))->toBeTrue()
         ->and($delivery->retry_payload)->toBe([
-            'handler' => RetryCommunicationDelivery::COMMUNICATION_HANDLER,
+            'handler' => CommunicationRetryHandler::Communication->value,
             'variables' => [
                 'member_name' => 'Taylor Member',
                 'member_code' => 'MEM-001',

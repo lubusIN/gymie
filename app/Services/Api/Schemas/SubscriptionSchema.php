@@ -8,6 +8,7 @@ use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Rules\ModelExists;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Single source of truth for Subscription API validation and serialization.
@@ -46,7 +47,7 @@ final class SubscriptionSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function storeRules(): array
     {
@@ -62,7 +63,7 @@ final class SubscriptionSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function updateRules(): array
     {
@@ -76,7 +77,7 @@ final class SubscriptionSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function renewRules(): array
     {
@@ -90,7 +91,7 @@ final class SubscriptionSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     private static function invoiceRules(string $prefix): array
     {
@@ -99,7 +100,7 @@ final class SubscriptionSchema
             "{$prefix}date" => ['nullable', 'date'],
             "{$prefix}due_date" => ['nullable', 'date'],
             "{$prefix}payment_method" => ['nullable', 'string', 'max:50'],
-            "{$prefix}discount" => ['nullable'],
+            "{$prefix}discount" => ['nullable', 'numeric', 'between:0,100'],
             "{$prefix}discount_amount" => ['nullable', 'numeric', 'min:0'],
             "{$prefix}discount_note" => ['nullable', 'string'],
             "{$prefix}paid_amount" => ['nullable', 'numeric', 'min:0'],

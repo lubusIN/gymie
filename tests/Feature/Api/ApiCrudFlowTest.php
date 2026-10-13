@@ -81,6 +81,21 @@ it('supports core CRUD flows for integrations', function (): void {
 
     expect($invoiceId)->toBeGreaterThan(0);
 
+    $this->patchJson("/api/v1/invoices/{$invoiceId}", [
+        'discount' => 101,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('discount');
+
+    $this->postJson('/api/v1/subscriptions', [
+        'member_id' => $member['id'],
+        'plan_id' => $plan['id'],
+        'start_date' => '2026-04-01',
+        'invoice' => [
+            'discount' => 'invalid',
+        ],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('invoice.discount');
+
     $this->postJson("/api/v1/invoices/{$invoiceId}/transactions", [
         'type' => 'payment',
         'amount' => 250,

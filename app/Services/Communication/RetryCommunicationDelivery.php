@@ -3,6 +3,7 @@
 namespace App\Services\Communication;
 
 use App\Enums\CommunicationDeliveryStatus;
+use App\Enums\CommunicationRetryHandler;
 use App\Jobs\SendCommunicationEmail;
 use App\Jobs\SendInvoiceIssuedEmail;
 use App\Jobs\SendInvoicePaymentReceiptEmail;
@@ -10,19 +11,10 @@ use App\Jobs\SendInvoicePaymentReminderEmail;
 use App\Models\CommunicationDelivery;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 final class RetryCommunicationDelivery
 {
-    public const string COMMUNICATION_HANDLER = 'communication';
-
-    public const string INVOICE_ISSUED_HANDLER = 'invoice_issued';
-
-    public const string PAYMENT_REMINDER_HANDLER = 'payment_reminder';
-
-    public const string PAYMENT_RECEIPT_HANDLER = 'payment_receipt';
-
     public function __construct(
         private readonly EmailDeliveryContext $emailContext,
     ) {}
@@ -47,7 +39,7 @@ final class RetryCommunicationDelivery
                 ]);
             }
 
-            $payload = $this->validatedPayload($lockedDelivery);
+            ['handler' => $handler, 'payload' => $payload] = $this->validatedPayload($lockedDelivery);
 
             $lockedDelivery->update([
                 'subject' => null,
@@ -58,14 +50,14 @@ final class RetryCommunicationDelivery
                 'failure_reason' => null,
             ]);
 
-            $this->dispatch($lockedDelivery, $payload);
+            $this->dispatch($lockedDelivery, $handler, $payload);
         });
     }
 
     /**
      * Validate the internal retry contract before creating a queue job.
      *
-     * @return array<string, mixed>
+     * @return array{handler: CommunicationRetryHandler, payload: array<string, mixed>}
      */
     private function validatedPayload(CommunicationDelivery $delivery): array
     {
@@ -77,31 +69,29 @@ final class RetryCommunicationDelivery
             ]);
         }
 
-        $handler = data_get($payload, 'handler');
+        $handlerValue = $payload['handler'] ?? null;
+        $handler = is_string($handlerValue)
+            ? CommunicationRetryHandler::tryFrom($handlerValue)
+            : null;
+
+        if ($handler === null) {
+            $this->throwNotRetryable();
+        }
+
         $rules = match ($handler) {
-            self::COMMUNICATION_HANDLER => [
-                'handler' => ['required', Rule::in(self::handlers())],
+            CommunicationRetryHandler::Communication => [
                 'variables' => ['present', 'array'],
             ],
-            self::INVOICE_ISSUED_HANDLER, self::PAYMENT_REMINDER_HANDLER => [
-                'handler' => ['required', Rule::in(self::handlers())],
+            CommunicationRetryHandler::InvoiceIssued, CommunicationRetryHandler::PaymentReminder => [
                 'invoice_id' => ['required', 'integer', 'min:1'],
                 'note' => ['nullable', 'string'],
             ],
-            self::PAYMENT_RECEIPT_HANDLER => [
-                'handler' => ['required', Rule::in(self::handlers())],
+            CommunicationRetryHandler::PaymentReceipt => [
                 'invoice_id' => ['required', 'integer', 'min:1'],
                 'invoice_transaction_id' => ['required', 'integer', 'min:1'],
                 'note' => ['nullable', 'string'],
             ],
-            default => [],
         };
-
-        if ($rules === []) {
-            throw ValidationException::withMessages([
-                'delivery' => __('app.communication.validation.delivery_not_retryable'),
-            ]);
-        }
 
         Validator::make(
             [
@@ -114,34 +104,40 @@ final class RetryCommunicationDelivery
             ],
         )->validate();
 
-        return $payload;
+        return [
+            'handler' => $handler,
+            'payload' => $payload,
+        ];
     }
 
     /** @param array<string, mixed> $payload */
-    private function dispatch(CommunicationDelivery $delivery, array $payload): void
-    {
+    private function dispatch(
+        CommunicationDelivery $delivery,
+        CommunicationRetryHandler $handler,
+        array $payload,
+    ): void {
         $deliveryId = (int) $delivery->getKey();
         $actorId = $delivery->actor_id;
 
-        match ($payload['handler']) {
-            self::COMMUNICATION_HANDLER => SendCommunicationEmail::dispatch(
+        match ($handler) {
+            CommunicationRetryHandler::Communication => SendCommunicationEmail::dispatch(
                 deliveryId: $deliveryId,
             )->afterCommit(),
-            self::INVOICE_ISSUED_HANDLER => SendInvoiceIssuedEmail::dispatch(
+            CommunicationRetryHandler::InvoiceIssued => SendInvoiceIssuedEmail::dispatch(
                 invoiceId: (int) $payload['invoice_id'],
                 toEmail: $delivery->recipient,
                 note: $payload['note'] ?? null,
                 actorId: $actorId,
                 deliveryId: $deliveryId,
             )->afterCommit(),
-            self::PAYMENT_REMINDER_HANDLER => SendInvoicePaymentReminderEmail::dispatch(
+            CommunicationRetryHandler::PaymentReminder => SendInvoicePaymentReminderEmail::dispatch(
                 invoiceId: (int) $payload['invoice_id'],
                 toEmail: $delivery->recipient,
                 note: $payload['note'] ?? null,
                 actorId: $actorId,
                 deliveryId: $deliveryId,
             )->afterCommit(),
-            self::PAYMENT_RECEIPT_HANDLER => SendInvoicePaymentReceiptEmail::dispatch(
+            CommunicationRetryHandler::PaymentReceipt => SendInvoicePaymentReceiptEmail::dispatch(
                 invoiceId: (int) $payload['invoice_id'],
                 invoiceTransactionId: (int) $payload['invoice_transaction_id'],
                 toEmail: $delivery->recipient,
@@ -152,14 +148,10 @@ final class RetryCommunicationDelivery
         };
     }
 
-    /** @return list<string> */
-    private static function handlers(): array
+    private function throwNotRetryable(): never
     {
-        return [
-            self::COMMUNICATION_HANDLER,
-            self::INVOICE_ISSUED_HANDLER,
-            self::PAYMENT_REMINDER_HANDLER,
-            self::PAYMENT_RECEIPT_HANDLER,
-        ];
+        throw ValidationException::withMessages([
+            'delivery' => __('app.communication.validation.delivery_not_retryable'),
+        ]);
     }
 }

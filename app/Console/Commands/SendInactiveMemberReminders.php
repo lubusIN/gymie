@@ -52,6 +52,9 @@ class SendInactiveMemberReminders extends Command
                 500,
                 /** @param Collection<int, Member> $members */
                 function (Collection $members) use ($communicationService, $today, &$queuedCount): void {
+                    /** @var array<int, array{member: Member, inactive_days: int, last_visited_on: mixed}> $reminders */
+                    $reminders = [];
+
                     foreach ($members as $member) {
                         $subscription = $member->subscriptions->first();
 
@@ -74,9 +77,33 @@ class SendInactiveMemberReminders extends Command
 
                         $inactiveDays = (int) $inactiveSince->startOfDay()->diffInDays($today);
 
-                        if (! in_array($inactiveDays, self::REMINDER_DAYS, true) || $this->alreadyQueuedToday($member, $today)) {
+                        if (! in_array($inactiveDays, self::REMINDER_DAYS, true)) {
                             continue;
                         }
+
+                        $reminders[(int) $member->getKey()] = [
+                            'member' => $member,
+                            'inactive_days' => $inactiveDays,
+                            'last_visited_on' => $lastVisitedOn,
+                        ];
+                    }
+
+                    if ($reminders === []) {
+                        return;
+                    }
+
+                    $queuedMemberIds = $this->queuedMemberIdsToday(
+                        array_keys($reminders),
+                        $today,
+                    );
+
+                    foreach ($reminders as $memberId => $reminder) {
+                        if (isset($queuedMemberIds[$memberId])) {
+                            continue;
+                        }
+
+                        $member = $reminder['member'];
+                        $lastVisitedOn = $reminder['last_visited_on'];
 
                         $communicationService->queue(
                             templateKey: CommunicationTemplateKey::MemberInactive,
@@ -84,7 +111,7 @@ class SendInactiveMemberReminders extends Command
                             variables: [
                                 'member_name' => $member->name,
                                 'member_code' => $member->code,
-                                'inactive_days' => $inactiveDays,
+                                'inactive_days' => $reminder['inactive_days'],
                                 'last_visit_date' => $lastVisitedOn
                                     ? Carbon::parse((string) $lastVisitedOn)->format('M j, Y')
                                     : '',
@@ -101,18 +128,25 @@ class SendInactiveMemberReminders extends Command
         return self::SUCCESS;
     }
 
-    /** Prevent a repeated command run from sending the same milestone twice. */
-    private function alreadyQueuedToday(Member $member, Carbon $today): bool
+    /**
+     * Find members that already have an inactive reminder queued today.
+     *
+     * @param  list<int>  $memberIds
+     * @return array<int, true>
+     */
+    private function queuedMemberIdsToday(array $memberIds, Carbon $today): array
     {
         return CommunicationDelivery::query()
-            ->where('related_type', $member->getMorphClass())
-            ->where('related_id', $member->getKey())
+            ->where('related_type', (new Member)->getMorphClass())
+            ->whereIn('related_id', $memberIds)
             ->whereHas('template', fn ($query) => $query
                 ->where('event', CommunicationTemplateKey::MemberInactive->value))
             ->whereBetween('created_at', [
                 $today->copy()->startOfDay()->utc(),
                 $today->copy()->endOfDay()->utc(),
             ])
-            ->exists();
+            ->pluck('related_id')
+            ->mapWithKeys(fn (mixed $memberId): array => [(int) $memberId => true])
+            ->all();
     }
 }

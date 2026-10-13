@@ -138,9 +138,8 @@ class Enquiry extends Model
     }
 
     /**
-     * Get the followUps for the enquiry.
-     */
-    /**
+     * Get the follow-ups for the enquiry.
+     *
      * @return HasMany<FollowUp, $this>
      */
     public function followUps(): HasMany
@@ -173,8 +172,7 @@ class Enquiry extends Model
 
     /**
      * Get the user for the enquiry.
-     */
-    /**
+     *
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo

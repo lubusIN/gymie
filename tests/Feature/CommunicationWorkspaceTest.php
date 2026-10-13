@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CommunicationDeliveryStatus;
+use App\Enums\CommunicationRetryHandler;
 use App\Enums\CommunicationTemplateKey;
 use App\Filament\Resources\CommunicationDeliveries\CommunicationDeliveryResource;
 use App\Filament\Resources\CommunicationDeliveries\Pages\ListCommunicationDeliveries;
@@ -13,7 +14,6 @@ use App\Models\CommunicationDelivery;
 use App\Models\CommunicationTemplate;
 use App\Models\User;
 use App\Services\Communication\CommunicationTemplateRenderer;
-use App\Services\Communication\RetryCommunicationDelivery;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -241,7 +241,7 @@ it('shows retry only for authorized failed deliveries with retry context', funct
         'status' => CommunicationDeliveryStatus::Failed,
         'failed_at' => now(),
         'retry_payload' => [
-            'handler' => RetryCommunicationDelivery::COMMUNICATION_HANDLER,
+            'handler' => CommunicationRetryHandler::Communication->value,
             'variables' => [],
         ],
     ]);
@@ -266,7 +266,7 @@ it('protects templates and delivery history with dedicated permissions', functio
         'status' => CommunicationDeliveryStatus::Failed,
         'failed_at' => now(),
         'retry_payload' => [
-            'handler' => RetryCommunicationDelivery::COMMUNICATION_HANDLER,
+            'handler' => CommunicationRetryHandler::Communication->value,
             'variables' => [],
         ],
     ]);

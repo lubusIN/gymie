@@ -11,6 +11,7 @@ use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
@@ -67,14 +68,27 @@ it('queues one reminder at each supported inactivity milestone and ignores ineli
         'status' => 'expired',
     ]);
 
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
     $this->artisan('gymie:inactive-members')
         ->assertSuccessful();
     $this->artisan('gymie:inactive-members')
         ->assertSuccessful();
+
+    $deliveryLookupCount = collect(DB::getQueryLog())
+        ->pluck('query')
+        ->filter(fn (string $query): bool => str_starts_with(strtolower(trim($query)), 'select')
+            && str_contains(strtolower($query), 'communication_deliveries'))
+        ->count();
+
+    DB::disableQueryLog();
+    DB::flushQueryLog();
 
     $deliveries = CommunicationDelivery::query()->get();
 
-    expect($deliveries)->toHaveCount(3)
+    expect($deliveryLookupCount)->toBe(2)
+        ->and($deliveries)->toHaveCount(3)
         ->and($deliveries->pluck('related_id')->sort()->values()->all())->toBe([
             $sevenDayMember->getKey(),
             $fourteenDayMember->getKey(),

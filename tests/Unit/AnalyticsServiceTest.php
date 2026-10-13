@@ -149,6 +149,24 @@ it('calculates collected financial and membership metrics within a custom date r
     $expectedOutstanding = (float) $invoicePartial->due_amount + (float) $invoiceOutstanding->due_amount;
     expect($financial['outstanding'])->toBe($expectedOutstanding);
 
+    expect($service->revenueTrendByDate($range))->toBe([
+        '2026-02-10' => 900.0,
+        '2026-02-25' => 200.0,
+    ]);
+    expect($service->collectedTrendByDate($range))->toBe([
+        '2026-02-12' => 600.0,
+        '2026-02-13' => -100.0,
+    ]);
+    expect($service->collectedTrendByMonth($range))->toBe([
+        '2026-02' => 500.0,
+    ]);
+    expect($service->expenseTrendByDate($range))->toBe([
+        '2026-02-14' => 50.0,
+    ]);
+    expect($service->expenseTrendByMonth($range))->toBe([
+        '2026-02' => 50.0,
+    ]);
+
     $membership = $service->membershipMetrics($range);
     expect($membership)
         ->active_members->toBe(1)

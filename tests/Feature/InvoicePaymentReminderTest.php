@@ -12,7 +12,7 @@ use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
-use App\Services\Email\InvoiceEmailService;
+use App\Services\Email\InvoiceEmailSender;
 use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
 use Filament\Infolists\Components\TextEntry;
@@ -128,6 +128,8 @@ it('queues an outstanding payment reminder and records it on the subscription ti
             && $job->timeout === 60
             && $job->failOnTimeout
             && $job->uniqueFor === 3600
+            && $job->deliveryId !== null
+            && $job->uniqueId() === "delivery:{$job->deliveryId}"
             && $job->backoff === [10, 60, 300]
             && $job->afterCommit === true;
     });
@@ -202,7 +204,7 @@ it('sends the reminder using the current invoice balance and default message', f
         'paid_amount' => 0,
     ])->refresh();
 
-    app(InvoiceEmailService::class)->sendPaymentReminderEmail(
+    app(InvoiceEmailSender::class)->sendPaymentReminderEmail(
         invoiceId: $invoice->getKey(),
         toEmail: $member->email,
     );
@@ -232,7 +234,7 @@ it('skips a queued reminder when the invoice has already been paid', function ()
     expect($invoice->status)->toBe(Status::Paid)
         ->and((float) $invoice->due_amount)->toBe(0.0);
 
-    app(InvoiceEmailService::class)->sendPaymentReminderEmail(
+    app(InvoiceEmailSender::class)->sendPaymentReminderEmail(
         invoiceId: $invoice->getKey(),
         toEmail: $member->email,
     );

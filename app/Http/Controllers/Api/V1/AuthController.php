@@ -52,7 +52,7 @@ class AuthController extends ApiController
 
         $deviceName = $deviceName->limit(255, '')->toString();
 
-        $token = $user->createToken($deviceName)->plainTextToken;
+        $token = (string) $user->createToken($deviceName)->plainTextToken;
 
         $user->load('roles');
 

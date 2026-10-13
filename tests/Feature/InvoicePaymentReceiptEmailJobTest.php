@@ -95,7 +95,8 @@ it('dispatches the payment receipt email job when enabled in settings', function
             && $job->timeout === 60
             && $job->failOnTimeout
             && $job->uniqueFor === 3600
-            && $job->uniqueId() === "{$transaction->id}:member@example.com"
+            && $job->deliveryId !== null
+            && $job->uniqueId() === "delivery:{$job->deliveryId}"
             && $job->backoff === [10, 60, 300]
             && $job->afterCommit === true;
     });

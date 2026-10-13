@@ -39,48 +39,6 @@ final class ResourceQueryRules
     ];
 
     /**
-     * @return list<string>
-     */
-    public static function searchable(string $resourceKey): array
-    {
-        return self::rules($resourceKey)['searchable'];
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function sortable(string $resourceKey): array
-    {
-        return self::rules($resourceKey)['sortable'];
-    }
-
-    public static function defaultSort(string $resourceKey): string
-    {
-        return self::rules($resourceKey)['default_sort'];
-    }
-
-    public static function statusColumn(string $resourceKey): ?string
-    {
-        return self::rules($resourceKey)['status_column'];
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function includes(string $resourceKey): array
-    {
-        return self::rules($resourceKey)['includes'];
-    }
-
-    /**
-     * @return array<string, array{type: string, column: string}>
-     */
-    public static function filters(string $resourceKey): array
-    {
-        return self::rules($resourceKey)['filters'];
-    }
-
-    /**
      * @return array{
      *   searchable: list<string>,
      *   sortable: list<string>,
@@ -90,7 +48,7 @@ final class ResourceQueryRules
      *   filters: array<string, array{type: string, column: string}>
      * }
      */
-    private static function rules(string $resourceKey): array
+    public static function forResource(string $resourceKey): array
     {
         if (! array_key_exists($resourceKey, self::SCHEMAS)) {
             throw new InvalidArgumentException("Unknown API resource key [{$resourceKey}].");

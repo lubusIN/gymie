@@ -12,6 +12,7 @@ use App\Support\Data;
 use App\Support\Invoices\InvoiceDocument;
 use App\Support\Invoices\InvoiceDocumentNotRenderable;
 use App\Support\Invoices\InvoicePdfRenderer;
+use Dedoc\Scramble\Attributes\Response as ScrambleResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -127,6 +128,7 @@ class InvoicesController extends ApiController
     /**
      * Render an invoice as an inline PDF.
      */
+    #[ScrambleResponse(status: 422, type: 'array{message: string, missing: list<string>}')]
     public function pdf(Request $request, Invoice $invoice, InvoicePdfRenderer $renderer): Response|JsonResponse
     {
         $this->requirePermission($request, 'View:Invoice');
@@ -138,7 +140,7 @@ class InvoicesController extends ApiController
         } catch (InvoiceDocumentNotRenderable $exception) {
             return response()->json([
                 'message' => 'Invoice can’t be generated.',
-                'missing' => $exception->viewData['missing'],
+                'missing' => $exception->missingFields(),
             ], 422);
         }
 
@@ -151,6 +153,7 @@ class InvoicesController extends ApiController
     /**
      * Download an invoice as a PDF attachment.
      */
+    #[ScrambleResponse(status: 422, type: 'array{message: string, missing: list<string>}')]
     public function downloadPdf(Request $request, Invoice $invoice, InvoicePdfRenderer $renderer): Response|JsonResponse
     {
         $this->requirePermission($request, 'View:Invoice');
@@ -162,7 +165,7 @@ class InvoicesController extends ApiController
         } catch (InvoiceDocumentNotRenderable $exception) {
             return response()->json([
                 'message' => 'Invoice can’t be generated.',
-                'missing' => $exception->viewData['missing'],
+                'missing' => $exception->missingFields(),
             ], 422);
         }
 

@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Email\InvoiceEmailSender;
 use App\Services\Email\InvoiceEmailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -64,7 +65,7 @@ it('sends invoice issued email with reply-to when gym email is configured', func
         'paid_amount' => 0,
     ]);
 
-    app(InvoiceEmailService::class)->sendInvoiceIssuedEmail(
+    app(InvoiceEmailSender::class)->sendInvoiceIssuedEmail(
         invoiceId: $invoice->id,
         toEmail: $member->email,
         note: 'Hello',

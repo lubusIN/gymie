@@ -18,6 +18,22 @@ afterEach(function (): void {
     Helpers::setTestSettingsOverride(null);
 });
 
+it('uses the delivery record as the uniqueness boundary', function (): void {
+    $firstDelivery = new SendInvoiceIssuedEmail(
+        invoiceId: 10,
+        toEmail: 'member@example.com',
+        deliveryId: 101,
+    );
+    $secondDelivery = new SendInvoiceIssuedEmail(
+        invoiceId: 10,
+        toEmail: 'member@example.com',
+        deliveryId: 102,
+    );
+
+    expect($firstDelivery->uniqueId())->toBe('delivery:101')
+        ->and($secondDelivery->uniqueId())->toBe('delivery:102');
+});
+
 it('dispatches the invoice issued email job when enabled in settings', function (): void {
     Queue::fake();
     config([
@@ -82,7 +98,8 @@ it('dispatches the invoice issued email job when enabled in settings', function 
             && $job->timeout === 60
             && $job->failOnTimeout
             && $job->uniqueFor === 3600
-            && $job->uniqueId() === "{$invoice->id}:member@example.com"
+            && $job->deliveryId !== null
+            && $job->uniqueId() === "delivery:{$job->deliveryId}"
             && $job->backoff === [10, 60, 300]
             && $job->afterCommit === true;
     });

@@ -6,16 +6,14 @@ use App\Contracts\SequenceRepository;
 use App\Contracts\SettingsRepository;
 use App\Models\Plan;
 use App\Services\JsonSettingsRepository;
-use App\Support\AppConfig;
 use App\Support\Billing\Currency;
 use App\Support\Billing\Discounts;
 use App\Support\Billing\TaxRate;
 use App\Support\Data;
-use App\Support\Dates\FiscalYear;
+use App\Support\LocationData;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
-use Nnjeim\World\WorldHelper;
 
 class Helpers
 {
@@ -54,24 +52,12 @@ class Helpers
         return app(SettingsRepository::class)->get();
     }
 
-    public static function appTimezone(): string
-    {
-        return AppConfig::timezone();
-    }
-
-    /**
-     * Get a list of all countries.
-     */
     /**
      * @return array<string, string>
      */
     public static function getCountries(): array
     {
-        return collect(self::fallbackCountries())
-            ->pluck('name', 'name')
-            ->mapWithKeys(fn (mixed $name, mixed $key): array => [Data::string($key) => Data::string($name)])
-            ->sortKeys()
-            ->all();
+        return app(LocationData::class)->countries();
     }
 
     /**
@@ -81,13 +67,7 @@ class Helpers
      */
     public static function getCountriesWithCodes(): array
     {
-        return collect(self::fallbackCountries())
-            ->mapWithKeys(fn (mixed $country): array => [
-                Data::string(data_get($country, 'iso2')) => Data::string(data_get($country, 'name')),
-            ])
-            ->filter(fn (mixed $name, mixed $code): bool => Data::string($code) !== '' && Data::string($name) !== '')
-            ->sort()
-            ->all();
+        return app(LocationData::class)->countriesWithCodes();
     }
 
     /**
@@ -95,32 +75,7 @@ class Helpers
      */
     public static function getCountryPhoneCode(?string $countryName): ?string
     {
-        if (blank($countryName)) {
-            return null;
-        }
-
-        try {
-            $countryResponse = self::worldResponse('countries', [
-                'fields' => 'id,name,phone_code',
-                'filters' => ['name' => $countryName],
-            ]);
-
-            if (! $countryResponse->success || empty($countryResponse->data)) {
-                return null;
-            }
-
-            $phoneCode = Data::nullableString(collect($countryResponse->data)->pluck('phone_code')->first());
-
-            if ($phoneCode === null) {
-                return null;
-            }
-
-            $phoneCode = ltrim($phoneCode, '+');
-
-            return $phoneCode !== '' ? $phoneCode : null;
-        } catch (\Throwable $e) {
-            return null;
-        }
+        return app(LocationData::class)->countryPhoneCode($countryName);
     }
 
     /**
@@ -146,131 +101,35 @@ class Helpers
             }
 
             return '+'.$phoneCode.' '.$fallback;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return $fallback;
         }
     }
 
     /**
-     * Get a list of states for a specific country.
-     *
      * @param  string|null  $countryName  The name of the country
-     */
-    /**
      * @return array<string, string>
      */
     public static function getStates(?string $countryName): array
     {
-        if (app()->runningUnitTests()) {
-            return [];
-        }
-
-        if (is_null($countryName)) {
-            return [];
-        }
-
-        // Retrieve country details to get the country code
-        $countryResponse = self::worldResponse('countries', [
-            'filters' => ['name' => $countryName],
-        ]);
-
-        if (! $countryResponse->success || empty($countryResponse->data)) {
-            return [];
-        }
-
-        $countryId = collect($countryResponse->data)->pluck('id')->first();
-
-        if (! $countryId) {
-            return [];
-        }
-
-        // Retrieve states using the country code
-        $stateResponse = self::worldResponse('states', [
-            'filters' => ['country_id' => $countryId],
-        ]);
-
-        if (! $stateResponse->success) {
-            return [];
-        }
-
-        return collect($stateResponse->data)
-            ->pluck('name', 'name')
-            ->mapWithKeys(fn (mixed $name, mixed $key): array => [Data::string($key) => Data::string($name)])
-            ->all();
+        return app(LocationData::class)->states($countryName);
     }
 
     /**
-     * Get a list of cities for a specific state using its name.
-     *
      * @param  string|null  $stateName  The name of the state
-     */
-    /**
      * @return array<string, string>
      */
     public static function getCities(?string $stateName): array
     {
-        if (app()->runningUnitTests()) {
-            return [];
-        }
-
-        if (is_null($stateName)) {
-            return [];
-        }
-
-        // Retrieve state details to get the state code
-        $stateResponse = self::worldResponse('states', [
-            'filters' => ['name' => $stateName],
-        ]);
-
-        if (! $stateResponse->success || empty($stateResponse->data)) {
-            return [];
-        }
-
-        $stateCode = collect($stateResponse->data)->pluck('id')->first();
-
-        if (! $stateCode) {
-            return [];
-        }
-
-        // Retrieve cities using the state code
-        $cityResponse = self::worldResponse('cities', [
-            'filters' => ['state_id' => $stateCode],
-        ]);
-
-        if (! $cityResponse->success || empty($cityResponse->data)) {
-            return [];
-        }
-
-        return collect($cityResponse->data)
-            ->pluck('name', 'name')
-            ->mapWithKeys(fn (mixed $name, mixed $key): array => [Data::string($key) => Data::string($name)])
-            ->all();
+        return app(LocationData::class)->cities($stateName);
     }
 
-    /**
-     * Get a list of currencies.
-     */
     /**
      * @return array<string, string>
      */
     public static function getCurrencies(): array
     {
-        if (app()->runningUnitTests()) {
-            return [];
-        }
-
-        $currencyResponse = self::worldResponse('currencies', [
-            'fields' => 'name,code',
-        ]);
-
-        if (! $currencyResponse->success) {
-            return [];
-        }
-
-        return collect($currencyResponse->data)
-            ->pluck('name', 'code')
-            ->mapWithKeys(fn (mixed $name, mixed $key): array => [Data::string($key) => Data::string($name)])
-            ->all();
+        return app(LocationData::class)->currencies();
     }
 
     /**
@@ -356,9 +215,6 @@ class Helpers
     }
 
     /**
-     * Get the discounts from settings.
-     */
-    /**
      * @return array<string, string>
      */
     public static function getDiscounts(): array
@@ -403,30 +259,6 @@ class Helpers
     }
 
     /**
-     * Parse a date string or return now().
-     *
-     * @param  string|null  $dateString  The date string to parse.
-     * @return Carbon Parsed Carbon instance, or now() if input is null or empty.
-     */
-    public static function parseDate(?string $dateString): Carbon
-    {
-        return $dateString ? Carbon::parse($dateString) : Carbon::now();
-    }
-
-    /**
-     * Determine fiscal year start and end dates for the given date.
-     *
-     * @param  Carbon  $date  The date to calculate the fiscal period for.
-     * @return array{0: Carbon, 1: Carbon} Array with [start, end] Carbon instances of the fiscal year.
-     */
-    public static function getFiscalSpan(Carbon $date): array
-    {
-        $generalSettings = self::getSettings()['general'] ?? [];
-
-        return FiscalYear::spanForDate($date, is_array($generalSettings) ? $generalSettings : []);
-    }
-
-    /**
      * Generate the next sequential identifier for a given type and model.
      *
      * @param  string  $type  The type identifier used to fetch the corresponding settings.
@@ -455,47 +287,6 @@ class Helpers
     public static function updateLastNumber(string $type, string $newNumber, ?string $date = null): void
     {
         app(SequenceRepository::class)->update($type, $newNumber, $date);
-    }
-
-    /**
-     * @param  array<string, mixed>  $parameters
-     * @return object{success: bool, data: array<int, array<string, mixed>>}
-     */
-    private static function worldResponse(string $method, array $parameters = []): object
-    {
-        /** @var object{success: bool, data: array<int, array<string, mixed>>} $response */
-        $response = app(WorldHelper::class)->__call($method, [$parameters]);
-
-        return $response;
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private static function fallbackCountries(): array
-    {
-        $path = base_path('vendor/nnjeim/world/resources/json/countries.json');
-
-        if (! is_file($path)) {
-            return [];
-        }
-
-        /** @var mixed $countries */
-        $countries = json_decode((string) file_get_contents($path), true);
-
-        if (! is_array($countries)) {
-            return [];
-        }
-
-        $filteredCountries = [];
-
-        foreach ($countries as $country) {
-            if (is_array($country)) {
-                $filteredCountries[] = Data::map($country);
-            }
-        }
-
-        return $filteredCountries;
     }
 
     /**

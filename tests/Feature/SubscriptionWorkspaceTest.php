@@ -102,6 +102,46 @@ it('does not count the waiting period before an upcoming subscription starts', f
         ->assertDontSee('37 Days Left');
 });
 
+it('renews a subscription from the subscriptions table', function (): void {
+    $member = Member::factory()->create();
+    $plan = Plan::factory()->create([
+        'amount' => 199.99,
+        'days' => 30,
+    ]);
+    $subscription = Subscription::factory()->for($member)->for($plan)->create([
+        'start_date' => '2026-08-28',
+        'end_date' => '2026-09-27',
+        'status' => Status::Expired,
+    ]);
+
+    Livewire::test(ListSubscriptions::class)
+        ->callTableAction('renew', $subscription, [
+            'plan_id' => $plan->getKey(),
+            'start_date' => '2026-09-28',
+            'end_date' => '2026-10-27',
+            'invoice_number' => 'INV-RENEW-001',
+            'invoice_date' => '2026-09-28',
+            'invoice_due_date' => '2026-09-28',
+            'payment_method' => 'cash',
+            'discount_amount' => 0,
+            'paid_amount' => 0,
+        ])
+        ->assertHasNoTableActionErrors()
+        ->assertNotified();
+
+    $renewal = Subscription::query()
+        ->where('renewed_from_subscription_id', $subscription->getKey())
+        ->sole();
+    $invoice = Invoice::query()
+        ->where('subscription_id', $renewal->getKey())
+        ->sole();
+
+    expect($renewal->start_date?->toDateString())->toBe('2026-09-28')
+        ->and($renewal->end_date?->toDateString())->toBe('2026-10-27')
+        ->and($subscription->fresh()->status)->toBe(Status::Renewed)
+        ->and((float) $invoice->subscription_fee)->toBe(200.0);
+});
+
 it('records membership and billing events on the subscription timeline', function (): void {
     $member = Member::factory()->create();
     $plan = Plan::factory()->create(['name' => 'Monthly']);

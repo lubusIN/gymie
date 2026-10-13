@@ -48,27 +48,20 @@ class JsonSettingsRepository implements SettingsRepository
 
         if (app()->runningUnitTests()) {
             $exampleFilePath = storage_path(self::EXAMPLE_SETTINGS_PATH);
+            $settings = File::exists($exampleFilePath)
+                ? $this->read($exampleFilePath)
+                : [];
 
-            if (file_exists($exampleFilePath)) {
-                $settings = json_decode((string) file_get_contents($exampleFilePath), true) ?? [];
-                $settings = is_array($settings) ? $settings : [];
-
-                return $this->cachedSettings = $this->normalize($settings);
-            }
-
-            return $this->cachedSettings = $this->normalize([]);
+            return $this->cachedSettings = $this->normalize($settings);
         }
 
         $filePath = storage_path(self::SETTINGS_PATH);
 
-        if (! file_exists($filePath)) {
+        if (! File::exists($filePath)) {
             $this->initializeFile($filePath);
         }
 
-        $settings = json_decode((string) file_get_contents($filePath), true) ?? [];
-        $settings = is_array($settings) ? $settings : [];
-
-        return $this->cachedSettings = $this->normalize($settings);
+        return $this->cachedSettings = $this->normalize($this->read($filePath));
     }
 
     /**
@@ -108,18 +101,15 @@ class JsonSettingsRepository implements SettingsRepository
     private function initializeFile(string $filePath): void
     {
         $exampleFilePath = storage_path(self::EXAMPLE_SETTINGS_PATH);
+        File::ensureDirectoryExists(dirname($filePath));
 
-        if (file_exists($exampleFilePath)) {
-            copy($exampleFilePath, $filePath);
+        if (File::exists($exampleFilePath)) {
+            File::copy($exampleFilePath, $filePath);
 
             return;
         }
 
-        if (! file_exists(dirname($filePath))) {
-            mkdir(dirname($filePath), 0755, true);
-        }
-
-        file_put_contents($filePath, json_encode([
+        File::put($filePath, json_encode([
             'general' => [],
             'invoice' => [],
             'member' => [],
@@ -127,6 +117,16 @@ class JsonSettingsRepository implements SettingsRepository
             'expenses' => [],
             'subscriptions' => [],
         ], JSON_PRETTY_PRINT));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function read(string $filePath): array
+    {
+        $settings = json_decode(File::get($filePath), true);
+
+        return is_array($settings) ? $settings : [];
     }
 
     /**

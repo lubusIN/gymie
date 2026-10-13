@@ -4,12 +4,13 @@ namespace App\Filament\Resources\Subscriptions\Tables;
 
 use App\Enums\Status;
 use App\Filament\Resources\Plans\PlanResource;
-use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
+use App\Filament\Resources\Subscriptions\Schemas\SubscriptionRenewalForm;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Helpers\Helpers;
 use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Subscriptions\SubscriptionRenewalService;
 use App\Support\AppConfig;
 use App\Support\Filament\StatusAction;
 use Carbon\Carbon;
@@ -262,9 +263,9 @@ class SubscriptionTable
                                     ->where('start_date', '>', $today)
                                     ->exists();
                             })
-                            ->schema(fn (Subscription $record): array => SubscriptionForm::renewSchema($record))
-                            ->action(function (Subscription $record, array $data): void {
-                                SubscriptionForm::handleRenew($record, $data);
+                            ->schema(fn (Subscription $record): array => SubscriptionRenewalForm::schema($record))
+                            ->action(function (Subscription $record, array $data, SubscriptionRenewalService $subscriptionRenewalService): void {
+                                SubscriptionRenewalForm::handle($subscriptionRenewalService, $record, $data);
                             }),
                         ViewAction::make()
                             ->url(fn ($record) => SubscriptionResource::getUrl('view', ['record' => $record])),

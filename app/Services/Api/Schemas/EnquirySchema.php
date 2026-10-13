@@ -49,15 +49,15 @@ final class EnquirySchema
     public static function storeRules(): array
     {
         return [
-            'user_id' => ['prohibited'],
+            'user_id' => ['prohibited', 'integer'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'contact' => ['required', 'string', 'max:20'],
             'date' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
             'dob' => ['nullable', 'date'],
-            'status' => ['prohibited'],
-            'lost_reason' => ['prohibited'],
+            'status' => ['prohibited', 'string'],
+            'lost_reason' => ['prohibited', 'nullable', 'string'],
             'address' => ['nullable', 'string'],
             'country' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],

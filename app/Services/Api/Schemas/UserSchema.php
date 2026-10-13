@@ -6,6 +6,7 @@ use App\Enums\Status;
 use App\Models\User;
 use App\Rules\ModelExists;
 use App\Rules\ModelUnique;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -44,7 +45,7 @@ final class UserSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function storeRules(): array
     {
@@ -68,7 +69,7 @@ final class UserSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function updateRules(int|string $userId): array
     {
@@ -104,8 +105,8 @@ final class UserSchema
                     'id' => (int) $role->id,
                     'name' => (string) $role->name,
                 ];
-            })->values()
-            : collect();
+            })->values()->all()
+            : [];
 
         $payload = [
             'id' => (int) $user->id,

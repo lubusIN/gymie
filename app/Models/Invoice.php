@@ -91,8 +91,7 @@ class Invoice extends Model
 
     /**
      * The subscription this invoice is for.
-     */
-    /**
+     *
      * @return BelongsTo<Subscription, $this>
      */
     public function subscription(): BelongsTo
@@ -113,8 +112,7 @@ class Invoice extends Model
 
     /**
      * Get the transactions for the invoice.
-     */
-    /**
+     *
      * @return HasMany<InvoiceTransaction, $this>
      */
     public function transactions(): HasMany
@@ -135,47 +133,21 @@ class Invoice extends Model
         $refundsTotal = (float) $this->transactions()
             ->where('type', 'refund')
             ->sum('amount');
-
-        $paymentsTotal = max($paymentsTotal, 0);
-        $refundsTotal = min(max($refundsTotal, 0), $paymentsTotal);
-
-        $total = (float) ($this->total_amount ?? 0);
-        $total = max($total, 0);
-
-        $netPaid = max($paymentsTotal - $refundsTotal, 0);
-        $netPaid = min($netPaid, $total);
-
-        $status = $this->status->value ?? 'issued';
-        $due = max($total - $netPaid, 0);
-
-        if ($status === 'cancelled') {
-            $due = 0;
-        } elseif ($refundsTotal > 0) {
-            $status = 'refund';
-            $due = 0;
-        } elseif ($due <= 0 && $netPaid > 0) {
-            $status = 'paid';
-            $due = 0;
-        } elseif ($netPaid > 0) {
-            $status = 'partial';
-        } else {
-            $status = 'issued';
-        }
-
-        $isDueOver = $due > 0
-            && $this->due_date
-            && Carbon::parse($this->due_date)->lt(Carbon::today(AppConfig::timezone()));
-
-        if ($isDueOver) {
-            $status = 'overdue';
-        }
+        $ledger = InvoiceCalculator::ledger(
+            totalAmount: (float) ($this->total_amount ?? 0),
+            paymentsTotal: $paymentsTotal,
+            refundsTotal: $refundsTotal,
+            currentStatus: $previousStatus,
+            isPastDue: $this->due_date !== null
+                && $this->due_date->lt(Carbon::today(AppConfig::timezone())),
+        );
 
         $this->newQuery()
             ->whereKey($this->getKey())
             ->update([
-                'paid_amount' => $netPaid,
-                'due_amount' => $due,
-                'status' => $status,
+                'paid_amount' => $ledger['paid'],
+                'due_amount' => $ledger['due'],
+                'status' => $ledger['status'],
             ]);
 
         $this->refresh();
@@ -199,75 +171,92 @@ class Invoice extends Model
      */
     protected static function booted(): void
     {
-        static::saving(function (self $invoice): void {
-            if (! $invoice->number) {
-                $invoice->number = Helpers::generateLastNumber('invoice', Invoice::class, $invoice->date);
-            }
-            Helpers::updateLastNumber('invoice', $invoice->number, $invoice->date);
+        static::saving(fn (self $invoice) => $invoice->prepareForSaving());
+        static::created(fn (self $invoice) => $invoice->recordCreation());
+        static::updated(fn (self $invoice) => $invoice->recordUpdate());
+    }
 
-            $taxRate = Helpers::getTaxRate() ?: 0;
-            $summary = InvoiceCalculator::summary(
-                fee: (float) ($invoice->subscription_fee ?? 0),
-                taxRatePercent: $taxRate,
-                discountAmount: (float) ($invoice->discount_amount ?? 0),
-                paidAmount: (float) ($invoice->paid_amount ?? 0),
-            );
+    /** Normalize generated identifiers and financial totals before persistence. */
+    private function prepareForSaving(): void
+    {
+        if (! $this->number) {
+            $this->number = Helpers::generateLastNumber('invoice', self::class, $this->date);
+        }
 
-            $invoice->subscription_fee = $summary['fee'];
-            $invoice->discount_amount = $summary['discount_amount'];
-            $invoice->tax = $summary['tax'];
-            $invoice->total_amount = $summary['total'];
-            $invoice->paid_amount = $summary['paid'];
-        });
+        Helpers::updateLastNumber('invoice', $this->number, $this->date);
 
-        static::created(function (self $invoice): void {
-            $invoice->recordSubscriptionActivity(SubscriptionActivityType::InvoiceCreated, [
-                'amount' => (float) ($invoice->total_amount ?? 0),
-                'status' => $invoice->status?->value,
+        $summary = InvoiceCalculator::summary(
+            fee: (float) ($this->subscription_fee ?? 0),
+            taxRatePercent: Helpers::getTaxRate(),
+            discountAmount: (float) ($this->discount_amount ?? 0),
+            paidAmount: (float) ($this->paid_amount ?? 0),
+        );
+
+        $this->subscription_fee = $summary['fee'];
+        $this->discount_amount = $summary['discount_amount'];
+        $this->tax = $summary['tax'];
+        $this->total_amount = $summary['total'];
+        $this->paid_amount = $summary['paid'];
+    }
+
+    /** Record the invoice and convert an initial paid amount into a ledger entry. */
+    private function recordCreation(): void
+    {
+        $this->recordSubscriptionActivity(SubscriptionActivityType::InvoiceCreated, [
+            'amount' => (float) ($this->total_amount ?? 0),
+            'status' => $this->status?->value,
+        ]);
+
+        $this->recordInitialPayment();
+        $this->syncFromTransactions();
+    }
+
+    /** Record a status transition before reconciling the ledger again. */
+    private function recordUpdate(): void
+    {
+        if ($this->wasChanged('status')) {
+            $this->recordSubscriptionActivity(SubscriptionActivityType::InvoiceStatusChanged, [
+                'old' => $this->getRawOriginal('status'),
+                'new' => $this->status?->value,
             ]);
 
-            $paid = (float) ($invoice->paid_amount ?? 0);
-            $paid = max($paid, 0);
-            $paid = min($paid, (float) ($invoice->total_amount ?? 0));
-
-            if ($paid > 0) {
-                $transaction = new InvoiceTransaction([
-                    'type' => 'payment',
-                    'amount' => $paid,
-                    'occurred_at' => now()->timezone(AppConfig::timezone()),
-                    'payment_method' => $invoice->payment_method,
-                    'note' => 'Initial payment',
-                    'created_by' => auth()->id(),
-                ]);
-
-                $gymId = $invoice->getAttribute('gym_id');
-
-                if (filled($gymId)) {
-                    $transaction->setAttribute('gym_id', $gymId);
-                }
-
-                $transaction->invoice()->associate($invoice);
-                $transaction->saveQuietly();
-                $transaction->recordSubscriptionActivity();
+            if ($this->status === Status::Overdue) {
+                $this->fireModelEvent('becameOverdue', false);
             }
+        }
 
-            $invoice->syncFromTransactions();
-        });
+        $this->syncFromTransactions();
+    }
 
-        static::updated(function (self $invoice): void {
-            if ($invoice->wasChanged('status')) {
-                $invoice->recordSubscriptionActivity(SubscriptionActivityType::InvoiceStatusChanged, [
-                    'old' => $invoice->getRawOriginal('status'),
-                    'new' => $invoice->status?->value,
-                ]);
+    /** Persist the initial payment supplied with a newly created invoice. */
+    private function recordInitialPayment(): void
+    {
+        $paidAmount = min(
+            max((float) ($this->paid_amount ?? 0), 0),
+            (float) ($this->total_amount ?? 0),
+        );
 
-                if ($invoice->status === Status::Overdue) {
-                    $invoice->fireModelEvent('becameOverdue', false);
-                }
-            }
+        if ($paidAmount <= 0) {
+            return;
+        }
 
-            $invoice->syncFromTransactions();
-        });
+        $transaction = new InvoiceTransaction([
+            'type' => 'payment',
+            'amount' => $paidAmount,
+            'occurred_at' => now()->timezone(AppConfig::timezone()),
+            'payment_method' => $this->payment_method,
+            'note' => 'Initial payment',
+            'created_by' => auth()->id(),
+        ]);
+        $gymId = $this->getAttribute('gym_id');
+
+        if (filled($gymId)) {
+            $transaction->setAttribute('gym_id', $gymId);
+        }
+
+        $transaction->invoice()->associate($this);
+        $transaction->saveQuietly();
+        $transaction->recordSubscriptionActivity();
     }
 
     /**

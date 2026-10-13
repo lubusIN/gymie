@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Rules\ModelExists;
 use App\Rules\ModelUnique;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Single source of truth for Invoice API validation and serialization.
@@ -45,7 +46,7 @@ final class InvoiceSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function storeRules(): array
     {
@@ -56,7 +57,7 @@ final class InvoiceSchema
             'due_date' => ['nullable', 'date'],
             'payment_method' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string'],
-            'discount' => ['nullable'],
+            'discount' => ['nullable', 'numeric', 'between:0,100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_note' => ['nullable', 'string'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
@@ -65,7 +66,7 @@ final class InvoiceSchema
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public static function updateRules(int|string $invoiceId): array
     {
@@ -75,7 +76,7 @@ final class InvoiceSchema
             'due_date' => ['sometimes', 'nullable', 'date'],
             'payment_method' => ['sometimes', 'nullable', 'string', 'max:50'],
             'status' => ['sometimes', 'nullable', 'string'],
-            'discount' => ['sometimes', 'nullable'],
+            'discount' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'discount_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'discount_note' => ['sometimes', 'nullable', 'string'],
             'paid_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],

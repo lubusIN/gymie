@@ -20,12 +20,6 @@ use Spatie\QueryBuilder\QueryBuilder;
 final class QueryFilters
 {
     /**
-     * Apply all common index filters for a resource using allowlisted rules.
-     *
-     * This consolidates controller boilerplate while keeping query rules explicit
-     * (see {@see ResourceQueryRules}).
-     */
-    /**
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
      * @param  Builder<TModel>  $query
@@ -33,32 +27,31 @@ final class QueryFilters
      */
     public static function applyIndexFilters(Builder $query, Request $request, string $resourceKey): Builder
     {
-        self::validateIndexQueryParameters($request, $resourceKey);
+        $rules = ResourceQueryRules::forResource($resourceKey);
+
+        self::validateIndexQueryParameters($request, $rules['filters']);
 
         self::applyTrashed($query, $request->query('trashed'));
-        self::applySearch($query, $request->query('q'), ResourceQueryRules::searchable($resourceKey));
+        self::applySearch($query, $request->query('q'), $rules['searchable']);
 
-        $includes = ResourceQueryRules::includes($resourceKey);
-        $filters = ResourceQueryRules::filters($resourceKey);
-
-        $statusColumn = ResourceQueryRules::statusColumn($resourceKey);
-        if ($statusColumn !== null) {
-            self::applyStatus($query, $request->query('status'), $statusColumn);
+        if ($rules['status_column'] !== null) {
+            self::applyStatus($query, $request->query('status'), $rules['status_column']);
         }
 
         self::applyQueryBuilderFilters(
             $query,
             $request,
-            $includes,
-            $filters,
-            ResourceQueryRules::sortable($resourceKey),
-            ResourceQueryRules::defaultSort($resourceKey),
+            $rules['includes'],
+            $rules['filters'],
+            $rules['sortable'],
+            $rules['default_sort'],
         );
 
         return $query;
     }
 
-    private static function validateIndexQueryParameters(Request $request, string $resourceKey): void
+    /** @param array<string, array{type: string, column: string}> $filterRules */
+    private static function validateIndexQueryParameters(Request $request, array $filterRules): void
     {
         $errors = [];
 
@@ -84,7 +77,6 @@ final class QueryFilters
             }
         }
 
-        $rules = ResourceQueryRules::filters($resourceKey);
         $filter = $request->query('filter');
         if ($filter !== null) {
             if (! is_array($filter)) {
@@ -97,7 +89,7 @@ final class QueryFilters
                         continue;
                     }
 
-                    if (! array_key_exists($key, $rules)) {
+                    if (! array_key_exists($key, $filterRules)) {
                         continue;
                     }
 
@@ -112,7 +104,7 @@ final class QueryFilters
                         continue;
                     }
 
-                    $type = $rules[$key]['type'];
+                    $type = $filterRules[$key]['type'];
                     if (in_array($type, ['date_range', 'datetime_range'], true) && str_contains($value, '..') && self::parseRange($value) === null) {
                         $errors["filter.{$key}"][] = 'Range filters must use `from..to`.';
                     }
@@ -207,15 +199,13 @@ final class QueryFilters
     }
 
     /**
-     * Apply a simple multi-column "contains" search using `?q=...`.
-     *
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
      * @param  Builder<TModel>  $query
      * @param  list<string>  $columns
      * @return Builder<TModel>
      */
-    public static function applySearch(Builder $query, ?string $q, array $columns): Builder
+    private static function applySearch(Builder $query, ?string $q, array $columns): Builder
     {
         $q = trim((string) $q);
 
@@ -231,15 +221,12 @@ final class QueryFilters
     }
 
     /**
-     * Apply a basic equality filter for `?status=...`.
-     */
-    /**
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
      * @param  Builder<TModel>  $query
      * @return Builder<TModel>
      */
-    public static function applyStatus(Builder $query, ?string $status, string $column = 'status'): Builder
+    private static function applyStatus(Builder $query, ?string $status, string $column = 'status'): Builder
     {
         $status = trim((string) $status);
 
@@ -251,15 +238,12 @@ final class QueryFilters
     }
 
     /**
-     * Apply soft-delete visibility filter using `?trashed=with|only`.
-     */
-    /**
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
      * @param  Builder<TModel>  $query
      * @return Builder<TModel>
      */
-    public static function applyTrashed(Builder $query, ?string $value): Builder
+    private static function applyTrashed(Builder $query, ?string $value): Builder
     {
         $value = trim((string) $value);
 

@@ -26,8 +26,7 @@ class Service extends Model
 
     /**
      * Get the plans for the service.
-     */
-    /**
+     *
      * @return HasMany<Plan, $this>
      */
     public function plans(): HasMany

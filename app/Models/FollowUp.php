@@ -59,8 +59,7 @@ class FollowUp extends Model
 
     /**
      * Get the enquiry for the follow-up.
-     */
-    /**
+     *
      * @return BelongsTo<Enquiry, $this>
      */
     public function enquiry(): BelongsTo
@@ -70,8 +69,7 @@ class FollowUp extends Model
 
     /**
      * Get the user for the follow-up.
-     */
-    /**
+     *
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo

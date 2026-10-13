@@ -2,10 +2,11 @@
 
 namespace App\Filament\Widgets\Analytics;
 
-use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
+use App\Filament\Resources\Subscriptions\Schemas\SubscriptionRenewalForm;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Helpers\Helpers;
 use App\Models\Subscription;
+use App\Services\Subscriptions\SubscriptionRenewalService;
 use App\Support\AppConfig;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
@@ -112,9 +113,9 @@ class ExpiringSoonSubscriptionsTableWidget extends TableWidget
                                 ->where('start_date', '>', $today)
                                 ->exists();
                         })
-                        ->schema(fn (Subscription $record): array => SubscriptionForm::renewSchema($record))
-                        ->action(function (Subscription $record, array $data): void {
-                            SubscriptionForm::handleRenew($record, $data);
+                        ->schema(fn (Subscription $record): array => SubscriptionRenewalForm::schema($record))
+                        ->action(function (Subscription $record, array $data, SubscriptionRenewalService $subscriptionRenewalService): void {
+                            SubscriptionRenewalForm::handle($subscriptionRenewalService, $record, $data);
                         }),
                     ViewAction::make()
                         ->url(fn (Subscription $record): string => SubscriptionResource::getUrl('view', ['record' => $record])),

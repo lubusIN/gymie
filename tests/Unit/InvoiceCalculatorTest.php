@@ -34,3 +34,27 @@ it('never returns negative totals or dues', function (): void {
     expect($summary['paid'])->toBe(0.0);
     expect($summary['due'])->toBe(0.0);
 });
+
+it('reconciles invoice ledger balances and statuses', function (
+    float $total,
+    float $payments,
+    float $refunds,
+    ?string $currentStatus,
+    bool $isPastDue,
+    array $expected,
+): void {
+    expect(InvoiceCalculator::ledger(
+        totalAmount: $total,
+        paymentsTotal: $payments,
+        refundsTotal: $refunds,
+        currentStatus: $currentStatus,
+        isPastDue: $isPastDue,
+    ))->toBe($expected);
+})->with([
+    'issued' => [100, 0, 0, 'issued', false, ['paid' => 0.0, 'due' => 100.0, 'status' => 'issued']],
+    'partial' => [100, 40, 0, 'issued', false, ['paid' => 40.0, 'due' => 60.0, 'status' => 'partial']],
+    'paid' => [100, 100, 0, 'issued', false, ['paid' => 100.0, 'due' => 0.0, 'status' => 'paid']],
+    'refunded' => [100, 100, 100, 'paid', false, ['paid' => 0.0, 'due' => 0.0, 'status' => 'refund']],
+    'cancelled' => [100, 0, 0, 'cancelled', false, ['paid' => 0.0, 'due' => 0.0, 'status' => 'cancelled']],
+    'overdue' => [100, 0, 0, 'issued', true, ['paid' => 0.0, 'due' => 100.0, 'status' => 'overdue']],
+]);

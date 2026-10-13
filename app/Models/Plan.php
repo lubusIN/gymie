@@ -58,9 +58,8 @@ class Plan extends Model
     }
 
     /**
-     * Get the sevice for the plan.
-     */
-    /**
+     * Get the service for the plan.
+     *
      * @return BelongsTo<Service, $this>
      */
     public function service(): BelongsTo
@@ -70,8 +69,7 @@ class Plan extends Model
 
     /**
      * Get the subscriptions for the plan.
-     */
-    /**
+     *
      * @return HasMany<Subscription, $this>
      */
     public function subscriptions(): HasMany

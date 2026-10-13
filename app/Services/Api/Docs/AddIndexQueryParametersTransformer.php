@@ -35,19 +35,14 @@ final class AddIndexQueryParametersTransformer implements OperationTransformer
         $resourceKey = $path;
 
         try {
-            $searchable = ResourceQueryRules::searchable($resourceKey);
-            $sortable = ResourceQueryRules::sortable($resourceKey);
-            $defaultSort = ResourceQueryRules::defaultSort($resourceKey);
-            $statusColumn = ResourceQueryRules::statusColumn($resourceKey);
-            $includes = ResourceQueryRules::includes($resourceKey);
-            $filters = ResourceQueryRules::filters($resourceKey);
+            $rules = ResourceQueryRules::forResource($resourceKey);
         } catch (\Throwable) {
             return;
         }
 
         $qDescription = 'Search term (contains match).';
-        if ($searchable !== []) {
-            $qDescription .= ' Searchable: '.implode(', ', $searchable).'.';
+        if ($rules['searchable'] !== []) {
+            $qDescription .= ' Searchable: '.implode(', ', $rules['searchable']).'.';
         }
         $this->add($operation, $this->stringParam('q', $qDescription)->example('alex'));
 
@@ -55,24 +50,24 @@ final class AddIndexQueryParametersTransformer implements OperationTransformer
         $this->add($operation, $this->intParam('per_page', 'Items per page (max 100).')->example(15));
 
         $sortDescription = 'Sort keys (comma-separated). Prefix with `-` for desc.';
-        if ($sortable !== []) {
-            $sortDescription .= ' Allowed: '.implode(', ', $sortable).'. Default: '.$defaultSort.'.';
+        if ($rules['sortable'] !== []) {
+            $sortDescription .= ' Allowed: '.implode(', ', $rules['sortable']).'. Default: '.$rules['default_sort'].'.';
         }
-        $this->add($operation, $this->stringParam('sort', $sortDescription)->example($defaultSort));
+        $this->add($operation, $this->stringParam('sort', $sortDescription)->example($rules['default_sort']));
 
         if (in_array($resourceKey, ['members', 'users', 'services', 'plans', 'subscriptions', 'invoices', 'enquiries', 'follow-ups'], true)) {
             $this->add($operation, $this->stringParam('trashed', 'Soft delete visibility: `with` or `only`.')->example('with'));
         }
 
-        if ($includes !== []) {
-            $this->add($operation, $this->stringParam('include', 'Comma-separated includes. Allowed: '.implode(', ', $includes).'.')->example($includes[0]));
+        if ($rules['includes'] !== []) {
+            $this->add($operation, $this->stringParam('include', 'Comma-separated includes. Allowed: '.implode(', ', $rules['includes']).'.')->example($rules['includes'][0]));
         }
 
-        if ($statusColumn !== null) {
+        if ($rules['status_column'] !== null) {
             $this->add($operation, $this->stringParam('status', 'Legacy shorthand for `filter[status]`.')->example('active'));
         }
 
-        foreach ($filters as $key => $rule) {
+        foreach ($rules['filters'] as $key => $rule) {
             $type = $rule['type'];
 
             $name = "filter[{$key}]";

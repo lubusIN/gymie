@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CommunicationDeliveryStatus;
+use App\Enums\CommunicationRetryHandler;
 use App\Enums\CommunicationTemplateKey;
 use App\Helpers\Helpers;
 use App\Jobs\SendCommunicationEmail;
@@ -17,6 +18,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Communication\CommunicationService;
 use App\Services\Communication\RetryCommunicationDelivery;
+use App\Services\Email\InvoiceEmailSender;
 use App\Services\Email\InvoiceEmailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -91,7 +93,7 @@ it('records a queued delivery before dispatching an email job', function (): voi
         ->and($delivery->related->is($invoice))->toBeTrue()
         ->and($delivery->template->key)->toBe(CommunicationTemplateKey::InvoiceIssued->value)
         ->and($delivery->retry_payload)->toMatchArray([
-            'handler' => RetryCommunicationDelivery::INVOICE_ISSUED_HANDLER,
+            'handler' => CommunicationRetryHandler::InvoiceIssued->value,
             'invoice_id' => $invoice->getKey(),
         ]);
 
@@ -127,7 +129,7 @@ it('encrypts retry context and requeues a failed template delivery', function ()
         'failed_at' => now(),
         'failure_reason' => 'Temporary provider failure.',
         'retry_payload' => [
-            'handler' => RetryCommunicationDelivery::COMMUNICATION_HANDLER,
+            'handler' => CommunicationRetryHandler::Communication->value,
             'variables' => [
                 'member_name' => 'Taylor Member',
                 'member_code' => 'MEM-001',
@@ -164,7 +166,7 @@ it('requeues payment receipts with their transaction context', function (): void
         'status' => CommunicationDeliveryStatus::Failed,
         'failed_at' => now(),
         'retry_payload' => [
-            'handler' => RetryCommunicationDelivery::PAYMENT_RECEIPT_HANDLER,
+            'handler' => CommunicationRetryHandler::PaymentReceipt->value,
             'invoice_id' => 42,
             'invoice_transaction_id' => 84,
             'note' => 'Thank you.',
@@ -196,7 +198,7 @@ it('rejects retry when context is missing or mail delivery is unavailable', func
         'status' => CommunicationDeliveryStatus::Failed,
         'failed_at' => now(),
         'retry_payload' => [
-            'handler' => RetryCommunicationDelivery::COMMUNICATION_HANDLER,
+            'handler' => CommunicationRetryHandler::Communication->value,
             'variables' => [],
         ],
     ]);
@@ -222,7 +224,7 @@ it('uses edited templates and records successful delivery without storing the me
             'body' => 'Hello {{ member_name }}, balance: {{ due }}.',
         ]);
 
-    app(InvoiceEmailService::class)->sendInvoiceIssuedEmail(
+    app(InvoiceEmailSender::class)->sendInvoiceIssuedEmail(
         invoiceId: $invoice->getKey(),
         toEmail: $member->email,
     );
@@ -270,7 +272,7 @@ it('records a skipped reminder when no balance remains', function (): void {
         'due_amount' => 0,
     ]);
 
-    app(InvoiceEmailService::class)->sendPaymentReminderEmail(
+    app(InvoiceEmailSender::class)->sendPaymentReminderEmail(
         invoiceId: $invoice->getKey(),
         toEmail: $member->email,
     );

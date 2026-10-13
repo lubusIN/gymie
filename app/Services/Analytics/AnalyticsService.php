@@ -65,9 +65,14 @@ class AnalyticsService
      */
     public function financialMetrics(AnalyticsDateRange $range): array
     {
-        $salesTotal = (float) Invoice::query()
+        $invoiceTotals = Invoice::query()
             ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
-            ->sum('total_amount');
+            ->selectRaw('COALESCE(SUM(total_amount), 0) as sales_total')
+            ->selectRaw('COALESCE(SUM(discount_amount), 0) as discounts_total')
+            ->first();
+
+        $salesTotal = (float) ($invoiceTotals?->sales_total ?? 0);
+        $discounts = (float) ($invoiceTotals?->discounts_total ?? 0);
 
         $transactions = InvoiceTransaction::query()
             ->whereBetween('occurred_at', [$range->start, $range->end])
@@ -79,10 +84,6 @@ class AnalyticsService
         $refundsTotal = (float) ($transactions->refunds_total ?? 0);
         $collected = max($paymentsTotal - $refundsTotal, 0);
         $netRevenue = max($salesTotal - $refundsTotal, 0);
-
-        $discounts = (float) Invoice::query()
-            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
-            ->sum('discount_amount');
 
         $outstanding = (float) Invoice::query()
             ->where('date', '<=', $range->referenceDateString())
@@ -110,20 +111,15 @@ class AnalyticsService
      */
     public function revenueTrendByDate(AnalyticsDateRange $range): array
     {
-        /** @var Collection<string, float> $rows */
-        $rows = Invoice::query()
-            ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
-            ->selectRaw('date as day')
-            ->selectRaw('SUM(total_amount) as total')
-            ->groupBy('day')
-            ->orderBy('day')
-            ->pluck('total', 'day')
-            ->map(fn ($value): float => Data::float($value));
-
-        /** @var array<string, float> $result */
-        $result = $rows->all();
-
-        return $result;
+        return $this->floatMap(
+            Invoice::query()
+                ->whereBetween('date', [$range->start->toDateString(), $range->end->toDateString()])
+                ->selectRaw('DATE(date) as day')
+                ->selectRaw('SUM(total_amount) as total')
+                ->groupBy('day')
+                ->orderBy('day')
+                ->pluck('total', 'day'),
+        );
     }
 
     /**
@@ -201,20 +197,15 @@ class AnalyticsService
      */
     public function collectedTrendByDate(AnalyticsDateRange $range): array
     {
-        /** @var Collection<string, float> $rows */
-        $rows = InvoiceTransaction::query()
-            ->whereBetween('occurred_at', [$range->start, $range->end])
-            ->selectRaw('DATE(occurred_at) as day')
-            ->selectRaw("SUM(CASE WHEN type = 'payment' THEN amount WHEN type = 'refund' THEN -amount ELSE 0 END) as net")
-            ->groupBy('day')
-            ->orderBy('day')
-            ->pluck('net', 'day')
-            ->map(fn ($value): float => Data::float($value));
-
-        /** @var array<string, float> $result */
-        $result = $rows->all();
-
-        return $result;
+        return $this->floatMap(
+            InvoiceTransaction::query()
+                ->whereBetween('occurred_at', [$range->start, $range->end])
+                ->selectRaw('DATE(occurred_at) as day')
+                ->selectRaw("SUM(CASE WHEN type = 'payment' THEN amount WHEN type = 'refund' THEN -amount ELSE 0 END) as net")
+                ->groupBy('day')
+                ->orderBy('day')
+                ->pluck('net', 'day'),
+        );
     }
 
     /**
@@ -227,20 +218,15 @@ class AnalyticsService
         $driver = InvoiceTransaction::query()->getModel()->getConnection()->getDriverName();
         $monthExpression = $this->monthGroupExpression('occurred_at', $driver);
 
-        /** @var Collection<string, float> $rows */
-        $rows = InvoiceTransaction::query()
-            ->whereBetween('occurred_at', [$range->start, $range->end])
-            ->selectRaw("{$monthExpression} as month")
-            ->selectRaw("SUM(CASE WHEN type = 'payment' THEN amount WHEN type = 'refund' THEN -amount ELSE 0 END) as net")
-            ->groupBy('month')
-            ->orderBy('month')
-            ->pluck('net', 'month')
-            ->map(fn ($value): float => Data::float($value));
-
-        /** @var array<string, float> $result */
-        $result = $rows->all();
-
-        return $result;
+        return $this->floatMap(
+            InvoiceTransaction::query()
+                ->whereBetween('occurred_at', [$range->start, $range->end])
+                ->selectRaw("{$monthExpression} as month")
+                ->selectRaw("SUM(CASE WHEN type = 'payment' THEN amount WHEN type = 'refund' THEN -amount ELSE 0 END) as net")
+                ->groupBy('month')
+                ->orderBy('month')
+                ->pluck('net', 'month'),
+        );
     }
 
     /**
@@ -250,19 +236,14 @@ class AnalyticsService
      */
     public function expenseTrendByDate(AnalyticsDateRange $range): array
     {
-        /** @var Collection<string, float> $rows */
-        $rows = $this->paidExpensesWithin($range)
-            ->selectRaw('DATE(paid_at) as day')
-            ->selectRaw('SUM(amount) as total')
-            ->groupBy('day')
-            ->orderBy('day')
-            ->pluck('total', 'day')
-            ->map(fn ($value): float => Data::float($value));
-
-        /** @var array<string, float> $result */
-        $result = $rows->all();
-
-        return $result;
+        return $this->floatMap(
+            $this->paidExpensesWithin($range)
+                ->selectRaw('DATE(paid_at) as day')
+                ->selectRaw('SUM(amount) as total')
+                ->groupBy('day')
+                ->orderBy('day')
+                ->pluck('total', 'day'),
+        );
     }
 
     /**
@@ -275,19 +256,14 @@ class AnalyticsService
         $driver = Expense::query()->getModel()->getConnection()->getDriverName();
         $monthExpression = $this->monthGroupExpression('paid_at', $driver);
 
-        /** @var Collection<string, float> $rows */
-        $rows = $this->paidExpensesWithin($range)
-            ->selectRaw("{$monthExpression} as month")
-            ->selectRaw('SUM(amount) as total')
-            ->groupBy('month')
-            ->orderBy('month')
-            ->pluck('total', 'month')
-            ->map(fn ($value): float => Data::float($value));
-
-        /** @var array<string, float> $result */
-        $result = $rows->all();
-
-        return $result;
+        return $this->floatMap(
+            $this->paidExpensesWithin($range)
+                ->selectRaw("{$monthExpression} as month")
+                ->selectRaw('SUM(amount) as total')
+                ->groupBy('month')
+                ->orderBy('month')
+                ->pluck('total', 'month'),
+        );
     }
 
     /**
@@ -380,5 +356,18 @@ class AnalyticsService
             'category' => 'Other',
             'total' => $otherTotal,
         ]);
+    }
+
+    /**
+     * @template TKey of array-key
+     *
+     * @param  Collection<TKey, mixed>  $values
+     * @return array<TKey, float>
+     */
+    private function floatMap(Collection $values): array
+    {
+        return $values
+            ->map(fn (mixed $value): float => Data::float($value))
+            ->all();
     }
 }

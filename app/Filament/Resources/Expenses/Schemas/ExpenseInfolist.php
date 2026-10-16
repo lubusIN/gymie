@@ -9,8 +9,6 @@ use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
 
 class ExpenseInfolist
 {
@@ -20,20 +18,6 @@ class ExpenseInfolist
             ->columns(1)
             ->components([
                 Fieldset::make(__('app.titles.expense_details'))
-                    ->label(function (Expense $record): HtmlString {
-                        $status = $record->status;
-                        $html = Blade::render(
-                            '<x-filament::badge class="inline-flex ml-2" :color="$color">
-                                {{ $label }}
-                            </x-filament::badge>',
-                            [
-                                'color' => $status->getColor(),
-                                'label' => $status->getLabel(),
-                            ]
-                        );
-
-                        return new HtmlString($html);
-                    })
                     ->schema([
                         TextEntry::make('name')
                             ->label(__('app.fields.expense')),

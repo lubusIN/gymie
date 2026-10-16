@@ -4,11 +4,10 @@ namespace App\Filament\Widgets\Analytics;
 
 use App\Services\Analytics\AnalyticsService;
 use App\Support\Analytics\AnalyticsDateRange;
+use App\Support\Filament\MetricTrend;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
 
 /**
  * Membership insights widget.
@@ -78,33 +77,6 @@ class MembershipMetricsWidget extends StatsOverviewWidget
     }
 
     /**
-     * Render a KPI value with an inline delta.
-     *
-     * @param  array{label: string, icon: string|null, class: string}  $delta
-     */
-    private function valueWithDelta(string $value, array $delta): HtmlString
-    {
-        $value = e($value);
-        $deltaLabel = e($delta['label']);
-        $deltaClass = e($delta['class']);
-
-        $deltaIcon = null;
-        if (filled($delta['icon'])) {
-            $deltaIcon = Blade::render(
-                '<x-filament::icon :icon="$icon" class="h-4 w-4 text-current" />',
-                ['icon' => $delta['icon']],
-            );
-        }
-
-        return new HtmlString(<<<HTML
-<div class="flex items-baseline gap-2 my-1">
-    <span>{$value}</span>
-    <span class="text-sm font-semibold {$deltaClass} inline-flex items-center gap-1">{$deltaLabel}{$deltaIcon}</span>
-</div>
-HTML);
-    }
-
-    /**
      * @return array<int, Stat>
      */
     protected function getStats(): array
@@ -123,28 +95,28 @@ HTML);
         return [
             Stat::make(
                 __('app.widgets.active_members'),
-                $this->valueWithDelta((string) $metrics['active_members'], $activeDelta),
+                MetricTrend::inlineValue((string) $metrics['active_members'], $activeDelta),
             )
                 ->icon('heroicon-o-user-group')
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['active_members']]))
                 ->descriptionColor('gray'),
             Stat::make(
                 __('app.widgets.new_members'),
-                $this->valueWithDelta((string) $metrics['new_signups'], $signupDelta),
+                MetricTrend::inlineValue((string) $metrics['new_signups'], $signupDelta),
             )
                 ->icon('heroicon-o-user-plus')
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['new_signups']]))
                 ->descriptionColor('gray'),
             Stat::make(
                 __('app.widgets.renewals'),
-                $this->valueWithDelta((string) $metrics['renewals'], $renewalDelta),
+                MetricTrend::inlineValue((string) $metrics['renewals'], $renewalDelta),
             )
                 ->icon('heroicon-o-arrow-path')
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['renewals']]))
                 ->descriptionColor('gray'),
             Stat::make(
                 __('app.widgets.expired_not_renewed'),
-                $this->valueWithDelta((string) $metrics['expired_not_renewed'], $expiredDelta),
+                MetricTrend::inlineValue((string) $metrics['expired_not_renewed'], $expiredDelta),
             )
                 ->icon('heroicon-o-x-circle')
                 ->description(__('app.widgets.vs_previous_period', ['count' => (string) $previous['expired_not_renewed']]))

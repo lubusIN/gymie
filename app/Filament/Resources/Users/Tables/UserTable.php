@@ -15,7 +15,6 @@ use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 
@@ -30,7 +29,6 @@ class UserTable
             ->columns([
                 TextColumn::make('id')
                     ->label(__('app.fields.id'))
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 ImageColumn::make('photo')
                     ->label(__('app.fields.photo'))
@@ -38,7 +36,6 @@ class UserTable
                     ->defaultImageUrl(fn (User $record): string => 'https://ui-avatars.com/api/?background=000&color=fff&name='.$record->name),
                 TextColumn::make('name')
                     ->label(__('app.fields.name'))
-                    ->sortable()
                     ->searchable(),
                 TextColumn::make('email')
                     ->label(__('app.fields.email'))
@@ -72,7 +69,6 @@ class UserTable
             ->emptyStateHeading(fn ($livewire): string => TableUi::emptyStateHeading($livewire, User::class, 'users'))
             ->emptyStateDescription(fn ($livewire): string => TableUi::emptyStateDescription($livewire, User::class, 'users'))
             ->filters([
-                TrashedFilter::make(),
                 TableUi::dateRangeFilter(),
             ])
             ->recordActions([

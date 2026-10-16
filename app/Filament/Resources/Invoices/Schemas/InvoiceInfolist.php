@@ -8,6 +8,7 @@ use App\Filament\Resources\Members\MemberResource;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Helpers\Helpers;
 use App\Models\Invoice;
+use App\Support\Billing\InvoiceDisplay;
 use App\Support\Billing\PaymentMethod;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
@@ -18,6 +19,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\TextSize;
+use Illuminate\Support\HtmlString;
 
 class InvoiceInfolist
 {
@@ -76,14 +78,6 @@ class InvoiceInfolist
                 'xl' => 2,
             ])
             ->schema([
-                TextEntry::make('number')
-                    ->label(__('app.fields.invoice_number'))
-                    ->weight(FontWeight::Bold)
-                    ->copyable(),
-                TextEntry::make('status')
-                    ->label(__('app.fields.status'))
-                    ->badge()
-                    ->placeholder(__('app.placeholders.na')),
                 TextEntry::make('subscription.member.name')
                     ->label(__('app.fields.member'))
                     ->helperText(fn (Invoice $record): ?string => $record->subscription?->member?->code)
@@ -102,15 +96,20 @@ class InvoiceInfolist
                 TextEntry::make('due_date')
                     ->label(__('app.fields.due_date'))
                     ->date('d M Y')
+                    ->helperText(fn (Invoice $record): ?HtmlString => self::overdueHelperText($record))
                     ->placeholder(__('app.placeholders.na')),
-                TextEntry::make('subscription.start_date')
-                    ->label(__('app.fields.start_date'))
-                    ->date('d M Y')
-                    ->placeholder(__('app.placeholders.na')),
-                TextEntry::make('subscription.end_date')
-                    ->label(__('app.fields.end_date'))
-                    ->date('d M Y')
-                    ->placeholder(__('app.placeholders.na')),
+                TextEntry::make('membership_period')
+                    ->label(__('app.fields.membership_period'))
+                    ->state(function (Invoice $record): string {
+                        $startDate = $record->subscription?->start_date;
+                        $endDate = $record->subscription?->end_date;
+
+                        if ($startDate === null || $endDate === null) {
+                            return __('app.placeholders.na');
+                        }
+
+                        return $startDate->format('d M Y').' – '.$endDate->format('d M Y');
+                    }),
                 TextEntry::make('payment_method')
                     ->label(__('app.fields.payment_method'))
                     ->formatStateUsing(fn (?string $state): string => $state
@@ -118,45 +117,72 @@ class InvoiceInfolist
                         : __('app.placeholders.na')),
                 TextEntry::make('discount_note')
                     ->label(__('app.fields.discount_note'))
-                    ->placeholder(__('app.placeholders.na')),
+                    ->visible(fn (Invoice $record): bool => filled($record->discount_note)),
             ]);
+    }
+
+    private static function overdueHelperText(Invoice $record): ?HtmlString
+    {
+        $message = InvoiceDisplay::overdueAge($record);
+
+        if ($message === null) {
+            return null;
+        }
+
+        return new HtmlString(
+            '<span class="text-danger-600 dark:text-danger-400">'.e($message).'</span>',
+        );
     }
 
     private static function summarySection(): Section
     {
-        return Section::make(__('app.titles.summary'))
+        return Section::make(__('app.titles.payment_summary'))
             ->key('invoice_summary')
-            ->columns(2)
+            ->columns(1)
+            ->inlineLabel()
             ->columnSpan(1)
+            ->extraAttributes(['class' => 'gymie-payment-summary'])
             ->schema([
                 TextEntry::make('subscription_fee')
                     ->label(__('app.fields.fee'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->alignEnd()
+                    ->weight(FontWeight::Bold)
+                    ->size(TextSize::Large),
                 TextEntry::make('tax')
                     ->label(fn (): string => __('app.fields.tax_with_rate', ['rate' => Helpers::getTaxRate()]))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->alignEnd()
+                    ->weight(FontWeight::Bold)
+                    ->size(TextSize::Large)
                     ->visible(fn (Invoice $record): bool => (float) $record->tax > 0),
                 TextEntry::make('discount_amount')
                     ->label(fn (Invoice $record): string => $record->discount
                         ? __('app.fields.discount_with_rate', ['rate' => $record->discount])
                         : __('app.fields.discount'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->alignEnd()
+                    ->weight(FontWeight::Bold)
+                    ->size(TextSize::Large)
                     ->visible(fn (Invoice $record): bool => (float) $record->discount_amount > 0),
                 TextEntry::make('total_amount')
                     ->label(__('app.fields.total'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->alignEnd()
                     ->weight(FontWeight::Bold)
-                    ->size(TextSize::Large)
-                    ->columnSpanFull(),
+                    ->size(TextSize::Large),
                 TextEntry::make('paid_amount')
                     ->label(__('app.fields.paid'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->alignEnd()
                     ->weight(FontWeight::Bold)
                     ->size(TextSize::Large)
-                    ->color('success'),
+                    ->color('success')
+                    ->extraEntryWrapperAttributes(['class' => 'gymie-payment-summary-settlement']),
                 TextEntry::make('due_amount')
                     ->label(__('app.fields.due'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->alignEnd()
                     ->weight(FontWeight::Bold)
                     ->size(TextSize::Large)
                     ->color(fn ($state): string => (float) $state > 0 ? 'danger' : 'success'),

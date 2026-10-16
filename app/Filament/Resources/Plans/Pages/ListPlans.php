@@ -3,14 +3,14 @@
 namespace App\Filament\Resources\Plans\Pages;
 
 use App\Enums\Status;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\Plans\PlanResource;
 use App\Models\Plan;
 use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
 
-class ListPlans extends ListRecords
+class ListPlans extends ListRecordsWithTableTabs
 {
     protected static string $resource = PlanResource::class;
 
@@ -18,7 +18,6 @@ class ListPlans extends ListRecords
     {
         return [
             CreateAction::make()
-                ->modalAlignment('center')
                 ->modalWidth(Width::ExtraLarge)
                 ->modalHeading(__('app.actions.new', ['resource' => PlanResource::getModelLabel()]))
                 ->createAnother(false)

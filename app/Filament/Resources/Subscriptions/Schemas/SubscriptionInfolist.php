@@ -3,14 +3,11 @@
 namespace App\Filament\Resources\Subscriptions\Schemas;
 
 use App\Filament\Infolists\Components\ActivityTimelineEntry;
-use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Members\MemberResource;
 use App\Filament\Resources\Subscriptions\Pages\ViewSubscription;
 use App\Filament\Resources\Subscriptions\RelationManagers\InvoicesRelationManager;
-use App\Helpers\Helpers;
 use App\Models\Subscription;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Livewire as LivewireComponent;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -36,13 +33,8 @@ class SubscriptionInfolist
                             ->key('details_tab')
                             ->icon('heroicon-o-identification')
                             ->schema([
-                                Grid::make([
-                                    'default' => 1,
-                                    'xl' => 2,
-                                ])->schema([
-                                    self::membershipSection(),
-                                    self::billingSection(),
-                                ]),
+                                self::membershipSection(),
+                                self::invoiceTable(),
                             ]),
                         Tab::make(__('app.activity.title'))
                             ->key('activity_tab')
@@ -55,92 +47,61 @@ class SubscriptionInfolist
                                             ->hiddenLabel(),
                                     ]),
                             ]),
-                        Tab::make(__('app.resources.invoices.singular'))
-                            ->key('invoice_tab')
-                            ->icon('heroicon-o-document-text')
-                            ->visible(fn (Subscription $record): bool => InvoicesRelationManager::canViewForRecord(
-                                $record,
-                                ViewSubscription::class,
-                            ))
-                            ->schema([
-                                LivewireComponent::make(
-                                    InvoicesRelationManager::class,
-                                    fn (Subscription $record): array => [
-                                        'ownerRecord' => $record,
-                                        'pageClass' => ViewSubscription::class,
-                                    ],
-                                )->key('invoice_relation_manager'),
-                            ]),
                     ]),
             ]);
     }
 
+    private static function invoiceTable(): LivewireComponent
+    {
+        return LivewireComponent::make(
+            InvoicesRelationManager::class,
+            fn (Subscription $record): array => [
+                'ownerRecord' => $record,
+                'pageClass' => ViewSubscription::class,
+            ],
+        )
+            ->key('invoice_relation_manager')
+            ->visible(fn (Subscription $record): bool => InvoicesRelationManager::canViewForRecord(
+                $record,
+                ViewSubscription::class,
+            ));
+    }
+
     private static function membershipSection(): Section
     {
-        return Section::make(__('app.resources.subscriptions.singular'))
-            ->columns(2)
+        return Section::make(__('app.ui.subscription_details'))
+            ->key('subscription_details')
+            ->columns(3)
             ->schema([
                 TextEntry::make('member.name')
                     ->label(__('app.fields.member'))
                     ->helperText(fn (Subscription $record): string => $record->member->code)
                     ->url(fn (Subscription $record): string => MemberResource::getUrl('view', [
                         'record' => $record->member,
-                    ]))
-                    ->columnSpanFull(),
+                    ])),
                 TextEntry::make('plan.name')
                     ->label(__('app.fields.plan'))
-                    ->helperText(fn (Subscription $record): string => $record->plan->code)
-                    ->columnSpanFull(),
-                TextEntry::make('status')
-                    ->label(__('app.fields.status'))
-                    ->badge(),
-                TextEntry::make('days_remaining')
-                    ->label(__('app.widgets.days_left'))
-                    ->state(fn (Subscription $record): ?int => $record->daysRemaining())
-                    ->placeholder(__('app.placeholders.na')),
-                TextEntry::make('start_date')
-                    ->label(__('app.fields.start_date'))
-                    ->date(),
-                TextEntry::make('end_date')
-                    ->label(__('app.fields.end_date'))
-                    ->date(),
+                    ->helperText(fn (Subscription $record): string => $record->plan->code),
+                TextEntry::make('membership_period')
+                    ->label(__('app.fields.membership_period'))
+                    ->state(fn (Subscription $record): string => self::membershipPeriod($record))
+                    ->helperText(fn (Subscription $record): ?string => self::daysRemaining($record)),
             ]);
     }
 
-    private static function billingSection(): Section
+    private static function membershipPeriod(Subscription $subscription): string
     {
-        return Section::make(__('app.titles.summary'))
-            ->columns(2)
-            ->schema([
-                TextEntry::make('invoice.number')
-                    ->label(__('app.fields.invoice_number'))
-                    ->placeholder(__('app.placeholders.na'))
-                    ->url(fn (Subscription $record): ?string => $record->invoice
-                        ? InvoiceResource::getUrl('view', ['record' => $record->invoice])
-                        : null)
-                    ->columnSpanFull(),
-                TextEntry::make('invoice.total_amount')
-                    ->label(__('app.fields.total'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
-                    ->placeholder(__('app.placeholders.na')),
-                TextEntry::make('invoice.paid_amount')
-                    ->label(__('app.fields.paid'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
-                    ->placeholder(__('app.placeholders.na')),
-                TextEntry::make('invoice.due_amount')
-                    ->label(__('app.fields.due'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
-                    ->color(fn ($state): string => (float) $state > 0 ? 'danger' : 'success')
-                    ->placeholder(__('app.placeholders.na')),
-                TextEntry::make('invoice.status')
-                    ->label(__('app.fields.status'))
-                    ->badge()
-                    ->placeholder(__('app.placeholders.na')),
-                TextEntry::make('invoice.due_date')
-                    ->label(__('app.fields.due_date'))
-                    ->date()
-                    ->placeholder(__('app.placeholders.na'))
-                    ->columnSpanFull(),
-            ]);
+        if ($subscription->start_date === null || $subscription->end_date === null) {
+            return __('app.placeholders.na');
+        }
+
+        return $subscription->start_date->format('d M Y').' – '.$subscription->end_date->format('d M Y');
+    }
+
+    private static function daysRemaining(Subscription $subscription): ?string
+    {
+        $days = $subscription->daysRemaining();
+
+        return $days === null ? null : $days.' '.__('app.widgets.days_left');
     }
 }

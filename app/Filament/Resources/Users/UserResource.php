@@ -10,7 +10,7 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Resources\Users\Tables\UserTable;
 use App\Models\User;
-use App\Support\Filament\GlobalSearchBadge;
+use App\Support\Filament\StatusBadge;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -60,7 +60,7 @@ class UserResource extends Resource
         }
 
         if ($record->status) {
-            $details[__('app.fields.status')] = GlobalSearchBadge::status($record->status);
+            $details[__('app.fields.status')] = StatusBadge::render($record->status);
         }
 
         return $details;

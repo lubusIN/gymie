@@ -18,11 +18,13 @@ it('hides invoice mutation actions from staff without update permission', functi
     ]);
 
     $unpaidInvoice = Invoice::factory()->create([
+        'date' => now()->toDateString(),
         'subscription_fee' => 100,
         'discount_amount' => 0,
         'paid_amount' => 0,
     ])->refresh();
     $paidInvoice = Invoice::factory()->create([
+        'date' => now()->toDateString(),
         'subscription_fee' => 100,
         'discount_amount' => 0,
         'paid_amount' => 50,

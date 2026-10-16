@@ -26,7 +26,6 @@ use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Blade;
 
@@ -44,17 +43,14 @@ class FollowUpTable
     {
         return [
             TextColumn::make('id')
-                ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
             TextColumn::make('enquiry.name')
                 ->searchable()
-                ->label(__('app.resources.enquiries.singular'))
-                ->sortable(),
+                ->label(__('app.resources.enquiries.singular')),
             TextColumn::make('user.name')
                 ->searchable()
                 ->label(__('app.fields.handled_by'))
-                ->placeholder(__('app.placeholders.na'))
-                ->sortable(),
+                ->placeholder(__('app.placeholders.na')),
             TextColumn::make('method')
                 ->label(__('app.fields.method'))
                 ->toggleable(isToggledHiddenByDefault: true),
@@ -128,12 +124,11 @@ class FollowUpTable
     /**
      * Get table filter definitions.
      *
-     * @return array<int, Filter|TrashedFilter>
+     * @return array<int, Filter>
      */
     public static function getTableFilters(): array
     {
         return [
-            TrashedFilter::make(),
             TableUi::dateRangeFilter(),
         ];
     }
@@ -198,7 +193,6 @@ class FollowUpTable
                     ViewAction::make()
                         ->modalWidth(Width::Large)
                         ->modalCancelAction(false)
-                        ->modalAlignment('center')
                         ->schema(
                             fn (Schema $schema): Schema => FollowUpResource::infolist($schema)
                         ),

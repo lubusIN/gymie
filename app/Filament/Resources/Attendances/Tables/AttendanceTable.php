@@ -2,12 +2,10 @@
 
 namespace App\Filament\Resources\Attendances\Tables;
 
-use Filament\Forms\Components\DatePicker;
+use App\Support\Filament\TableUi;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Shared attendance table configuration for the workspace and member profile.
@@ -25,12 +23,10 @@ class AttendanceTable
                 TextColumn::make('member.code')
                     ->label(__('app.fields.member_code'))
                     ->searchable()
-                    ->sortable()
                     ->visible($showMember),
                 TextColumn::make('member.name')
                     ->label(__('app.resources.members.singular'))
                     ->searchable()
-                    ->sortable()
                     ->visible($showMember),
                 TextColumn::make('checked_in_at')
                     ->label(__('app.fields.checked_in_at'))
@@ -42,21 +38,7 @@ class AttendanceTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Filter::make('visit_date')
-                    ->label(__('app.fields.date'))
-                    ->schema([
-                        DatePicker::make('date_from')->label(__('app.fields.date_from')),
-                        DatePicker::make('date_to')->label(__('app.fields.date_to')),
-                    ])
-                    ->query(fn (Builder $query, array $data): Builder => $query
-                        ->when(
-                            $data['date_from'] ?? null,
-                            fn (Builder $query, string $date): Builder => $query->where('visited_on', '>=', $date),
-                        )
-                        ->when(
-                            $data['date_to'] ?? null,
-                            fn (Builder $query, string $date): Builder => $query->where('visited_on', '<=', $date),
-                        )),
+                ...($showMember ? [] : [TableUi::dateRangeFilter('visited_on')]),
                 SelectFilter::make('member')
                     ->relationship('member', 'name')
                     ->searchable()

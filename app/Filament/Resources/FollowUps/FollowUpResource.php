@@ -7,7 +7,7 @@ use App\Filament\Resources\FollowUps\Schemas\FollowUpForm;
 use App\Filament\Resources\FollowUps\Schemas\FollowUpInfolist;
 use App\Filament\Resources\FollowUps\Tables\FollowUpTable;
 use App\Models\FollowUp;
-use App\Support\Filament\GlobalSearchBadge;
+use App\Support\Filament\StatusBadge;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -81,7 +81,7 @@ class FollowUpResource extends Resource
         }
 
         if ($record->status) {
-            $details[__('app.fields.status')] = GlobalSearchBadge::status($record->status);
+            $details[__('app.fields.status')] = StatusBadge::render($record->status);
         }
 
         return $details;

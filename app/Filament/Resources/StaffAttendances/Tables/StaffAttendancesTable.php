@@ -2,12 +2,10 @@
 
 namespace App\Filament\Resources\StaffAttendances\Tables;
 
-use Filament\Forms\Components\DatePicker;
+use App\Support\Filament\TableUi;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class StaffAttendancesTable
 {
@@ -22,7 +20,6 @@ class StaffAttendancesTable
                 TextColumn::make('staff.name')
                     ->label(__('app.staff_attendance.staff_member'))
                     ->searchable()
-                    ->sortable()
                     ->visible($showStaff),
                 TextColumn::make('checked_in_at')
                     ->label(__('app.fields.checked_in_at'))
@@ -34,21 +31,7 @@ class StaffAttendancesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Filter::make('visit_date')
-                    ->label(__('app.fields.date'))
-                    ->schema([
-                        DatePicker::make('date_from')->label(__('app.fields.date_from')),
-                        DatePicker::make('date_to')->label(__('app.fields.date_to')),
-                    ])
-                    ->query(fn (Builder $query, array $data): Builder => $query
-                        ->when(
-                            $data['date_from'] ?? null,
-                            fn (Builder $query, string $date): Builder => $query->where('visited_on', '>=', $date),
-                        )
-                        ->when(
-                            $data['date_to'] ?? null,
-                            fn (Builder $query, string $date): Builder => $query->where('visited_on', '<=', $date),
-                        )),
+                ...($showStaff ? [] : [TableUi::dateRangeFilter('visited_on')]),
                 SelectFilter::make('staff')
                     ->relationship('staff', 'name')
                     ->searchable()

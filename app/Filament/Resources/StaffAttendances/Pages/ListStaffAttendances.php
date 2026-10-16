@@ -3,25 +3,64 @@
 namespace App\Filament\Resources\StaffAttendances\Pages;
 
 use App\Enums\Status;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\Attendances\AttendanceResource;
 use App\Filament\Resources\StaffAttendances\StaffAttendanceResource;
 use App\Models\User;
 use App\Services\AttendanceService;
 use App\Support\AppConfig;
+use App\Support\Filament\HasDateRangeFilters;
 use DomainException;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Pages\Dashboard\Concerns\HasFilters;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
-class ListStaffAttendances extends ListRecords
+class ListStaffAttendances extends ListRecordsWithTableTabs
 {
+    use HasDateRangeFilters;
+    use HasFilters;
+
     protected static string $resource = StaffAttendanceResource::class;
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->initializeDateRangeFilters();
+    }
+
+    public function getHeader(): ?View
+    {
+        return view('filament.pages.date-range-header', [
+            'page' => $this,
+            'dateRangeForm' => $this->dateRangeForm,
+        ]);
+    }
+
+    public function dateRangeForm(Schema $schema): Schema
+    {
+        return $this->configureDateRangeFilters($schema);
+    }
+
+    public function table(Table $table): Table
+    {
+        return $table->modifyQueryUsing(
+            fn (Builder $query): Builder => $this->applyDateRangeToQuery($query, 'checked_in_at'),
+        );
+    }
+
+    protected function defaultDateRangePeriod(): string
+    {
+        return 'today';
+    }
 
     /** @return array<Action> */
     protected function getHeaderActions(): array
@@ -91,10 +130,24 @@ class ListStaffAttendances extends ListRecords
         return [];
     }
 
-    /** @return array<NavigationItem> */
-    public function getSubNavigation(): array
+    public function getTabs(): array
     {
-        return AttendanceResource::getWorkspaceNavigationItems();
+        return AttendanceResource::getWorkspaceTabs();
+    }
+
+    public function getDefaultActiveTab(): string
+    {
+        return 'staff';
+    }
+
+    protected function getTableTabUrl(string $tab): ?string
+    {
+        return AttendanceResource::getWorkspaceTabUrl($tab);
+    }
+
+    protected function supportsAllDateRange(): bool
+    {
+        return true;
     }
 
     /** @return array<int|string, string> */

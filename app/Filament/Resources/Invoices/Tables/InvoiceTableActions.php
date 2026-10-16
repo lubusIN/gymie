@@ -26,6 +26,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
 use Filament\Support\Enums\Width;
 
 final class InvoiceTableActions
@@ -46,12 +47,38 @@ final class InvoiceTableActions
         );
     }
 
-    public static function forViewPage(): ActionGroup
+    /** @return list<Action|ActionGroup> */
+    public static function forViewPage(): array
     {
-        return ActionGroup::make([
-            ...self::primaryActions(),
-            ...self::recordActions(includeNavigationActions: false),
-        ]);
+        return [
+            self::addPaymentAction(),
+            self::sendPaymentReminderAction(),
+            self::downloadInvoiceAction()
+                ->visible(fn (Invoice $record): bool => $record->status === Status::Paid
+                    && (auth()->user()?->can('view', $record) ?? false)),
+            self::emailInvoiceAction()
+                ->visible(fn (Invoice $record): bool => $record->status === Status::Paid
+                    && (auth()->user()?->can('update', $record) ?? false)),
+            ActionGroup::make(self::viewPageMenuActions()),
+        ];
+    }
+
+    /** @return list<Action> */
+    private static function viewPageMenuActions(): array
+    {
+        return [
+            EditAction::make()
+                ->hidden(fn (Invoice $record): bool => $record->status !== Status::Issued)
+                ->url(fn (Invoice $record): string => InvoiceResource::getUrl('edit', ['record' => $record])),
+            self::refundAction(),
+            self::cancelInvoiceAction(),
+            self::emailInvoiceAction('email_invoice_menu')
+                ->hidden(fn (Invoice $record): bool => $record->status === Status::Paid),
+            self::emailReceiptAction(),
+            self::previewInvoiceAction(),
+            self::downloadInvoiceAction('download_invoice_menu')
+                ->hidden(fn (Invoice $record): bool => $record->status === Status::Paid),
+        ];
     }
 
     /** @return list<Action> */
@@ -251,31 +278,35 @@ final class InvoiceTableActions
             ->icon('heroicon-o-bell-alert')
             ->color('warning')
             ->authorize(fn (Invoice $record): bool => auth()->user()?->can('update', $record) ?? false)
-            ->requiresConfirmation()
             ->modalHeading(__('app.titles.send_payment_reminder'))
             ->modalDescription(__('app.help.payment_reminder_confirmation'))
             ->modalWidth(Width::Medium)
             ->modalSubmitActionLabel(__('app.actions.send_reminder'))
             ->schema([
-                TextEntry::make('payment_reminder_member')
-                    ->label(__('app.fields.member'))
-                    ->state(fn (Invoice $record): string => (string) ($record->subscription->member->name ?? __('app.placeholders.na'))),
-                TextEntry::make('payment_reminder_invoice')
-                    ->label(__('app.fields.invoice_number'))
-                    ->state(fn (Invoice $record): string => (string) ($record->number ?? __('app.placeholders.na'))),
-                TextEntry::make('payment_reminder_due')
-                    ->label(__('app.fields.due_amount'))
-                    ->state(fn (Invoice $record): string => Helpers::formatCurrency((float) ($record->due_amount ?? 0))),
-                TextEntry::make('payment_reminder_due_date')
-                    ->label(__('app.fields.due_date'))
-                    ->state(fn (Invoice $record): string => $record->due_date?->translatedFormat('d M Y') ?? __('app.placeholders.na')),
-                TextEntry::make('payment_reminder_recipient')
-                    ->label(__('app.fields.to'))
-                    ->state(fn (Invoice $record): string => (string) ($record->subscription->member->email ?? __('app.placeholders.na'))),
-                Textarea::make('note')
-                    ->label(__('app.fields.note'))
-                    ->rows(2)
-                    ->placeholder(__('app.placeholders.optional_note')),
+                Grid::make(2)
+                    ->schema([
+                        TextEntry::make('payment_reminder_member')
+                            ->label(__('app.fields.member'))
+                            ->state(fn (Invoice $record): string => (string) ($record->subscription->member->name ?? __('app.placeholders.na')))
+                            ->columnSpanFull(),
+                        TextEntry::make('payment_reminder_invoice')
+                            ->label(__('app.fields.invoice_number'))
+                            ->state(fn (Invoice $record): string => (string) ($record->number ?? __('app.placeholders.na'))),
+                        TextEntry::make('payment_reminder_due')
+                            ->label(__('app.fields.due_amount'))
+                            ->state(fn (Invoice $record): string => Helpers::formatCurrency((float) ($record->due_amount ?? 0))),
+                        TextEntry::make('payment_reminder_due_date')
+                            ->label(__('app.fields.due_date'))
+                            ->state(fn (Invoice $record): string => $record->due_date?->translatedFormat('d M Y') ?? __('app.placeholders.na')),
+                        TextEntry::make('payment_reminder_recipient')
+                            ->label(__('app.fields.to'))
+                            ->state(fn (Invoice $record): string => (string) ($record->subscription->member->email ?? __('app.placeholders.na'))),
+                        Textarea::make('note')
+                            ->label(__('app.fields.note'))
+                            ->rows(2)
+                            ->placeholder(__('app.placeholders.optional_note'))
+                            ->columnSpanFull(),
+                    ]),
             ])
             ->action(function (Invoice $record, array $data, InvoiceEmailService $emailService): void {
                 $record->loadMissing('subscription.member');
@@ -319,9 +350,9 @@ final class InvoiceTableActions
                 && in_array($record->status?->value, ['issued', 'partial', 'overdue'], true));
     }
 
-    private static function emailInvoiceAction(): Action
+    private static function emailInvoiceAction(string $name = 'email_invoice'): Action
     {
-        return Action::make('email_invoice')
+        return Action::make($name)
             ->label(__('app.actions.email_invoice'))
             ->icon('heroicon-o-envelope')
             ->color('info')
@@ -452,9 +483,9 @@ final class InvoiceTableActions
             ->visible(fn (Invoice $record): bool => auth()->user()?->can('view', $record) ?? false);
     }
 
-    private static function downloadInvoiceAction(): Action
+    private static function downloadInvoiceAction(string $name = 'download_invoice'): Action
     {
-        return Action::make('download_invoice')
+        return Action::make($name)
             ->label(__('app.actions.download'))
             ->icon('heroicon-o-arrow-down-tray')
             ->url(fn (Invoice $record): string => route('invoices.download', $record))

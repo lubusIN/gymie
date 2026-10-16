@@ -10,7 +10,7 @@ use App\Filament\Resources\Invoices\Schemas\InvoiceInfolist;
 use App\Filament\Resources\Invoices\Tables\InvoiceTable;
 use App\Helpers\Helpers;
 use App\Models\Invoice;
-use App\Support\Filament\GlobalSearchBadge;
+use App\Support\Filament\StatusBadge;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -74,7 +74,7 @@ class InvoiceResource extends Resource
         }
 
         if ($record->status) {
-            $details[__('app.fields.status')] = GlobalSearchBadge::status($record->status);
+            $details[__('app.fields.status')] = StatusBadge::render($record->status);
         }
 
         if (! is_null($record->total_amount)) {

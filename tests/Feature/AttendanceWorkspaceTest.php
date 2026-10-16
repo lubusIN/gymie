@@ -234,24 +234,32 @@ it('filters members who need attendance follow-up', function (): void {
         ->assertCanNotSeeTableRecords([$recentMember, $inactiveMember]);
 });
 
-it('summarizes recent attendance and members needing follow-up', function (): void {
+it('summarizes attendance for the selected period', function (): void {
     $this->travelTo('2026-09-28 12:00:00');
-    Attendance::factory()->for(Member::factory()->create(['status' => Status::Active]))->create([
+    $recentMember = Member::factory()->create(['status' => Status::Active]);
+    Attendance::factory()->for($recentMember)->create([
         'checked_in_at' => '2026-09-28 08:00:00',
     ]);
-    Attendance::factory()->for(Member::factory()->create(['status' => Status::Active]))->create([
-        'checked_in_at' => '2026-09-28 10:00:00',
+    Attendance::factory()->for($recentMember)->create([
+        'checked_in_at' => '2026-09-27 10:00:00',
     ]);
     Attendance::factory()->for(Member::factory()->create(['status' => Status::Active]))->create([
         'checked_in_at' => '2026-09-20 08:00:00',
     ]);
     Member::factory()->create(['status' => Status::Active]);
 
-    Livewire::test(AttendanceOverviewWidget::class)
+    Livewire::test(AttendanceOverviewWidget::class, [
+        'pageFilters' => [
+            'period' => 'custom',
+            'startDate' => '2026-09-22',
+            'endDate' => '2026-09-28',
+        ],
+    ])
         ->assertSee('2')
-        ->assertSee(__('app.widgets.today_check_ins'))
-        ->assertSee(__('app.widgets.visits_last_7_days'))
-        ->assertSee(__('app.widgets.members_needing_follow_up'));
+        ->assertSee('1')
+        ->assertSee(__('app.widgets.total_check_ins'))
+        ->assertSee(__('app.widgets.unique_members'))
+        ->assertSee(__('app.widgets.members_without_visits'));
 });
 
 it('shows the attendance overview on the attendance page', function (): void {
@@ -259,6 +267,29 @@ it('shows the attendance overview on the attendance page', function (): void {
 
     expect($page->getVisibleHeaderWidgets())
         ->toContain(AttendanceOverviewWidget::class);
+});
+
+it('filters member attendance with the page period selector', function (): void {
+    $this->travelTo('2026-10-15 12:00:00');
+
+    $recentAttendance = Attendance::factory()->create([
+        'checked_in_at' => '2026-10-14 08:00:00',
+    ]);
+    $todayAttendance = Attendance::factory()->create([
+        'checked_in_at' => '2026-10-15 08:00:00',
+    ]);
+    $olderAttendance = Attendance::factory()->create([
+        'checked_in_at' => '2026-09-20 08:00:00',
+    ]);
+
+    Livewire::test(ListAttendances::class)
+        ->assertSet('filters.period', 'today')
+        ->assertSet('filters.startDate', '2026-10-15')
+        ->assertSet('filters.endDate', '2026-10-15')
+        ->assertCanSeeTableRecords([$todayAttendance])
+        ->assertCanNotSeeTableRecords([$recentAttendance, $olderAttendance])
+        ->call('setPeriod', 'all')
+        ->assertCanSeeTableRecords([$todayAttendance, $recentAttendance, $olderAttendance]);
 });
 
 it('hides attendance write actions from users without write permission', function (): void {

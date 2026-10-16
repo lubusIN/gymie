@@ -23,12 +23,10 @@ class ServiceTable
         return $table
             ->columns([
                 TextColumn::make('id')
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
                     ->searchable()
-                    ->label(__('app.fields.name'))
-                    ->sortable(),
+                    ->label(__('app.fields.name')),
                 TextColumn::make('description')
                     ->searchable()
                     ->label(__('app.fields.description')),

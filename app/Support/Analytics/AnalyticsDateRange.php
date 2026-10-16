@@ -22,7 +22,7 @@ final readonly class AnalyticsDateRange
      * Create a normalized date range from raw page filters.
      *
      * Supported keys:
-     * - `period`: `7days|30days|month|quarter|year|custom`
+     * - `period`: `today|7days|30days|month|quarter|year|custom`
      * - `startDate`: `Y-m-d`
      * - `endDate`: `Y-m-d`
      *
@@ -40,6 +40,7 @@ final readonly class AnalyticsDateRange
 
         if ($period !== 'custom') {
             [$start, $end] = match ($period) {
+                'today' => [$today, $today],
                 '7days' => [$today->subDays(6), $today],
                 '30days' => [$today->subDays(29), $today],
                 'month' => [$today->startOfMonth(), $today],

@@ -3,6 +3,18 @@
 use App\Support\Analytics\AnalyticsDateRange;
 use Carbon\CarbonImmutable;
 
+it('resolves today correctly', function (): void {
+    config()->set('app.timezone', 'UTC');
+    CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-02-23 14:30:00', 'UTC'));
+
+    $range = AnalyticsDateRange::fromFilters([
+        'period' => 'today',
+    ]);
+
+    expect($range->start->toDateTimeString())->toBe('2026-02-23 00:00:00')
+        ->and($range->end->toDateTimeString())->toBe('2026-02-23 23:59:59');
+});
+
 it('resolves last 30 days correctly', function (): void {
     config()->set('app.timezone', 'UTC');
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-02-23', 'UTC'));

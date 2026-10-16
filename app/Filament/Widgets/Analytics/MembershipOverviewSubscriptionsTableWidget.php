@@ -157,6 +157,7 @@ BLADE,
         return $table
             ->heading(null)
             ->header(fn (): HtmlString => $this->tableHeader())
+            ->columnManager(false)
             ->paginated(false)
             ->query(fn (): Builder => $this->getActiveTabQuery()->limit(5))
             ->columns([

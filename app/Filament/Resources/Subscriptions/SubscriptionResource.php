@@ -10,7 +10,7 @@ use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionInfolist;
 use App\Filament\Resources\Subscriptions\Tables\SubscriptionTable;
 use App\Models\Subscription;
-use App\Support\Filament\GlobalSearchBadge;
+use App\Support\Filament\StatusBadge;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -81,7 +81,7 @@ class SubscriptionResource extends Resource
         }
 
         if ($record->status) {
-            $details[__('app.fields.status')] = GlobalSearchBadge::status($record->status);
+            $details[__('app.fields.status')] = StatusBadge::render($record->status);
         }
 
         return $details;

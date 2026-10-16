@@ -32,6 +32,9 @@ class InvoicesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return InvoiceResource::table($table)
+            ->searchable(false)
+            ->filters([])
+            ->columnManager(false)
             ->headerActions([]);
     }
 }

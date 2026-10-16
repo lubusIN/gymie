@@ -13,7 +13,6 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -31,13 +30,12 @@ class EnquiryTable
                 'user',
             ]))
             ->columns([
-                TextColumn::make('id')->sortable()->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.id')),
-                TextColumn::make('name')->searchable()->sortable()->label(__('app.fields.name')),
+                TextColumn::make('id')->toggleable(isToggledHiddenByDefault: true)->label(__('app.fields.id')),
+                TextColumn::make('name')->searchable()->label(__('app.fields.name')),
                 TextColumn::make('contact')->searchable()->label(__('app.fields.contact')),
                 TextColumn::make('user.name')
                     ->label(__('app.fields.lead_owner'))
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
                 TextColumn::make('source')
                     ->label(__('app.fields.source'))
                     ->formatStateUsing(fn (?string $state): string => $state
@@ -66,7 +64,6 @@ class EnquiryTable
                     ->hidden(fn (): bool => Enquiry::exists()),
             ])
             ->filters([
-                TrashedFilter::make(),
                 SelectFilter::make('user')
                     ->label(__('app.fields.lead_owner'))
                     ->relationship('user', 'name')

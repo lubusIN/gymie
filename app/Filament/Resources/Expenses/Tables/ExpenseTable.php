@@ -23,7 +23,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
-use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -37,8 +36,7 @@ class ExpenseTable
             ->columns([
                 TextColumn::make('name')
                     ->label(__('app.resources.expenses.singular'))
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
                 TextColumn::make('date')
                     ->label(__('app.fields.date'))
                     ->date()
@@ -47,12 +45,7 @@ class ExpenseTable
                     ->label(__('app.fields.amount'))
                     ->numeric(decimalPlaces: 2)
                     ->prefix(Helpers::getCurrencySymbol())
-                    ->sortable()
-                    ->summarize(
-                        Sum::make('total_expense')
-                            ->label(__('app.summaries.total_expense'))
-                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
-                    ),
+                    ->sortable(),
                 TextColumn::make('category')
                     ->label(__('app.fields.category'))
                     ->searchable()
@@ -86,7 +79,6 @@ class ExpenseTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                TableUi::dateRangeFilter('date'),
                 SelectFilter::make('category')
                     ->label(__('app.fields.category'))
                     ->options(fn (): array => Helpers::getExpenseCategoryOptions())
@@ -119,7 +111,6 @@ class ExpenseTable
                             ->modal()
                             ->url(null)
                             ->modalCancelAction(false)
-                            ->modalAlignment('center')
                             ->modalWidth(Width::ScreenSmall)
                             ->schema(fn ($livewire, Expense $record): array => ExpenseInfolist::configure(
                                 Schema::make($livewire)->model($record)->record($record),
@@ -146,8 +137,20 @@ class ExpenseTable
                 ]),
             ])
             ->emptyStateIcon('heroicon-o-banknotes')
-            ->emptyStateHeading(__('app.empty.no_records', ['records' => __('app.resources.expenses.plural')]))
-            ->emptyStateDescription(__('app.empty.create_to_get_started', ['resource' => __('app.resources.expenses.singular')]))
+            ->emptyStateHeading(function ($livewire): string {
+                if (! Expense::exists()) {
+                    return __('app.empty.no_records', ['records' => __('app.resources.expenses.plural')]);
+                }
+
+                return TableUi::emptyStateHeading($livewire, Expense::class, 'expenses');
+            })
+            ->emptyStateDescription(function ($livewire): string {
+                if (! Expense::exists()) {
+                    return __('app.empty.create_to_get_started', ['resource' => __('app.resources.expenses.singular')]);
+                }
+
+                return TableUi::emptyStateDescription($livewire, Expense::class, 'expenses');
+            })
             ->emptyStateActions([
                 CreateAction::make()
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.expenses.singular')]))

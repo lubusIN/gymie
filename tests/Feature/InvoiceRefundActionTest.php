@@ -20,6 +20,7 @@ beforeEach(function (): void {
 
 it('shows the refund amount as read only', function (): void {
     $invoice = Invoice::factory()->create([
+        'date' => now()->toDateString(),
         'subscription_fee' => 100,
         'discount' => 0,
         'discount_amount' => 0,
@@ -39,6 +40,7 @@ it('shows the refund amount as read only', function (): void {
 
 it('refunds the full paid balance', function (): void {
     $invoice = Invoice::factory()->create([
+        'date' => now()->toDateString(),
         'subscription_fee' => 100,
         'discount' => 0,
         'discount_amount' => 0,

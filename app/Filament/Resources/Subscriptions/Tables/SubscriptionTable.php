@@ -6,7 +6,6 @@ use App\Enums\Status;
 use App\Filament\Resources\Plans\PlanResource;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionRenewalForm;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
-use App\Helpers\Helpers;
 use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -28,10 +27,8 @@ use Filament\Notifications\Notification;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SubscriptionTable
 {
@@ -42,43 +39,32 @@ class SubscriptionTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('member.name')
                     ->label(__('app.fields.member'))
                     ->description(fn (Subscription $record): string => $record->member->code)
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
                 TextColumn::make('plan.name')
                     ->label(__('app.fields.plan'))
                     ->description(fn (Subscription $record): string => $record->plan->code)
                     ->searchable()
-                    ->sortable(),
+                    ->visibleFrom('sm'),
                 TextColumn::make('start_date')
                     ->label(__('app.fields.start_date'))
-                    ->date()
+                    ->date('d M Y')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->visibleFrom('lg'),
                 TextColumn::make('end_date')
                     ->label(__('app.fields.end_date'))
-                    ->date()
-                    ->description(fn (Subscription $record): ?string => self::daysLeft($record))
-                    ->sortable(),
-                TextColumn::make('invoice.due_amount')
-                    ->label(__('app.fields.due'))
-                    ->state(fn (Subscription $record): ?float => $record->invoice
-                        ? (float) $record->invoice->due_amount
-                        : null)
-                    ->formatStateUsing(fn (?float $state): string => Helpers::formatCurrency($state ?? 0))
+                    ->date('d M Y')
+                    ->sortable()
+                    ->visibleFrom('md'),
+                TextColumn::make('days_remaining')
+                    ->label(__('app.widgets.days_left'))
+                    ->state(fn (Subscription $record): ?int => $record->daysRemaining())
                     ->placeholder(__('app.placeholders.na'))
-                    ->color(fn (?float $state): string => ($state ?? 0) > 0 ? 'danger' : 'success')
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->date()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->visibleFrom('md'),
                 TextColumn::make('status')
-                    ->badge()
-                    ->sortable(),
+                    ->badge(),
             ])
             ->defaultSort('end_date')
             ->emptyStateIcon(
@@ -126,7 +112,6 @@ class SubscriptionTable
                     ->hidden(fn () => Plan::exists()),
             ])
             ->filters([
-                TrashedFilter::make(),
                 SelectFilter::make('plan')
                     ->label(__('app.fields.plan'))
                     ->relationship('plan', 'name')
@@ -177,7 +162,7 @@ class SubscriptionTable
                                     return false;
                                 }
 
-                                if ($record->renewals()->exists()) {
+                                if ($record->renewals_count > 0) {
                                     return false;
                                 }
 
@@ -215,28 +200,10 @@ class SubscriptionTable
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query) => $query
-                ->withoutGlobalScopes([
-                    SoftDeletingScope::class,
-                ])
                 ->with([
-                    'invoice:id,subscription_id,due_amount,status',
                     'member:id,code,name',
                     'plan:id,code,name',
                 ])
                 ->withCount('renewals'));
-    }
-
-    /**
-     * Describe the remaining membership time for active subscriptions.
-     */
-    private static function daysLeft(Subscription $subscription): ?string
-    {
-        $days = $subscription->daysRemaining();
-
-        if ($days === null) {
-            return null;
-        }
-
-        return $days.' '.__('app.widgets.days_left');
     }
 }

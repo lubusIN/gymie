@@ -3,15 +3,15 @@
 namespace App\Filament\Resources\FollowUps\Pages;
 
 use App\Enums\Status;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\FollowUps\FollowUpResource;
 use App\Models\Enquiry;
 use App\Models\FollowUp;
 use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
 
-class ListFollowUps extends ListRecords
+class ListFollowUps extends ListRecordsWithTableTabs
 {
     protected static string $resource = FollowUpResource::class;
 

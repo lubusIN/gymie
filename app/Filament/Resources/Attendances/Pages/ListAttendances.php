@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Attendances\Pages;
 
 use App\Enums\Status;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\Attendances\AttendanceResource;
 use App\Filament\Widgets\AttendanceOverviewWidget;
 use App\Models\Member;
@@ -10,17 +11,19 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Services\AttendanceService;
 use App\Support\AppConfig;
+use App\Support\Filament\HasDateRangeFilters;
 use chillerlan\QRCode\QRCode;
 use DomainException;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Pages\Dashboard\Concerns\HasFilters;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -30,12 +33,47 @@ use RuntimeException;
 /**
  * Attendance workspace for staff check-ins, history, and the shared QR code.
  */
-class ListAttendances extends ListRecords
+class ListAttendances extends ListRecordsWithTableTabs
 {
+    use HasDateRangeFilters;
+    use HasFilters;
+
     protected static string $resource = AttendanceResource::class;
 
     /** @var array<string, Subscription|null> */
     private array $selectedSubscriptions = [];
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->initializeDateRangeFilters();
+    }
+
+    public function getHeader(): ?View
+    {
+        return view('filament.pages.date-range-header', [
+            'page' => $this,
+            'dateRangeForm' => $this->dateRangeForm,
+        ]);
+    }
+
+    public function dateRangeForm(Schema $schema): Schema
+    {
+        return $this->configureDateRangeFilters($schema);
+    }
+
+    public function table(Table $table): Table
+    {
+        return $table->modifyQueryUsing(
+            fn (Builder $query): Builder => $this->applyDateRangeToQuery($query, 'checked_in_at'),
+        );
+    }
+
+    protected function defaultDateRangePeriod(): string
+    {
+        return 'today';
+    }
 
     /** @return array<Action> */
     protected function getHeaderActions(): array
@@ -147,10 +185,19 @@ class ListAttendances extends ListRecords
         return [];
     }
 
-    /** @return array<NavigationItem> */
-    public function getSubNavigation(): array
+    public function getTabs(): array
     {
-        return AttendanceResource::getWorkspaceNavigationItems();
+        return AttendanceResource::getWorkspaceTabs();
+    }
+
+    protected function getTableTabUrl(string $tab): ?string
+    {
+        return AttendanceResource::getWorkspaceTabUrl($tab);
+    }
+
+    protected function supportsAllDateRange(): bool
+    {
+        return true;
     }
 
     private function membershipSummary(mixed $memberId, mixed $checkedInAt): string

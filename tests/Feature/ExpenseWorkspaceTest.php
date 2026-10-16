@@ -34,61 +34,178 @@ afterEach(function (): void {
     Helpers::setTestSettingsOverride(null);
 });
 
-it('summarizes paid, pending, and overdue expenses without counting cancelled records', function (): void {
+it('summarizes expenses by status for the selected date range', function (): void {
     Expense::factory()->create([
         'amount' => 100,
+        'date' => '2026-09-10',
         'status' => Status::Paid,
         'paid_at' => '2026-09-10 10:00:00',
     ]);
     Expense::factory()->create([
         'amount' => 200,
+        'date' => '2026-09-15',
         'status' => Status::Pending,
         'paid_at' => null,
     ]);
     Expense::factory()->create([
         'amount' => 300,
+        'date' => '2026-09-20',
         'status' => Status::Overdue,
         'paid_at' => null,
     ]);
     Expense::factory()->create([
         'amount' => 400,
+        'date' => '2026-09-22',
         'status' => Status::Cancelled,
         'paid_at' => null,
     ]);
+    Expense::factory()->create([
+        'amount' => 901,
+        'date' => '2026-08-31',
+        'status' => Status::Paid,
+        'paid_at' => '2026-09-10 10:00:00',
+    ]);
 
-    Livewire::test(ExpenseOverviewWidget::class)
-        ->assertSee('Paid expenses this month')
+    Livewire::test(ExpenseOverviewWidget::class, [
+        'pageFilters' => [
+            'period' => 'custom',
+            'startDate' => '2026-09-01',
+            'endDate' => '2026-09-30',
+        ],
+    ])
+        ->assertSee('Total expenses')
+        ->assertSee('Paid expenses')
         ->assertSee('Pending expenses')
         ->assertSee('Overdue expenses')
+        ->assertSee(Helpers::formatCurrency(600))
         ->assertSee(Helpers::formatCurrency(100))
         ->assertSee(Helpers::formatCurrency(200))
         ->assertSee(Helpers::formatCurrency(300))
-        ->assertDontSee(Helpers::formatCurrency(400));
+        ->assertSee('-33.4%')
+        ->assertDontSee(Helpers::formatCurrency(400))
+        ->assertSee(__('app.widgets.vs_previous_period', [
+            'count' => Helpers::formatCurrency(901),
+        ]));
+
+    Livewire::test(ExpenseOverviewWidget::class, [
+        'pageFilters' => ['period' => 'all'],
+    ])->assertSee(Helpers::formatCurrency(1501));
 });
 
-it('filters expenses by date, category, and vendor', function (): void {
+it('changes the expense workspace date range from the header filter', function (): void {
+    Livewire::test(ListExpenses::class)
+        ->assertSet('filters.period', '7days')
+        ->assertSet('filters.startDate', '2026-09-22')
+        ->assertSet('filters.endDate', '2026-09-28')
+        ->assertSchemaComponentHidden('startDate', 'dateRangeForm')
+        ->assertSchemaComponentHidden('endDate', 'dateRangeForm')
+        ->call('setPeriod', 'today')
+        ->assertSet('filters.period', 'today')
+        ->assertSet('filters.startDate', '2026-09-28')
+        ->assertSet('filters.endDate', '2026-09-28')
+        ->call('setPeriod', 'custom')
+        ->assertSchemaComponentVisible('startDate', 'dateRangeForm')
+        ->assertSchemaComponentVisible('endDate', 'dateRangeForm')
+        ->call('setPeriod', '30days')
+        ->assertSet('filters.period', '30days')
+        ->assertSet('filters.startDate', '2026-08-30')
+        ->assertSet('filters.endDate', '2026-09-28')
+        ->assertSchemaComponentHidden('startDate', 'dateRangeForm')
+        ->assertSchemaComponentHidden('endDate', 'dateRangeForm')
+        ->fillForm(['period' => null], 'dateRangeForm')
+        ->assertSet('filters.period', 'all')
+        ->assertSet('filters.startDate', null)
+        ->assertSet('filters.endDate', null);
+});
+
+it('scopes expense status tab counts to the selected date range', function (): void {
+    Expense::factory()->create([
+        'date' => '2026-09-25',
+        'status' => Status::Pending,
+    ]);
+    Expense::factory()->create([
+        'date' => '2026-08-25',
+        'status' => Status::Pending,
+    ]);
+    Expense::factory()->create([
+        'date' => '2026-09-26',
+        'status' => Status::Paid,
+    ]);
+    Expense::factory()->create([
+        'date' => '2026-08-26',
+        'status' => Status::Overdue,
+    ]);
+
+    $tabs = Livewire::test(ListExpenses::class)->instance()->getCachedTabs();
+
+    expect($tabs[Status::Pending->value]->getBadge())->toBe('1')
+        ->and($tabs[Status::Paid->value]->getBadge())->toBe('1')
+        ->and($tabs[Status::Overdue->value]->getBadge())->toBe('0')
+        ->and($tabs[Status::Cancelled->value]->getBadge())->toBe('0');
+});
+
+it('uses the workspace date range and table filters for rows and exports', function (): void {
     $matching = Expense::factory()->create([
         'name' => 'September rent',
         'date' => '2026-09-05',
         'category' => 'rent',
         'vendor' => 'Property Owner',
     ]);
-    $other = Expense::factory()->create([
+    $outsideRange = Expense::factory()->create([
         'name' => 'August utilities',
         'date' => '2026-08-05',
+        'category' => 'rent',
+        'vendor' => 'Property Owner',
+    ]);
+    $otherCategory = Expense::factory()->create([
+        'name' => 'September utilities',
+        'date' => '2026-09-06',
         'category' => 'utilities',
         'vendor' => 'Power Company',
     ]);
+    $otherVendor = Expense::factory()->create([
+        'name' => 'September maintenance',
+        'date' => '2026-09-07',
+        'category' => 'rent',
+        'vendor' => 'Maintenance Company',
+    ]);
 
-    Livewire::test(ListExpenses::class)
-        ->filterTable('date', [
-            'date_from' => '2026-09-01',
-            'date_to' => '2026-09-30',
-        ])
+    $component = Livewire::test(ListExpenses::class)
+        ->call('setPeriod', 'custom')
+        ->set('filters.startDate', '2026-09-01')
+        ->set('filters.endDate', '2026-09-30')
+        ->call('applyCustomRangeFromFilters')
         ->filterTable('category', 'rent')
         ->filterTable('vendor', 'Property Owner')
         ->assertCanSeeTableRecords([$matching])
-        ->assertCanNotSeeTableRecords([$other]);
+        ->assertCanNotSeeTableRecords([$outsideRange, $otherCategory, $otherVendor]);
+
+    expect($component->instance()->getTableQueryForExport()->pluck('id')->all())
+        ->toBe([$matching->getKey()]);
+});
+
+it('shows onboarding guidance when no expenses have been created', function (): void {
+    Livewire::test(ListExpenses::class)
+        ->assertSee(__('app.empty.no_records', ['records' => __('app.resources.expenses.plural')]))
+        ->assertSee(__('app.empty.create_to_get_started', [
+            'resource' => __('app.resources.expenses.singular'),
+        ]));
+});
+
+it('shows the selected range when expenses exist outside it', function (): void {
+    Expense::factory()->create([
+        'date' => '2026-09-01',
+    ]);
+
+    Livewire::test(ListExpenses::class)
+        ->assertSee(__('app.empty.no_records_in_range', [
+            'records' => __('app.resources.expenses.plural'),
+        ]))
+        ->assertSee(__('app.empty.found_none_between', [
+            'records' => __('app.resources.expenses.plural'),
+            'from' => '22-09-2026',
+            'to' => '28-09-2026',
+        ]));
 });
 
 it('marks only past-due pending expenses as overdue', function (): void {

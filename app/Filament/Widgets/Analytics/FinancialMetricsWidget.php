@@ -35,31 +35,29 @@ class FinancialMetricsWidget extends Widget
      */
     private function trend(float $current, float $previous): array
     {
-        if ($previous <= 0) {
-            if ($current <= 0) {
-                return [
-                    'label' => '0%',
-                    'icon' => 'heroicon-o-minus',
-                    'color' => 'gray',
-                ];
-            }
+        $change = $current - $previous;
 
-            return [
-                'label' => '+'.Helpers::formatCurrency($current),
-                'icon' => 'heroicon-o-arrow-trending-up',
-                'color' => 'success',
-            ];
-        }
-
-        $percentage = round((($current - $previous) / $previous) * 100, 1);
-
-        if ($percentage === 0.0) {
+        if ($change === 0.0) {
             return [
                 'label' => '0%',
                 'icon' => 'heroicon-o-minus',
                 'color' => 'gray',
             ];
         }
+
+        if ($previous === 0.0) {
+            return [
+                'label' => $change > 0
+                    ? '+'.Helpers::formatCurrency($change)
+                    : Helpers::formatCurrency($change),
+                'icon' => $change > 0
+                    ? 'heroicon-o-arrow-trending-up'
+                    : 'heroicon-o-arrow-trending-down',
+                'color' => $change > 0 ? 'success' : 'danger',
+            ];
+        }
+
+        $percentage = round(($change / abs($previous)) * 100, 1);
 
         if ($percentage > 0) {
             return [

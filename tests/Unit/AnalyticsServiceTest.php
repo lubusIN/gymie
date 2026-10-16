@@ -180,6 +180,51 @@ it('calculates collected financial and membership metrics within a custom date r
     expect($topPlans->first()['collected'])->toBe(500.0);
 });
 
+it('attributes refunds to the period of their invoice for net revenue', function (): void {
+    $range = AnalyticsDateRange::fromFilters([
+        'period' => 'custom',
+        'startDate' => '2026-02-01',
+        'endDate' => '2026-02-28',
+    ]);
+
+    $olderInvoice = Invoice::factory()->create([
+        'date' => '2026-01-15',
+        'subscription_fee' => 100,
+        'discount_amount' => 0,
+        'paid_amount' => 0,
+    ]);
+    $currentInvoice = Invoice::factory()->create([
+        'date' => '2026-02-15',
+        'subscription_fee' => 200,
+        'discount_amount' => 0,
+        'paid_amount' => 0,
+    ]);
+
+    InvoiceTransaction::query()->create([
+        'invoice_id' => $olderInvoice->id,
+        'type' => 'refund',
+        'amount' => 50,
+        'occurred_at' => '2026-02-16 10:00:00',
+        'payment_method' => 'offline',
+        'reference_id' => 'test:older-invoice-refund',
+    ]);
+    InvoiceTransaction::query()->create([
+        'invoice_id' => $currentInvoice->id,
+        'type' => 'refund',
+        'amount' => 20,
+        'occurred_at' => '2026-02-17 10:00:00',
+        'payment_method' => 'offline',
+        'reference_id' => 'test:current-invoice-refund',
+    ]);
+
+    $financial = app(AnalyticsService::class)->financialMetrics($range);
+
+    expect($financial)
+        ->net_revenue->toBe(180.0)
+        ->refunds->toBe(70.0)
+        ->collected->toBe(0.0);
+});
+
 it('includes every remaining expense category in the other chart segment', function (): void {
     $range = AnalyticsDateRange::fromFilters([
         'period' => 'custom',

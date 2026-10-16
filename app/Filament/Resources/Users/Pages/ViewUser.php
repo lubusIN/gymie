@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
+use App\Support\Filament\HasStatusHeading;
 use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -12,6 +13,8 @@ use Filament\Resources\Pages\ViewRecord;
  */
 class ViewUser extends ViewRecord
 {
+    use HasStatusHeading;
+
     protected static string $resource = UserResource::class;
 
     public function getTitle(): string

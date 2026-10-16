@@ -8,7 +8,7 @@ use App\Filament\Resources\Expenses\Schemas\ExpenseInfolist;
 use App\Filament\Resources\Expenses\Tables\ExpenseTable;
 use App\Helpers\Helpers;
 use App\Models\Expense;
-use App\Support\Filament\GlobalSearchBadge;
+use App\Support\Filament\StatusBadge;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -50,7 +50,7 @@ class ExpenseResource extends Resource
         /** @var Expense $record */
         return [
             __('app.fields.date') => $record->date->toDateString(),
-            __('app.fields.status') => GlobalSearchBadge::status($record->status),
+            __('app.fields.status') => StatusBadge::render($record->status),
             __('app.fields.amount') => Helpers::formatCurrency((float) $record->amount),
         ];
     }

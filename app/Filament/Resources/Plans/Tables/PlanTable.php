@@ -18,7 +18,6 @@ use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 class PlanTable
@@ -31,7 +30,6 @@ class PlanTable
         return $table
             ->columns([
                 TextColumn::make('id')
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('code')
                     ->searchable()
@@ -82,14 +80,12 @@ class PlanTable
                     ->iconPosition('after')
                     ->hidden(fn () => Service::exists()),
                 CreateAction::make()
-                    ->modalAlignment('center')
                     ->modalWidth(Width::ExtraLarge)
                     ->modalHeading(__('app.actions.new', ['resource' => __('app.resources.plans.singular')]))
                     ->createAnother(false)
                     ->visible(fn () => Service::exists() && ! Plan::exists()),
             ])
             ->filters([
-                TrashedFilter::make(),
                 TableUi::dateRangeFilter(),
             ])
             ->recordActions([
@@ -124,10 +120,8 @@ class PlanTable
                     recordActions: [
                         ViewAction::make()
                             ->modalWidth(Width::ExtraLarge)
-                            ->modalCancelAction(false)
-                            ->modalAlignment('center'),
+                            ->modalCancelAction(false),
                         EditAction::make()
-                            ->modalAlignment('center')
                             ->modalWidth(Width::ExtraLarge),
                         DeleteAction::make()->hiddenLabel(),
                     ],

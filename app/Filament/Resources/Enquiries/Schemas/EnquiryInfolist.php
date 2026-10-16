@@ -139,10 +139,6 @@ class EnquiryInfolist
         return Section::make(__('app.ui.lead_status'))
             ->columns(1)
             ->schema([
-                TextEntry::make('status')
-                    ->label(__('app.fields.status'))
-                    ->inlineLabel()
-                    ->badge(),
                 TextEntry::make('date')
                     ->label(__('app.fields.date'))
                     ->inlineLabel()

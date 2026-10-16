@@ -5,6 +5,7 @@ namespace App\Filament\Widgets\Analytics;
 use App\Helpers\Helpers;
 use App\Models\InvoiceTransaction;
 use App\Support\Analytics\AnalyticsDateRange;
+use App\Support\AppConfig;
 use App\Support\Billing\PaymentMethod;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -36,6 +37,7 @@ class RecentTransactionsTableWidget extends TableWidget
     public function table(Table $table): Table
     {
         return $table
+            ->columnManager(false)
             ->paginated(false)
             ->heading(__('app.widgets.recent_transactions'))
             ->query(function (): Builder {
@@ -54,8 +56,8 @@ class RecentTransactionsTableWidget extends TableWidget
                     ->wrap(),
                 TextColumn::make('occurred_at')
                     ->label(__('app.fields.date'))
-                    ->state(fn (InvoiceTransaction $record): string => $record->occurred_at?->timezone(\App\Support\AppConfig::timezone())->translatedFormat('d M Y') ?? '—')
-                    ->description(fn (InvoiceTransaction $record): string => $record->occurred_at?->timezone(\App\Support\AppConfig::timezone())->format('h:i A') ?? '—')
+                    ->state(fn (InvoiceTransaction $record): string => $record->occurred_at?->timezone(AppConfig::timezone())->translatedFormat('d M Y') ?? '—')
+                    ->description(fn (InvoiceTransaction $record): string => $record->occurred_at?->timezone(AppConfig::timezone())->format('h:i A') ?? '—')
                     ->sortable(),
                 TextColumn::make('type')
                     ->label(__('app.fields.status'))

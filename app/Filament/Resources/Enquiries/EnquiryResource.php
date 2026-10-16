@@ -10,7 +10,7 @@ use App\Filament\Resources\Enquiries\Schemas\EnquiryForm;
 use App\Filament\Resources\Enquiries\Schemas\EnquiryInfolist;
 use App\Filament\Resources\Enquiries\Tables\EnquiryTable;
 use App\Models\Enquiry;
-use App\Support\Filament\GlobalSearchBadge;
+use App\Support\Filament\StatusBadge;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -75,7 +75,7 @@ class EnquiryResource extends Resource
         }
 
         if ($record->status) {
-            $details[__('app.fields.status')] = GlobalSearchBadge::status($record->status);
+            $details[__('app.fields.status')] = StatusBadge::render($record->status);
         }
 
         return $details;

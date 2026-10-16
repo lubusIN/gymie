@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Subscriptions\Pages;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Models\Member;
 use App\Models\Subscription;
+use App\Support\Filament\HasStatusHeading;
 use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -13,6 +14,8 @@ use Filament\Resources\Pages\ViewRecord;
  */
 class ViewSubscription extends ViewRecord
 {
+    use HasStatusHeading;
+
     protected static string $resource = SubscriptionResource::class;
 
     public function getTitle(): string

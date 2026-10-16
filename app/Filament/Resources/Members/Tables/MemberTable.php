@@ -21,7 +21,6 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -41,7 +40,6 @@ class MemberTable
                 ]))
             ->columns([
                 TextColumn::make('id')
-                    ->sortable()
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 ImageColumn::make('photo')
@@ -91,7 +89,6 @@ class MemberTable
                     ->hidden(fn (): bool => Member::exists()),
             ])
             ->filters([
-                TrashedFilter::make(),
                 SelectFilter::make('attendance_recency')
                     ->label(__('app.fields.visit_activity'))
                     ->options([

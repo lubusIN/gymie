@@ -3,13 +3,13 @@
 namespace App\Filament\Resources\Users\Pages;
 
 use App\Enums\Status;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
 use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ListRecords;
 
-class ListUsers extends ListRecords
+class ListUsers extends ListRecordsWithTableTabs
 {
     protected static string $resource = UserResource::class;
 

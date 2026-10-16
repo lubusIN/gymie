@@ -13,7 +13,9 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Invoices\InvoiceTransactionService;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
@@ -63,27 +65,49 @@ it('shows membership urgency and outstanding billing in the subscription workspa
         'due_date' => '2026-10-01',
     ])->refresh();
 
-    Livewire::test(ListSubscriptions::class)
-        ->assertSee('30 Days Left')
-        ->assertSee(Helpers::formatCurrency((float) $invoice->due_amount));
+    $subscriptionTable = Livewire::test(ListSubscriptions::class);
+
+    $subscriptionTable
+        ->assertTableColumnStateSet('days_remaining', 30, $subscription)
+        ->assertTableColumnExists('member.name')
+        ->assertTableColumnExists('plan.name', fn (TextColumn $column): bool => $column->getVisibleFrom() === 'sm')
+        ->assertTableColumnExists('start_date', fn (TextColumn $column): bool => $column->getVisibleFrom() === 'lg')
+        ->assertTableColumnExists('end_date', fn (TextColumn $column): bool => $column->getVisibleFrom() === 'md')
+        ->assertTableColumnExists('days_remaining', fn (TextColumn $column): bool => $column->getVisibleFrom() === 'md')
+        ->assertTableColumnExists('status')
+        ->assertTableColumnDoesNotExist('id')
+        ->assertTableColumnDoesNotExist('invoice.due_amount')
+        ->assertTableColumnDoesNotExist('created_at');
 
     Livewire::test(ViewSubscription::class, ['record' => $subscription->getRouteKey()])
         ->assertSchemaComponentExists('subscription_sections.details_tab')
+        ->assertSchemaComponentExists('subscription_sections.details_tab.subscription_details')
+        ->assertSchemaComponentDoesNotExist('subscription_sections.details_tab.subscription_payment_summary')
+        ->assertSchemaComponentExists('subscription_sections.details_tab.invoice_relation_manager')
         ->assertSchemaComponentExists('subscription_sections.activity_tab')
-        ->assertSchemaComponentExists('subscription_sections.invoice_tab')
+        ->assertSchemaComponentDoesNotExist('subscription_sections.invoice_tab')
+        ->assertActionDoesNotExist('view_invoice')
+        ->assertActionExists('delete', fn (Action $action): bool => $action->isIconButton())
         ->assertSee('Taylor Member')
         ->assertSee('Monthly')
-        ->assertSee('INV-100')
-        ->assertSee(Helpers::formatCurrency((float) $invoice->due_amount));
+        ->assertSee('01 Sep 2026 – 28 Oct 2026')
+        ->assertSee('30 Days Left')
+        ->assertSee('INV-100');
 
-    Livewire::test(InvoicesRelationManager::class, [
+    $invoiceTable = Livewire::test(InvoicesRelationManager::class, [
         'ownerRecord' => $subscription,
         'pageClass' => ViewSubscription::class,
-    ])
+    ]);
+
+    $invoiceTable
         ->assertCanSeeTableRecords([$invoice])
         ->assertTableColumnHidden('id')
         ->assertTableColumnHidden('subscription.member.name')
         ->assertTableColumnVisible('discount_amount');
+
+    expect($invoiceTable->instance()->getTable()->isSearchable())->toBeFalse()
+        ->and($invoiceTable->instance()->getTable()->getFilters())->toBe([])
+        ->and($invoiceTable->instance()->getTable()->hasColumnManager())->toBeFalse();
 });
 
 it('does not count the waiting period before an upcoming subscription starts', function (): void {
@@ -91,7 +115,7 @@ it('does not count the waiting period before an upcoming subscription starts', f
         'name' => 'Future Member',
     ]);
     $plan = Plan::factory()->create();
-    Subscription::factory()->for($member)->for($plan)->create([
+    $subscription = Subscription::factory()->for($member)->for($plan)->create([
         'start_date' => '2026-10-05',
         'end_date' => '2026-11-04',
         'status' => Status::Upcoming,
@@ -99,7 +123,10 @@ it('does not count the waiting period before an upcoming subscription starts', f
 
     Livewire::test(ListSubscriptions::class)
         ->assertSee('Future Member')
-        ->assertDontSee('37 Days Left');
+        ->assertTableColumnStateSet('days_remaining', null, $subscription);
+
+    Livewire::test(ViewSubscription::class, ['record' => $subscription->getRouteKey()])
+        ->assertActionDoesNotExist('view_invoice');
 });
 
 it('renews a subscription from the subscriptions table', function (): void {

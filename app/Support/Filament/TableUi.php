@@ -7,8 +7,8 @@ use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -21,15 +21,34 @@ final class TableUi
     /**
      * @param  class-string<Model>  $model
      * @param  list<Status>  $statuses
+     * @param  (Closure(Builder): Builder)|null  $scopeBadgeQuery
      * @return array<string, Tab>
      */
-    public static function statusTabs(string $model, array $statuses): array
-    {
+    public static function statusTabs(
+        string $model,
+        array $statuses,
+        ?Closure $scopeBadgeQuery = null,
+    ): array {
         $tabs = ['all' => Tab::make(__('app.common.all'))];
+        $statusValues = array_map(
+            fn (Status $status): string => $status->value,
+            $statuses,
+        );
+        $badgeQuery = $model::query()->whereIn('status', $statusValues);
+
+        if ($scopeBadgeQuery) {
+            $badgeQuery = $scopeBadgeQuery($badgeQuery);
+        }
+
+        $badgeCounts = $badgeQuery
+            ->select('status')
+            ->selectRaw('COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
 
         foreach ($statuses as $status) {
             $tabs[$status->value] = Tab::make($status->getLabel())
-                ->badge($model::query()->where('status', $status->value)->count())
+                ->badge((int) ($badgeCounts[$status->value] ?? 0))
                 ->badgeColor($status->getColor())
                 ->modifyQueryUsing(
                     fn (Builder $query): Builder => $query->where('status', $status->value),
@@ -62,7 +81,7 @@ final class TableUi
      * @param  array<string, string>  $statusLabels
      */
     public static function emptyStateHeading(
-        ListRecords $livewire,
+        HasTable $livewire,
         string $model,
         string $resource,
         array $statusLabels = [],
@@ -92,7 +111,7 @@ final class TableUi
      * @param  array<string, string>  $statusLabels
      */
     public static function emptyStateDescription(
-        ListRecords $livewire,
+        HasTable $livewire,
         string $model,
         string $resource,
         array $statusLabels = [],
@@ -160,16 +179,29 @@ final class TableUi
     }
 
     /** @return array{mixed, mixed} */
-    private static function dateRange(ListRecords $livewire): array
+    private static function dateRange(HasTable $livewire): array
     {
+        $pageFilters = data_get($livewire, 'filters');
+
+        if (is_array($pageFilters)) {
+            $from = $pageFilters['startDate'] ?? null;
+            $to = $pageFilters['endDate'] ?? null;
+
+            if ($from || $to) {
+                return [$from, $to];
+            }
+        }
+
         $dates = $livewire->getTableFilterState('date') ?? [];
 
         return [$dates['date_from'] ?? null, $dates['date_to'] ?? null];
     }
 
-    private static function activeTab(ListRecords $livewire): string
+    private static function activeTab(HasTable $livewire): string
     {
-        return $livewire->activeTab ?? 'all';
+        $activeTab = data_get($livewire, 'activeTab');
+
+        return is_string($activeTab) && filled($activeTab) ? $activeTab : 'all';
     }
 
     /** @param array<string, string> $statusLabels */

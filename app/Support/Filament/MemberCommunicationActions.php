@@ -23,6 +23,7 @@ final class MemberCommunicationActions
             ->color('gray')
             ->authorize('Update:Member')
             ->requiresConfirmation()
+            ->modalIcon('heroicon-o-envelope')
             ->modalDescription(__('app.communication.confirm_member_welcome'))
             ->visible(fn (Member $record): bool => filled($record->email))
             ->disabled(fn (Member $record, EmailDeliveryContext $emailContext, CommunicationPreferenceService $preferenceService): bool => ! $emailContext->isDeliveryConfigured()

@@ -3,13 +3,13 @@
 namespace App\Filament\Resources\Subscriptions\Pages;
 
 use App\Enums\Status;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Models\Subscription;
 use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ListRecords;
 
-class ListSubscriptions extends ListRecords
+class ListSubscriptions extends ListRecordsWithTableTabs
 {
     protected static string $resource = SubscriptionResource::class;
 

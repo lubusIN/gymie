@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Subscription;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -65,7 +66,7 @@ it('lists only subscriptions that are ending within the expiring window', functi
     $method = new ReflectionMethod($widget, 'getActiveTabQuery');
     $method->setAccessible(true);
 
-    /** @var \Illuminate\Database\Eloquent\Builder $query */
+    /** @var Builder $query */
     $query = $method->invoke($widget);
 
     $ids = $query->pluck('id')->all();
@@ -116,7 +117,7 @@ it('lists only subscriptions that have already ended in the expired tab', functi
     $method = new ReflectionMethod($widget, 'getActiveTabQuery');
     $method->setAccessible(true);
 
-    /** @var \Illuminate\Database\Eloquent\Builder $query */
+    /** @var Builder $query */
     $query = $method->invoke($widget);
 
     $ids = $query->pluck('id')->all();
@@ -157,10 +158,12 @@ it('shows only the top 5 expiring memberships on the dashboard widget', function
     $expected = $records->take(5);
     $excluded = $records->last();
 
-    Livewire::test(MembershipOverviewSubscriptionsTableWidget::class)
+    $component = Livewire::test(MembershipOverviewSubscriptionsTableWidget::class)
         ->loadTable()
         ->assertCanSeeTableRecords($expected)
         ->assertCanNotSeeTableRecords([$excluded]);
+
+    expect($component->instance()->getTable()->hasColumnManager())->toBeFalse();
 });
 
 it('shows only the top 5 expired memberships on the dashboard widget', function (): void {

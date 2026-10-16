@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use App\Enums\Status;
 use App\Filament\Resources\Users\Pages\ViewUser;
 use App\Filament\Resources\Users\RelationManagers\StaffActivitiesRelationManager;
 use App\Filament\Resources\Users\RelationManagers\StaffAttendancesRelationManager;
@@ -15,8 +14,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class UserInfolist
@@ -79,21 +76,7 @@ class UserInfolist
 
     private static function staffInformationSection(): Section
     {
-        return Section::make()
-            ->heading(function (User $record): HtmlString {
-                $status = $record->status ?? Status::Inactive;
-                $html = Blade::render(
-                    '<x-filament::badge class="inline-flex ml-2" :color="$color">
-                        {{ $label }}
-                    </x-filament::badge>',
-                    [
-                        'color' => $status->getColor(),
-                        'label' => $status->getLabel(),
-                    ]
-                );
-
-                return new HtmlString(e(__('app.ui.details')).' '.$html);
-            })
+        return Section::make(__('app.ui.details'))
             ->schema([
                 ImageEntry::make('photo')
                     ->hiddenLabel()

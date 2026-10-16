@@ -75,10 +75,12 @@ it('shows only the top 5 recent transactions on the dashboard widget', function 
     $expected = $transactions->sortByDesc('occurred_at')->take(5)->values();
     $excluded = $transactions->sortBy('occurred_at')->first();
 
-    Livewire::test(RecentTransactionsTableWidget::class)
+    $component = Livewire::test(RecentTransactionsTableWidget::class)
         ->loadTable()
         ->assertCanSeeTableRecords($expected)
         ->assertCanNotSeeTableRecords([$excluded])
         ->assertSee(__('app.transactions.payment'))
         ->assertSee(__('app.transactions.refund'));
+
+    expect($component->instance()->getTable()->hasColumnManager())->toBeFalse();
 });

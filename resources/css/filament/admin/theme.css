@@ -9,6 +9,47 @@
     color: var(--gray-500);
 }
 
+.gymie-workspace-overview-stat .fi-wi-stats-overview-stat-value {
+    @apply text-2xl;
+}
+
 .fi-in-entry .fi-in-entry-label {
-    @apply text-[13px] font-medium text-gray-500 dark:text-gray-400;
+    @apply text-[14px] font-medium text-gray-500 dark:text-gray-400;
+}
+
+.gymie-record-status-badge {
+    @apply px-2.5 py-1.5 text-sm;
+}
+
+.fi-in-entry .fi-in-entry-content-col {
+    @apply gap-y-1;
+}
+
+.fi-ta-header-toolbar:has([data-table-tabs]) {
+    @apply flex-col items-stretch sm:flex-row sm:items-center;
+
+    & > .fi-ta-actions {
+        @apply w-full min-w-0 flex-1 sm:w-auto;
+    }
+
+    & > :nth-child(2) {
+        @apply ms-0 w-full justify-end sm:ms-auto sm:w-auto;
+    }
+}
+
+.gymie-payment-summary {
+    & .fi-in-entry-has-inline-label {
+        grid-template-columns: minmax(0, 1fr) auto;
+
+        @apply items-center gap-x-4;
+    }
+
+    & .fi-in-entry-has-inline-label .fi-in-entry-content-col {
+        grid-column: auto;
+        min-width: max-content;
+    }
+
+    & .gymie-payment-summary-settlement {
+        @apply mt-2 border-t border-gray-200 pt-5 dark:border-white/10;
+    }
 }

@@ -4,36 +4,72 @@ namespace App\Filament\Resources\Expenses\Pages;
 
 use App\Enums\ExpensePaymentMethod;
 use App\Enums\Status;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Filament\Widgets\ExpenseOverviewWidget;
 use App\Helpers\Helpers;
 use App\Models\Expense;
 use App\Services\Reporting\CsvDownloadService;
+use App\Support\Filament\HasDateRangeFilters;
 use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Pages\Dashboard\Concerns\HasFilters;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class ListExpenses extends ListRecords
+class ListExpenses extends ListRecordsWithTableTabs
 {
+    use HasDateRangeFilters;
+    use HasFilters;
+
     protected static string $resource = ExpenseResource::class;
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->initializeDateRangeFilters();
+    }
+
+    public function getHeader(): ?View
+    {
+        return view('filament.pages.date-range-header', [
+            'page' => $this,
+            'dateRangeForm' => $this->dateRangeForm,
+        ]);
+    }
+
+    public function dateRangeForm(Schema $schema): Schema
+    {
+        return $this->configureDateRangeFilters($schema);
+    }
+
+    public function table(Table $table): Table
+    {
+        return $table->modifyQueryUsing(
+            fn (Builder $query): Builder => $this->applyDateRangeToQuery($query),
+        );
+    }
 
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('export_csv')
+                ->label(__('app.actions.export_csv'))
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->action(fn (): StreamedResponse => $this->exportCsv()),
             CreateAction::make()
                 ->modalHeading(__('app.actions.new', ['resource' => ExpenseResource::getModelLabel()]))
                 ->createAnother(false)
                 ->modalWidth(Width::ScreenLarge)
                 ->closeModalByClickingAway(false)
                 ->hidden(! Expense::exists()),
-            Action::make('export_csv')
-                ->label(__('app.actions.export_csv'))
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('gray')
-                ->action(fn (): StreamedResponse => $this->exportCsv()),
         ];
     }
 
@@ -62,7 +98,12 @@ class ListExpenses extends ListRecords
             Status::Paid,
             Status::Overdue,
             Status::Cancelled,
-        ]);
+        ], fn (Builder $query): Builder => $this->applyDateRangeToQuery($query));
+    }
+
+    protected function supportsAllDateRange(): bool
+    {
+        return true;
     }
 
     /**

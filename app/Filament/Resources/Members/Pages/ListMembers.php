@@ -5,23 +5,21 @@ namespace App\Filament\Resources\Members\Pages;
 use App\Enums\Status;
 use App\Filament\Exports\MemberExporter;
 use App\Filament\Imports\MemberImporter;
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Filament\Resources\Members\MemberResource;
 use App\Models\Member;
 use App\Support\Filament\TableUi;
 use Filament\Actions\CreateAction;
 use Filament\Actions\ExportAction;
 use Filament\Actions\ImportAction;
-use Filament\Resources\Pages\ListRecords;
 
-class ListMembers extends ListRecords
+class ListMembers extends ListRecordsWithTableTabs
 {
     protected static string $resource = MemberResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
-                ->hidden(! Member::exists()),
             ImportAction::make()
                 ->importer(MemberImporter::class)
                 ->label(__('app.actions.import'))
@@ -37,6 +35,8 @@ class ListMembers extends ListRecords
                 ->maxRows(10000)
                 ->authorize('Export:Member')
                 ->columnMappingColumns(3),
+            CreateAction::make()
+                ->hidden(! Member::exists()),
         ];
     }
 

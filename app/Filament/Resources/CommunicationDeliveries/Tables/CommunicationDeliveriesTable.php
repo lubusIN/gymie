@@ -70,6 +70,7 @@ class CommunicationDeliveriesTable
                             ->icon(Heroicon::OutlinedArrowPath)
                             ->color('warning')
                             ->requiresConfirmation()
+                            ->modalIcon(Heroicon::OutlinedArrowPath)
                             ->modalDescription(__('app.communication.retry_confirmation'))
                             ->authorize(fn (CommunicationDelivery $record): bool => auth()->user()?->can('update', $record) ?? false)
                             ->visible(fn (CommunicationDelivery $record): bool => $record->canBeRetried())

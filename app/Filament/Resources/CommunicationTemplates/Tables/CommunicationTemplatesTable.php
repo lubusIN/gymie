@@ -70,7 +70,6 @@ class CommunicationTemplatesTable
                             ->label(__('app.communication.preview_and_test'))
                             ->icon(Heroicon::OutlinedBeaker)
                             ->color('gray')
-                            ->modalHeading(__('app.communication.preview_and_test'))
                             ->modalDescription(__('app.communication.preview_help'))
                             ->modalSubmitActionLabel(__('app.communication.send_test'))
                             ->modalWidth(Width::ThreeExtraLarge)
@@ -140,6 +139,7 @@ class CommunicationTemplatesTable
                             ->icon(Heroicon::OutlinedCheckCircle)
                             ->color('success')
                             ->requiresConfirmation()
+                            ->modalIcon(Heroicon::OutlinedCheckCircle)
                             ->modalDescription(fn (CommunicationTemplate $record): string => __('app.communication.use_for_event_confirmation', [
                                 'event' => $record->eventKey()?->getLabel(),
                             ]))

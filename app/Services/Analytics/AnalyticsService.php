@@ -38,6 +38,66 @@ class AnalyticsService
     }
 
     /**
+     * Expense totals by status for expenses dated within the selected range.
+     *
+     * Cancelled expenses are excluded from the total.
+     *
+     * @return array{total: float, paid: float, pending: float, overdue: float}
+     */
+    public function expenseStatusTotals(?AnalyticsDateRange $range = null): array
+    {
+        $totals = Expense::query()
+            ->when(
+                $range,
+                fn (Builder $query, AnalyticsDateRange $range): Builder => $query
+                    ->whereBetween('date', [$range->start, $range->end]),
+            )
+            ->whereIn('status', [Status::Paid->value, Status::Pending->value, Status::Overdue->value])
+            ->selectRaw('COALESCE(SUM(amount), 0) as total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN status = ? THEN amount ELSE 0 END), 0) as paid', [Status::Paid->value])
+            ->selectRaw('COALESCE(SUM(CASE WHEN status = ? THEN amount ELSE 0 END), 0) as pending', [Status::Pending->value])
+            ->selectRaw('COALESCE(SUM(CASE WHEN status = ? THEN amount ELSE 0 END), 0) as overdue', [Status::Overdue->value])
+            ->first();
+
+        return [
+            'total' => (float) ($totals?->total ?? 0),
+            'paid' => (float) ($totals?->paid ?? 0),
+            'pending' => (float) ($totals?->pending ?? 0),
+            'overdue' => (float) ($totals?->overdue ?? 0),
+        ];
+    }
+
+    /**
+     * Invoice amounts for invoices dated within the selected range.
+     *
+     * Cancelled invoices do not contribute to the workspace totals.
+     *
+     * @return array{total: float, paid: float, outstanding: float, overdue: float}
+     */
+    public function invoiceStatusTotals(?AnalyticsDateRange $range = null): array
+    {
+        $totals = Invoice::query()
+            ->when(
+                $range,
+                fn (Builder $query, AnalyticsDateRange $range): Builder => $query
+                    ->whereBetween('date', [$range->start, $range->end]),
+            )
+            ->where('status', '!=', Status::Cancelled->value)
+            ->selectRaw('COALESCE(SUM(total_amount), 0) as total')
+            ->selectRaw('COALESCE(SUM(paid_amount), 0) as paid')
+            ->selectRaw('COALESCE(SUM(due_amount), 0) as outstanding')
+            ->selectRaw('COALESCE(SUM(CASE WHEN status = ? THEN due_amount ELSE 0 END), 0) as overdue', [Status::Overdue->value])
+            ->first();
+
+        return [
+            'total' => (float) ($totals?->total ?? 0),
+            'paid' => (float) ($totals?->paid ?? 0),
+            'outstanding' => (float) ($totals?->outstanding ?? 0),
+            'overdue' => (float) ($totals?->overdue ?? 0),
+        ];
+    }
+
+    /**
      * Build a SQL expression that groups a date/datetime column by month.
      */
     private function monthGroupExpression(string $column, string $driver): string
@@ -53,13 +113,13 @@ class AnalyticsService
      * Financial metrics for the given date range.
      *
      * Definitions:
-     * - `net_revenue`: total invoiced sales - refunds (sales based on invoice dates)
+     * - `net_revenue`: invoiced sales in range - refunds attributed to those invoices through the range end
      * - `collected`: payments - refunds (from transactions in range)
      * - `refunds`: refund transactions total (in range)
      * - `discounts`: invoice discount_amount total (invoice date in range)
      * - `outstanding`: sum of invoice due_amount as-of the range end date
      * - `expenses`: paid expenses (payment time in range)
-     * - `profit`: collected - expenses
+     * - `profit`: collected - expenses (negative values represent a loss)
      *
      * @return array{net_revenue: float, collected: float, refunds: float, discounts: float, outstanding: float, expenses: float, profit: float}
      */
@@ -82,8 +142,20 @@ class AnalyticsService
 
         $paymentsTotal = (float) ($transactions->payments_total ?? 0);
         $refundsTotal = (float) ($transactions->refunds_total ?? 0);
-        $collected = max($paymentsTotal - $refundsTotal, 0);
-        $netRevenue = max($salesTotal - $refundsTotal, 0);
+        $revenueRefundsTotal = (float) InvoiceTransaction::query()
+            ->where('type', 'refund')
+            ->where('occurred_at', '<=', $range->end)
+            ->whereHas(
+                'invoice',
+                fn (Builder $query): Builder => $query->whereBetween(
+                    'date',
+                    [$range->start->toDateString(), $range->end->toDateString()],
+                ),
+            )
+            ->sum('amount');
+
+        $collected = max($paymentsTotal - $refundsTotal, 0.0);
+        $netRevenue = max($salesTotal - $revenueRefundsTotal, 0.0);
 
         $outstanding = (float) Invoice::query()
             ->where('date', '<=', $range->referenceDateString())
@@ -100,7 +172,7 @@ class AnalyticsService
             'discounts' => $discounts,
             'outstanding' => $outstanding,
             'expenses' => $expenses,
-            'profit' => max($collected - $expenses, 0),
+            'profit' => $collected - $expenses,
         ];
     }
 

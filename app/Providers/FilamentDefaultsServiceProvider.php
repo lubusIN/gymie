@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Filament\Pages\ListRecordsWithTableTabs;
 use App\Helpers\Helpers;
 use App\Support\Data;
 use Filament\Actions\Action;
@@ -18,15 +19,21 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Assets\Css;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
-use Filament\Support\Enums\TextSize;
 use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Facades\FilamentView;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
+use Filament\Tables\View\TablesRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Livewire\LivewireManager;
 
 final class FilamentDefaultsServiceProvider extends ServiceProvider
 {
@@ -41,13 +48,24 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
         $this->configureFormsAndTables();
         $this->configureInfolists();
         $this->configureDeletionPrevention();
+        $this->configureTableTabs();
     }
 
     private function configureActions(): void
     {
+        Action::configureUsing(function (Action $action): void {
+            $action
+                ->modalAlignment(
+                    fn (): Alignment => $action->getModalIcon() === null
+                        ? Alignment::Start
+                        : Alignment::Center,
+                )
+                ->modalFooterActionsAlignment(Alignment::End);
+        });
+
         CreateAction::configureUsing(function (CreateAction $action): void {
             $action
-                ->label(fn(): string => __('app.actions.new_label'))
+                ->label(fn (): string => __('app.actions.new_label'))
                 ->icon(Heroicon::OutlinedPlus);
         });
 
@@ -75,7 +93,9 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
     private function configureFormsAndTables(): void
     {
         Table::configureUsing(function (Table $table): void {
-            $table->defaultSort('id', 'desc');
+            $table
+                ->defaultSort('id', 'desc')
+                ->filtersLayout(FiltersLayout::Modal);
         });
 
         Select::configureUsing(function (Select $select): void {
@@ -117,9 +137,25 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
     {
         TextEntry::configureUsing(function (TextEntry $entry): void {
             $entry
-                ->size(15)
+                ->size('text-[15px]')
                 ->weight(FontWeight::Medium);
         });
+    }
+
+    private function configureTableTabs(): void
+    {
+        FilamentView::registerRenderHook(
+            TablesRenderHook::TOOLBAR_GROUPING_SELECTOR_BEFORE,
+            function (LivewireManager $livewireManager): View|HtmlString {
+                $page = $livewireManager->current();
+
+                if (! $page instanceof ListRecordsWithTableTabs) {
+                    return new HtmlString('');
+                }
+
+                return view('filament.tables.status-tabs', compact('page'));
+            },
+        );
     }
 
     /** Prevent deletion of records that still have configured related data. */
@@ -209,7 +245,7 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
             }
 
             $map[$class] = array_values(array_filter(array_map(
-                static fn(mixed $relation): string => Data::string($relation),
+                static fn (mixed $relation): string => Data::string($relation),
                 $relations,
             )));
         }

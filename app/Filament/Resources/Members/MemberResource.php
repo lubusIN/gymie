@@ -10,13 +10,11 @@ use App\Filament\Resources\Members\Schemas\MemberForm;
 use App\Filament\Resources\Members\Schemas\MemberInfolist;
 use App\Filament\Resources\Members\Tables\MemberTable;
 use App\Models\Member;
-use App\Support\Filament\GlobalSearchBadge;
+use App\Support\Filament\StatusBadge;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /** @extends resource<Member> */
 class MemberResource extends Resource
@@ -68,7 +66,7 @@ class MemberResource extends Resource
         }
 
         if ($record->status) {
-            $details[__('app.fields.status')] = GlobalSearchBadge::status($record->status);
+            $details[__('app.fields.status')] = StatusBadge::render($record->status);
         }
 
         return $details;
@@ -106,16 +104,5 @@ class MemberResource extends Resource
             'edit' => EditMember::route('/{record}/edit'),
             'view' => ViewMember::route('/{record}'),
         ];
-    }
-
-    /**
-     * @return Builder<Member>
-     */
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
     }
 }

@@ -4,6 +4,8 @@ use App\Enums\ExpensePaymentMethod;
 use App\Enums\Status;
 use App\Filament\Resources\Expenses\Pages\ListExpenses;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
+use App\Filament\Widgets\Analytics\ExpenseCategoriesDoughnutChartWidget;
+use App\Filament\Widgets\InvoiceOverviewWidget;
 use App\Helpers\Helpers;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -40,9 +42,36 @@ afterEach(function (): void {
     Helpers::setTestSettingsOverride(null);
 });
 
-it('shows invoice discounts while keeping IDs hidden by default', function (): void {
+it('keeps secondary invoice amounts hidden and removes table summaries', function (): void {
     Livewire::test(ListInvoices::class)
-        ->assertTableColumnVisible('discount_amount')
+        ->assertTableColumnVisible('total_amount')
+        ->assertTableColumnVisible('due_amount')
+        ->assertTableColumnExists(
+            'subscription_fee',
+            fn ($column): bool => $column->isToggleable()
+                && $column->isToggledHiddenByDefault()
+                && $column->isToggledHidden(),
+        )
+        ->assertTableColumnExists(
+            'discount_amount',
+            fn ($column): bool => $column->isToggleable()
+                && $column->isToggledHiddenByDefault()
+                && $column->isToggledHidden(),
+        )
+        ->assertTableColumnExists(
+            'paid_amount',
+            fn ($column): bool => $column->isToggleable()
+                && $column->isToggledHiddenByDefault()
+                && $column->isToggledHidden(),
+        )
+        ->assertTableColumnExists(
+            'tax',
+            fn ($column): bool => $column->isToggleable()
+                && $column->isToggledHiddenByDefault()
+                && $column->isToggledHidden(),
+        )
+        ->assertTableColumnExists('total_amount', fn ($column): bool => $column->getSummarizers() === [])
+        ->assertTableColumnExists('due_amount', fn ($column): bool => $column->getSummarizers() === [])
         ->assertTableColumnExists(
             'id',
             fn ($column): bool => $column->isToggleable()
@@ -51,7 +80,66 @@ it('shows invoice discounts while keeping IDs hidden by default', function (): v
         );
 });
 
-it('filters and summarizes invoices by member, plan, and active status tab', function (): void {
+it('summarizes invoices in the overview card for the selected period', function (): void {
+    Invoice::factory()->create([
+        'date' => '2026-09-05',
+        'due_date' => '2026-09-15',
+        'subscription_fee' => 100,
+        'discount_amount' => 0,
+        'paid_amount' => 100,
+    ]);
+    Invoice::factory()->create([
+        'date' => '2026-09-10',
+        'due_date' => '2026-10-05',
+        'subscription_fee' => 200,
+        'discount_amount' => 0,
+        'paid_amount' => 50,
+    ]);
+    Invoice::factory()->create([
+        'date' => '2026-09-30',
+        'due_date' => '2026-09-20',
+        'subscription_fee' => 300,
+        'discount_amount' => 0,
+        'paid_amount' => 0,
+    ]);
+    Invoice::factory()->create([
+        'date' => '2026-09-20',
+        'due_date' => '2026-09-25',
+        'status' => Status::Cancelled,
+        'subscription_fee' => 400,
+        'discount_amount' => 0,
+        'paid_amount' => 0,
+    ]);
+    Invoice::factory()->create([
+        'date' => '2026-08-15',
+        'due_date' => '2026-08-20',
+        'subscription_fee' => 901,
+        'discount_amount' => 0,
+        'paid_amount' => 0,
+    ]);
+
+    Livewire::test(InvoiceOverviewWidget::class, [
+        'pageFilters' => [
+            'period' => 'custom',
+            'startDate' => '2026-09-01',
+            'endDate' => '2026-09-30',
+        ],
+    ])
+        ->assertSee(__('app.summaries.total_invoiced'))
+        ->assertSee(__('app.summaries.paid'))
+        ->assertSee(__('app.summaries.outstanding'))
+        ->assertSee(Status::Overdue->getLabel())
+        ->assertSee(Helpers::formatCurrency(600))
+        ->assertSee(Helpers::formatCurrency(150))
+        ->assertSee(Helpers::formatCurrency(450))
+        ->assertSee(Helpers::formatCurrency(300))
+        ->assertSee('-33.4%')
+        ->assertSee(__('app.widgets.vs_previous_period', [
+            'count' => Helpers::formatCurrency(901),
+        ]));
+});
+
+it('filters invoices by period, member, plan, and active status tab', function (): void {
     $member = Member::factory()->create(['name' => 'Alex Member']);
     $otherMember = Member::factory()->create(['name' => 'Other Member']);
     $plan = Plan::factory()->create(['name' => 'Monthly']);
@@ -72,32 +160,140 @@ it('filters and summarizes invoices by member, plan, and active status tab', fun
     ])->refresh();
     $otherMemberInvoice = Invoice::factory()->for($otherMemberSubscription)->create([
         'number' => 'INV-OTHER-MEMBER',
+        'date' => '2026-09-11',
+        'due_date' => '2026-10-11',
         'subscription_fee' => 200,
         'discount_amount' => 0,
         'paid_amount' => 200,
     ])->refresh();
     $otherPlanInvoice = Invoice::factory()->for($otherPlanSubscription)->create([
         'number' => 'INV-OTHER-PLAN',
+        'date' => '2026-09-12',
+        'due_date' => '2026-10-12',
         'subscription_fee' => 300,
         'discount_amount' => 0,
         'paid_amount' => 300,
     ])->refresh();
     $partial = Invoice::factory()->for($partialSubscription)->create([
         'number' => 'INV-PARTIAL',
+        'date' => '2026-09-13',
+        'due_date' => '2026-10-13',
         'subscription_fee' => 400,
         'discount_amount' => 0,
         'paid_amount' => 100,
     ])->refresh();
 
     Livewire::test(ListInvoices::class)
+        ->call('setPeriod', 'custom')
+        ->set('filters.startDate', '2026-09-01')
+        ->set('filters.endDate', '2026-09-30')
+        ->call('applyCustomRangeFromFilters')
         ->set('activeTab', Status::Paid->value)
         ->filterTable('member', $member->getKey())
         ->filterTable('plan', $plan->getKey())
         ->assertCanSeeTableRecords([$matching])
-        ->assertCanNotSeeTableRecords([$otherMemberInvoice, $otherPlanInvoice, $partial])
-        ->assertTableColumnSummarySet('total_amount', 'total_invoiced', 90)
-        ->assertTableColumnSummarySet('paid_amount', 'paid', 90)
-        ->assertTableColumnSummarySet('due_amount', 'outstanding', 0);
+        ->assertCanNotSeeTableRecords([$otherMemberInvoice, $otherPlanInvoice, $partial]);
+});
+
+it('shows invoices from every date when the date filter is cleared', function (): void {
+    $recentInvoice = Invoice::factory()->create([
+        'date' => '2026-09-30',
+        'due_date' => '2026-10-29',
+        'subscription_fee' => 100,
+        'discount_amount' => 0,
+        'paid_amount' => 100,
+    ]);
+    $olderInvoice = Invoice::factory()->create([
+        'date' => '2025-01-15',
+        'due_date' => '2025-02-15',
+        'subscription_fee' => 100,
+        'discount_amount' => 0,
+        'paid_amount' => 100,
+    ]);
+
+    $component = Livewire::test(ListInvoices::class)
+        ->assertCanSeeTableRecords([$recentInvoice])
+        ->assertCanNotSeeTableRecords([$olderInvoice]);
+
+    expect($component->instance()->getCachedTabs()[Status::Paid->value]->getBadge())->toBe('1');
+
+    $component
+        ->call('setPeriod', 'today')
+        ->assertSet('filters.period', 'today')
+        ->assertSet('filters.startDate', '2026-09-30')
+        ->assertSet('filters.endDate', '2026-09-30')
+        ->assertCanSeeTableRecords([$recentInvoice])
+        ->assertCanNotSeeTableRecords([$olderInvoice])
+        ->fillForm(['period' => null], 'dateRangeForm')
+        ->assertSet('filters.period', 'all')
+        ->assertCanSeeTableRecords([$recentInvoice, $olderInvoice]);
+
+    expect($component->instance()->getCachedTabs()[Status::Paid->value]->getBadge())->toBe('2');
+
+    Livewire::test(InvoiceOverviewWidget::class, [
+        'pageFilters' => ['period' => 'all'],
+    ])->assertSee(Helpers::formatCurrency(200));
+});
+
+it('shows member context and overdue age in the invoice list', function (): void {
+    $member = Member::factory()->create([
+        'name' => 'Taylor Member',
+        'code' => 'MEM-100',
+    ]);
+    $plan = Plan::factory()->create(['name' => 'Strength 30']);
+    $subscription = Subscription::factory()->for($member)->for($plan)->create();
+    $invoice = Invoice::factory()->for($subscription)->create([
+        'number' => 'INV-OVERDUE',
+        'date' => '2026-09-20',
+        'due_date' => '2026-09-25',
+        'subscription_fee' => 500,
+        'discount_amount' => 0,
+        'paid_amount' => 0,
+    ]);
+
+    Livewire::test(ListInvoices::class)
+        ->call('setPeriod', 'custom')
+        ->set('filters.startDate', '2026-09-01')
+        ->set('filters.endDate', '2026-09-30')
+        ->call('applyCustomRangeFromFilters')
+        ->assertCanSeeTableRecords([$invoice])
+        ->assertSee('Taylor Member')
+        ->assertSee('MEM-100')
+        ->assertDontSee('MEM-100 · Strength 30')
+        ->assertSee('5 days overdue');
+});
+
+it('orders expense categories from the highest amount to the lowest', function (): void {
+    Expense::factory()
+        ->count(7)
+        ->sequence(
+            ['category' => 'Largest', 'amount' => 700],
+            ['category' => 'Second', 'amount' => 600],
+            ['category' => 'Third', 'amount' => 500],
+            ['category' => 'Fourth', 'amount' => 400],
+            ['category' => 'Fifth', 'amount' => 300],
+            ['category' => 'Sixth', 'amount' => 290],
+            ['category' => 'Seventh', 'amount' => 280],
+        )
+        ->create([
+            'date' => '2026-09-15',
+            'paid_at' => '2026-09-15 10:00:00',
+            'status' => Status::Paid,
+        ]);
+
+    Livewire::test(ExpenseCategoriesDoughnutChartWidget::class, [
+        'pageFilters' => [
+            'period' => 'month',
+        ],
+    ])
+        ->assertSeeInOrder([
+            'Largest',
+            'Second',
+            __('app.analytics.other'),
+            'Third',
+            'Fourth',
+            'Fifth',
+        ]);
 });
 
 it('exports only invoices represented by the active table state', function (): void {
@@ -117,6 +313,8 @@ it('exports only invoices represented by the active table state', function (): v
     ]);
     Invoice::factory()->for($otherSubscription)->create([
         'number' => 'INV-EXCLUDED',
+        'date' => '2026-09-11',
+        'due_date' => '2026-10-11',
         'subscription_fee' => 200,
         'discount_amount' => 0,
         'paid_amount' => 200,
@@ -154,6 +352,10 @@ it('exports only invoices represented by the active table state', function (): v
     ]);
 
     Livewire::test(ListInvoices::class)
+        ->call('setPeriod', 'custom')
+        ->set('filters.startDate', '2026-09-01')
+        ->set('filters.endDate', '2026-09-30')
+        ->call('applyCustomRangeFromFilters')
         ->set('activeTab', Status::Paid->value)
         ->filterTable('member', $member->getKey())
         ->filterTable('plan', $plan->getKey())
@@ -165,7 +367,7 @@ it('exports only invoices represented by the active table state', function (): v
         );
 });
 
-it('filters, searches, summarizes, and safely exports expenses', function (): void {
+it('filters, searches, and safely exports expenses', function (): void {
     $matching = Expense::factory()->create([
         'name' => '=SUM(1,1)',
         'amount' => 500,
@@ -219,12 +421,15 @@ it('filters, searches, summarizes, and safely exports expenses', function (): vo
     ]);
 
     Livewire::test(ListExpenses::class)
+        ->call('setPeriod', 'custom')
+        ->set('filters.startDate', '2026-09-01')
+        ->set('filters.endDate', '2026-09-30')
+        ->call('applyCustomRangeFromFilters')
         ->set('activeTab', Status::Paid->value)
         ->filterTable('payment_method', ExpensePaymentMethod::Cash->value)
         ->searchTable('SUM')
         ->assertCanSeeTableRecords([$matching])
         ->assertCanNotSeeTableRecords([$otherPaymentMethod, $otherStatus])
-        ->assertTableColumnSummarySet('amount', 'total_expense', 500)
         ->callAction('export_csv')
         ->assertFileDownloaded(
             'expenses-2026-09-30.csv',

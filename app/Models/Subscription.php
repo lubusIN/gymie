@@ -35,6 +35,7 @@ use Spatie\Activitylog\Models\Activity;
  * @property-read Plan|null $plan
  * @property-read Subscription|null $renewedFrom
  * @property-read Collection<int, Subscription> $renewals
+ * @property-read int $renewals_count
  * @property-read Collection<int, Invoice> $invoices
  * @property-read Invoice|null $invoice
  * @property-read Collection<int, Activity> $activitiesAsSubject

@@ -6,77 +6,81 @@ use App\Filament\Resources\Subscriptions\RelationManagers\InvoicesRelationManage
 use App\Helpers\Helpers;
 use App\Models\Invoice;
 use App\Models\Subscription;
+use App\Support\Billing\InvoiceDisplay;
 use App\Support\Filament\TableUi;
 use Filament\Actions\Action;
-use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 final class InvoiceTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('subscription.member'))
+            ->defaultSort('date', 'desc')
             ->columns([
                 TextColumn::make('id')
-                    ->sortable()
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->hiddenOn(InvoicesRelationManager::class),
                 TextColumn::make('number')
                     ->label(__('app.fields.invoice_number'))
-                    ->sortable(),
+                    ->searchable(),
                 TextColumn::make('subscription.member.name')
-                    ->label(__('app.fields.subscription'))
-                    ->description(fn ($record): string => $record->subscription->member->code)
+                    ->label(__('app.fields.member'))
+                    ->description(fn (Invoice $record): ?string => $record->subscription?->member?->code)
                     ->hiddenOn(InvoicesRelationManager::class),
                 TextColumn::make('date')
-                    ->label(__('app.fields.date'))
-                    ->date()
+                    ->label(__('app.fields.invoice_date'))
+                    ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('due_date')
                     ->label(__('app.fields.due_date'))
-                    ->date()
+                    ->date('d M Y')
+                    ->description(fn (Invoice $record): ?string => InvoiceDisplay::overdueAge($record))
+                    ->color(fn (Invoice $record): ?string => InvoiceDisplay::overdueAge($record) === null ? null : 'danger')
                     ->sortable(),
-                TextColumn::make('subscription_fee')
-                    ->label(__('app.fields.fee'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
-                TextColumn::make('discount_amount')
-                    ->label(__('app.fields.discount'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
-                TextColumn::make('paid_amount')
-                    ->label(__('app.fields.paid'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
-                    ->summarize(
-                        Sum::make('paid')
-                            ->label(__('app.summaries.paid'))
-                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
-                    ),
-                TextColumn::make('tax')
-                    ->label(__('app.fields.tax'))
-                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
                 TextColumn::make('total_amount')
                     ->label(__('app.fields.total'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
-                    ->summarize(
-                        Sum::make('total_invoiced')
-                            ->label(__('app.summaries.total_invoiced'))
-                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
-                    ),
+                    ->sortable()
+                    ->alignEnd(),
                 TextColumn::make('due_amount')
                     ->label(__('app.fields.due'))
                     ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
-                    ->summarize(
-                        Sum::make('outstanding')
-                            ->label(__('app.summaries.outstanding'))
-                            ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state)),
-                    ),
+                    ->sortable()
+                    ->alignEnd(),
                 TextColumn::make('status')
                     ->badge(),
+                TextColumn::make('subscription_fee')
+                    ->label(__('app.fields.fee'))
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->sortable()
+                    ->alignEnd()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('discount_amount')
+                    ->label(__('app.fields.discount'))
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->sortable()
+                    ->alignEnd()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('paid_amount')
+                    ->label(__('app.fields.paid'))
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->sortable()
+                    ->alignEnd()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('tax')
+                    ->label(__('app.fields.tax'))
+                    ->formatStateUsing(fn ($state): string => Helpers::formatCurrency($state))
+                    ->sortable()
+                    ->alignEnd()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                TableUi::dateRangeFilter('date'),
                 SelectFilter::make('member')
                     ->label(__('app.fields.member'))
                     ->relationship('subscription.member', 'name')

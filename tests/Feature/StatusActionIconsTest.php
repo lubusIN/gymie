@@ -18,7 +18,14 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Support\Filament\StatusAction;
+use Carbon\Carbon;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,9 +35,30 @@ use Spatie\Permission\Models\Role;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    Carbon::setTestNow('2026-09-28 10:00:00');
+
     Role::findOrCreate('super_admin', 'web');
     $this->actingAs(User::factory()->create()->assignRole('super_admin'));
     Filament::setCurrentPanel('admin');
+});
+
+afterEach(function (): void {
+    Carbon::setTestNow();
+});
+
+it('aligns modal headings by icon and keeps footer actions at the end', function (): void {
+    $formAction = Action::make('form');
+    $confirmationAction = Action::make('confirm')
+        ->requiresConfirmation();
+
+    expect($formAction->getModalAlignment())->toBe(Alignment::Start)
+        ->and($confirmationAction->getModalAlignment())->toBe(Alignment::Center)
+        ->and($formAction->getModalFooterActionsAlignment())->toBe(Alignment::End)
+        ->and($confirmationAction->getModalFooterActionsAlignment())->toBe(Alignment::End);
+
+    foreach ([CreateAction::make(), EditAction::make(), DeleteAction::make(), ViewAction::make()] as $resourceAction) {
+        expect($resourceAction->getModalFooterActionsAlignment())->toBe(Alignment::End);
+    }
 });
 
 it('keeps status row and confirmation modal icons aligned', function (
@@ -172,6 +200,7 @@ it('uses semantic icons for status row actions', function (
     'cancel invoice' => [
         ListInvoices::class,
         fn (): Invoice => Invoice::factory()->create([
+            'date' => now()->toDateString(),
             'status' => 'issued',
             'paid_amount' => 0,
         ]),
@@ -180,25 +209,37 @@ it('uses semantic icons for status row actions', function (
     ],
     'mark expense as paid' => [
         ListExpenses::class,
-        fn (): Expense => Expense::factory()->create(['status' => 'pending']),
+        fn (): Expense => Expense::factory()->create([
+            'date' => now()->toDateString(),
+            'status' => 'pending',
+        ]),
         'mark_as_paid',
         Heroicon::OutlinedCheckCircle,
     ],
     'mark expense as overdue' => [
         ListExpenses::class,
-        fn (): Expense => Expense::factory()->create(['status' => 'pending']),
+        fn (): Expense => Expense::factory()->create([
+            'date' => now()->toDateString(),
+            'status' => 'pending',
+        ]),
         'mark_as_overdue',
         Heroicon::OutlinedExclamationTriangle,
     ],
     'mark expense as pending' => [
         ListExpenses::class,
-        fn (): Expense => Expense::factory()->create(['status' => 'overdue']),
+        fn (): Expense => Expense::factory()->create([
+            'date' => now()->toDateString(),
+            'status' => 'overdue',
+        ]),
         'mark_as_pending',
         Heroicon::OutlinedClock,
     ],
     'mark expense as cancelled' => [
         ListExpenses::class,
-        fn (): Expense => Expense::factory()->create(['status' => 'pending']),
+        fn (): Expense => Expense::factory()->create([
+            'date' => now()->toDateString(),
+            'status' => 'pending',
+        ]),
         'mark_as_cancelled',
         Heroicon::OutlinedXCircle,
     ],
@@ -211,6 +252,7 @@ it('updates expense statuses from row actions', function (
     bool $hasPaidAt,
 ): void {
     $expense = Expense::factory()->create([
+        'date' => now()->toDateString(),
         'status' => $sourceStatus,
         'paid_at' => null,
         'payment_method' => null,
@@ -241,7 +283,10 @@ it('updates expense statuses from row actions', function (
 ]);
 
 it('keeps expense status and record actions available after grouping', function (): void {
-    $expense = Expense::factory()->create(['status' => 'pending']);
+    $expense = Expense::factory()->create([
+        'date' => now()->toDateString(),
+        'status' => 'pending',
+    ]);
 
     Livewire::test(ListExpenses::class)
         ->assertTableActionVisible('mark_as_paid', $expense)

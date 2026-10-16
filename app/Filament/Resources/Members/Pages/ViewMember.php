@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Members\Pages;
 
 use App\Filament\Resources\Members\MemberResource;
 use App\Models\Member;
+use App\Support\Filament\HasStatusHeading;
 use App\Support\Filament\MemberCommunicationActions;
 use App\Support\Filament\RecordPageActions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,6 +14,8 @@ use Filament\Resources\Pages\ViewRecord;
  */
 class ViewMember extends ViewRecord
 {
+    use HasStatusHeading;
+
     protected static string $resource = MemberResource::class;
 
     protected function getHeaderActions(): array

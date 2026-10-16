@@ -4,11 +4,14 @@ namespace App\Filament\Resources\StaffActivities\Pages;
 
 use App\Filament\Resources\StaffActivities\StaffActivityResource;
 use App\Models\StaffActivity;
+use App\Support\Filament\HasStatusHeading;
 use Filament\Resources\Pages\ViewRecord;
 
 /** @property-read StaffActivity $record */
 class ViewStaffActivity extends ViewRecord
 {
+    use HasStatusHeading;
+
     protected static string $resource = StaffActivityResource::class;
 
     public function getTitle(): string

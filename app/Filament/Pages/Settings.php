@@ -74,7 +74,6 @@ class Settings extends Page implements HasForms
             Action::make('sendTestEmail')
                 ->label(__('app.settings.actions.send_test_email'))
                 ->icon(Heroicon::OutlinedPaperAirplane)
-                ->modalHeading(__('app.settings.actions.send_test_email'))
                 ->modalDescription(__('app.settings.hints.test_email'))
                 ->modalWidth(Width::Small)
                 ->schema([

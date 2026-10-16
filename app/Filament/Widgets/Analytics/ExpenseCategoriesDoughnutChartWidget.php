@@ -5,8 +5,8 @@ namespace App\Filament\Widgets\Analytics;
 use App\Helpers\Helpers;
 use App\Services\Analytics\AnalyticsService;
 use App\Support\Analytics\AnalyticsDateRange;
-use Carbon\CarbonImmutable;
 use Filament\Support\Facades\FilamentColor;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
 
@@ -18,6 +18,8 @@ use Illuminate\Support\Collection;
  */
 class ExpenseCategoriesDoughnutChartWidget extends Widget
 {
+    use InteractsWithPageFilters;
+
     protected static ?int $sort = -39;
 
     /**
@@ -26,59 +28,12 @@ class ExpenseCategoriesDoughnutChartWidget extends Widget
     protected string $view = 'filament.widgets.analytics.expense-spending-overview';
 
     /**
-     * Selected range key for this widget.
-     *
-     * This powers the default widget select filter UI in the header.
-     */
-    public ?string $filter = '6months';
-
-    /**
      * @var int | string | array<string, int | null>
      */
     protected int|string|array $columnSpan = [
         'default' => 1,
         'md' => 2,
     ];
-
-    /**
-     * Range filters for the default widget select UI.
-     *
-     * @return array<string, string>
-     */
-    public function getFilters(): array
-    {
-        return [
-            '7days' => __('app.analytics.ranges.7days'),
-            '30days' => __('app.analytics.ranges.30days'),
-            'quarter' => __('app.analytics.ranges.quarter'),
-            '6months' => __('app.analytics.ranges.6months'),
-            'ytd' => __('app.analytics.ranges.ytd'),
-        ];
-    }
-
-    /**
-     * Resolve the date range used for this widget.
-     */
-    private function resolveRange(): AnalyticsDateRange
-    {
-        $rangeKey = $this->filter ?: '6months';
-
-        $today = CarbonImmutable::today(\App\Support\AppConfig::timezone());
-        $monthStart = $today->startOfMonth();
-
-        [$start, $end] = match ($rangeKey) {
-            '7days' => [$today->subDays(6), $today],
-            '30days' => [$today->subDays(29), $today],
-            'quarter' => [$today->startOfQuarter(), $today],
-            'ytd' => [$today->startOfYear(), $today],
-            default => [$monthStart->subMonthsNoOverflow(5), $today],
-        };
-
-        return new AnalyticsDateRange(
-            $start->startOfDay(),
-            $end->endOfDay(),
-        );
-    }
 
     /**
      * Resolve a registered Filament color shade (or return a fallback).
@@ -113,27 +68,15 @@ class ExpenseCategoriesDoughnutChartWidget extends Widget
     private function segmentPalette(): array
     {
         $primary = FilamentColor::getColor('primary');
-        $info = FilamentColor::getColor('info');
-        $warning = FilamentColor::getColor('warning');
-        $success = FilamentColor::getColor('success');
 
         return [
-            $this->colorShade($primary, 400, '#1c908d'),
-            $this->colorShade($primary, 600, '#0e5c5a'),
-            $this->colorShade($info, 500, '#3B82F6'),
-            $this->colorShade($warning, 500, '#F97316'),
-            $this->colorShade($success, 500, '#10B981'),
+            $this->colorShade($primary, 600, '#042f2e'),
+            $this->colorShade($primary, 500, '#084543'),
+            $this->colorShade($primary, 400, '#0e5c5a'),
+            $this->colorShade($primary, 300, '#157573'),
+            $this->colorShade($primary, 200, '#1c908d'),
+            $this->colorShade($primary, 100, '#24adaa'),
         ];
-    }
-
-    /**
-     * Color used for the "Other" segment.
-     */
-    private function otherSegmentColor(): string
-    {
-        $gray = FilamentColor::getColor('gray');
-
-        return $this->colorShade($gray, 400, '#94A3B8');
     }
 
     /**
@@ -144,11 +87,11 @@ class ExpenseCategoriesDoughnutChartWidget extends Widget
         $rows = app(AnalyticsService::class)->expenseCategoryBreakdownForChart($range, 5);
 
         $palette = $this->segmentPalette();
-        $otherColor = $this->otherSegmentColor();
 
         return $rows
+            ->sortByDesc('total')
             ->values()
-            ->map(function (array $row, int $index) use ($palette, $otherColor): array {
+            ->map(function (array $row, int $index) use ($palette): array {
                 $category = (string) $row['category'];
                 $resolvedLabel = Helpers::getExpenseCategoryLabel($category);
                 $label = (string) ($category === 'Other'
@@ -159,9 +102,7 @@ class ExpenseCategoriesDoughnutChartWidget extends Widget
                     'label' => $label,
                     'total' => (float) $row['total'],
                     'flex' => (float) max((float) $row['total'], 0),
-                    'color' => $category === 'Other'
-                        ? $otherColor
-                        : ($palette[$index] ?? $palette[max(array_key_last($palette) ?? 0, 0)]),
+                    'color' => $palette[$index] ?? $palette[max(array_key_last($palette) ?? 0, 0)],
                 ];
             })
             ->filter(fn (array $segment): bool => $segment['flex'] > 0)
@@ -173,7 +114,7 @@ class ExpenseCategoriesDoughnutChartWidget extends Widget
      */
     protected function getViewData(): array
     {
-        $range = $this->resolveRange();
+        $range = AnalyticsDateRange::fromFilters($this->pageFilters);
 
         $service = app(AnalyticsService::class);
         $expenses = (float) $service->financialMetrics($range)['expenses'];

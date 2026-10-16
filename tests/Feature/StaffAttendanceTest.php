@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\Status;
+use App\Filament\Resources\Attendances\AttendanceResource;
+use App\Filament\Resources\Attendances\Pages\ListAttendances;
 use App\Filament\Resources\StaffAttendances\Pages\ListStaffAttendances;
 use App\Filament\Resources\StaffAttendances\StaffAttendanceResource;
 use App\Filament\Resources\Users\Pages\ViewUser;
@@ -93,12 +95,45 @@ it('shows staff attendance on the individual staff profile', function (): void {
     ])->assertCanSeeTableRecords([$attendance]);
 });
 
-it('keeps staff attendance under the existing attendance navigation', function (): void {
+it('keeps member and staff attendance tabs inside their tables', function (): void {
     expect(StaffAttendanceResource::shouldRegisterNavigation())->toBeFalse();
 
     Livewire::test(ListStaffAttendances::class)
+        ->assertSeeHtml('data-table-tabs')
+        ->assertSet('activeTab', 'staff')
         ->assertSee(__('app.attendance.members'))
-        ->assertSee(__('app.attendance.staff'));
+        ->assertSee(__('app.attendance.staff'))
+        ->call('selectTableTab', 'members')
+        ->assertRedirect(AttendanceResource::getUrl());
+
+    Livewire::test(ListAttendances::class)
+        ->assertSeeHtml('data-table-tabs')
+        ->assertSet('activeTab', 'members')
+        ->call('selectTableTab', 'staff')
+        ->assertRedirect(StaffAttendanceResource::getUrl());
+});
+
+it('filters staff attendance with the page period selector', function (): void {
+    $this->travelTo('2026-10-15 12:00:00');
+
+    $recentAttendance = StaffAttendance::factory()->create([
+        'checked_in_at' => '2026-10-14 08:00:00',
+    ]);
+    $todayAttendance = StaffAttendance::factory()->create([
+        'checked_in_at' => '2026-10-15 08:00:00',
+    ]);
+    $olderAttendance = StaffAttendance::factory()->create([
+        'checked_in_at' => '2026-09-20 08:00:00',
+    ]);
+
+    Livewire::test(ListStaffAttendances::class)
+        ->assertSet('filters.period', 'today')
+        ->assertSet('filters.startDate', '2026-10-15')
+        ->assertSet('filters.endDate', '2026-10-15')
+        ->assertCanSeeTableRecords([$todayAttendance])
+        ->assertCanNotSeeTableRecords([$recentAttendance, $olderAttendance])
+        ->call('setPeriod', 'all')
+        ->assertCanSeeTableRecords([$todayAttendance, $recentAttendance, $olderAttendance]);
 });
 
 it('hides staff check-in from users without attendance write permission', function (): void {

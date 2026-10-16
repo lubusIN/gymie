@@ -66,6 +66,7 @@ it('disables payment reminders when outbound email is unavailable', function ():
     $plan = Plan::factory()->create();
     $subscription = Subscription::factory()->for($member)->for($plan)->current()->create();
     $invoice = Invoice::factory()->for($subscription)->create([
+        'date' => now()->toDateString(),
         'due_date' => '2026-10-07',
         'subscription_fee' => 100,
         'discount_amount' => 0,
@@ -154,6 +155,7 @@ it('disables reminders when the member has no email address', function (): void 
     $memberWithoutEmail = Member::factory()->create(['email' => null]);
     $subscriptionWithoutEmail = Subscription::factory()->for($memberWithoutEmail)->for($plan)->current()->create();
     $invoiceWithoutEmail = Invoice::factory()->for($subscriptionWithoutEmail)->create([
+        'date' => now()->toDateString(),
         'due_date' => '2026-10-07',
         'subscription_fee' => 100,
         'discount_amount' => 0,
@@ -170,6 +172,7 @@ it('does not expose the reminder action without invoice update permission', func
     $plan = Plan::factory()->create();
     $subscription = Subscription::factory()->for($member)->for($plan)->current()->create();
     $invoice = Invoice::factory()->for($subscription)->create([
+        'date' => now()->toDateString(),
         'due_date' => '2026-10-07',
         'subscription_fee' => 100,
         'discount_amount' => 0,

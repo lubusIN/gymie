@@ -16,8 +16,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
 
 class MemberInfolist
 {
@@ -89,26 +87,7 @@ class MemberInfolist
 
     private static function memberInformationSection(): Section
     {
-        return Section::make()
-            ->heading(function (Member $record): HtmlString {
-                $status = $record->status;
-
-                if ($status === null) {
-                    return new HtmlString(e(__('app.ui.member_information')));
-                }
-
-                $html = Blade::render(
-                    '<x-filament::badge class="inline-flex ml-2" :color="$color">
-                        {{ $label }}
-                    </x-filament::badge>',
-                    [
-                        'color' => $status->getColor(),
-                        'label' => $status->getLabel(),
-                    ]
-                );
-
-                return new HtmlString(e(__('app.ui.member_information')).' '.$html);
-            })
+        return Section::make(__('app.ui.member_information'))
             ->schema([
                 ImageEntry::make('photo')
                     ->hiddenLabel()

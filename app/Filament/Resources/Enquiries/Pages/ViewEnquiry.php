@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Enquiries\Pages;
 use App\Filament\Resources\Enquiries\EnquiryResource;
 use App\Models\Enquiry;
 use App\Support\Filament\EnquiryPipelineActions;
+use App\Support\Filament\HasStatusHeading;
 use App\Support\Filament\RecordPageActions;
 use Filament\Actions\ActionGroup;
 use Filament\Resources\Pages\ViewRecord;
@@ -14,6 +15,8 @@ use Filament\Resources\Pages\ViewRecord;
  */
 class ViewEnquiry extends ViewRecord
 {
+    use HasStatusHeading;
+
     protected static string $resource = EnquiryResource::class;
 
     public function getTitle(): string

@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Invoices\Pages;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Invoices\Tables\InvoiceTableActions;
 use App\Models\Invoice;
-use App\Support\Filament\RecordPageActions;
+use App\Support\Filament\HasStatusHeading;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
@@ -13,20 +13,18 @@ use Filament\Resources\Pages\ViewRecord;
  */
 class ViewInvoice extends ViewRecord
 {
+    use HasStatusHeading;
+
     protected static string $resource = InvoiceResource::class;
 
     public function getTitle(): string
     {
-        return __('app.titles.invoice_number', ['number' => $this->record->number]);
+        return InvoiceResource::getModelLabel().' #'.$this->record->number;
     }
 
     protected function getHeaderActions(): array
     {
-        return [
-            RecordPageActions::edit()
-                ->hidden(fn (): bool => $this->record->status?->value !== 'issued'),
-            InvoiceTableActions::forViewPage(),
-        ];
+        return InvoiceTableActions::forViewPage();
     }
 
     public function getBreadcrumbs(): array

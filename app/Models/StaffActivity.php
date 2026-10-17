@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Filament\Resources\Enquiries\EnquiryResource;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Members\MemberResource;
+use App\Filament\Resources\StaffLeaves\StaffLeaveResource;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Filament\Resources\Users\UserResource;
 use Illuminate\Database\Eloquent\Builder;
@@ -64,6 +65,7 @@ class StaffActivity extends Activity
             Subscription::class => SubscriptionResource::class,
             Invoice::class => InvoiceResource::class,
             User::class => UserResource::class,
+            StaffLeave::class => StaffLeaveResource::class,
             default => null,
         };
 

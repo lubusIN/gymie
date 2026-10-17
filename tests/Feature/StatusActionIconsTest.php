@@ -46,18 +46,18 @@ afterEach(function (): void {
     Carbon::setTestNow();
 });
 
-it('aligns modal headings by icon and keeps footer actions at the end', function (): void {
+it('aligns modal headings by icon and stretches footer actions evenly', function (): void {
     $formAction = Action::make('form');
     $confirmationAction = Action::make('confirm')
         ->requiresConfirmation();
 
     expect($formAction->getModalAlignment())->toBe(Alignment::Start)
         ->and($confirmationAction->getModalAlignment())->toBe(Alignment::Center)
-        ->and($formAction->getModalFooterActionsAlignment())->toBe(Alignment::End)
-        ->and($confirmationAction->getModalFooterActionsAlignment())->toBe(Alignment::End);
+        ->and($formAction->getModalFooterActionsAlignment())->toBe(Alignment::Center)
+        ->and($confirmationAction->getModalFooterActionsAlignment())->toBe(Alignment::Center);
 
     foreach ([CreateAction::make(), EditAction::make(), DeleteAction::make(), ViewAction::make()] as $resourceAction) {
-        expect($resourceAction->getModalFooterActionsAlignment())->toBe(Alignment::End);
+        expect($resourceAction->getModalFooterActionsAlignment())->toBe(Alignment::Center);
     }
 });
 

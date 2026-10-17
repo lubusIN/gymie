@@ -12,6 +12,7 @@ use App\Models\Plan;
 use App\Models\Service;
 use App\Models\StaffActivity;
 use App\Models\StaffAttendance;
+use App\Models\StaffLeave;
 use App\Models\Subscription;
 use App\Models\User;
 use BackedEnum;
@@ -30,9 +31,10 @@ class StaffActivityObserver
         Expense::class => ['name', 'amount', 'date', 'due_date', 'paid_at', 'category', 'status', 'vendor', 'payment_method', 'payment_reference'],
         Attendance::class => ['member_id', 'subscription_id', 'checked_in_by_id', 'checked_in_at'],
         StaffAttendance::class => ['staff_id', 'checked_in_by_id', 'checked_in_at'],
+        StaffLeave::class => ['staff_id', 'type', 'start_date', 'end_date', 'status', 'reviewed_by_id', 'reviewed_at', 'cancelled_by_id', 'cancelled_at'],
         Plan::class => ['name', 'code', 'service_id', 'amount', 'days', 'status'],
         Service::class => ['name'],
-        User::class => ['name', 'email', 'status', 'contact'],
+        User::class => ['name', 'email', 'status', 'contact', 'emergency_contact', 'joining_date'],
     ];
 
     public function created(Model $model): void

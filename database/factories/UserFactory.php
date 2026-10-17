@@ -40,6 +40,7 @@ class UserFactory extends Factory
         $attributes = [
             'name' => $this->faker->company,
             'contact' => $location['contact'],
+            'emergency_contact' => $location['contact'],
             'address' => $location['address'],
             'country' => $location['country'],
             'state' => $location['state'],
@@ -48,6 +49,7 @@ class UserFactory extends Factory
             'gender' => $this->gender,
             'status' => $this->status,
             'dob' => $this->faker->date(),
+            'joining_date' => $this->faker->dateTimeBetween('-5 years')->format('Y-m-d'),
             'email' => $this->faker->unique()->safeEmail,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

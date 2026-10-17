@@ -60,7 +60,7 @@ final class FilamentDefaultsServiceProvider extends ServiceProvider
                         ? Alignment::Start
                         : Alignment::Center,
                 )
-                ->modalFooterActionsAlignment(Alignment::End);
+                ->modalFooterActionsAlignment(Alignment::Center);
         });
 
         CreateAction::configureUsing(function (CreateAction $action): void {

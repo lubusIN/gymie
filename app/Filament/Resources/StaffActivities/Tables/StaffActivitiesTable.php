@@ -11,6 +11,7 @@ use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Service;
 use App\Models\StaffActivity;
+use App\Models\StaffLeave;
 use App\Models\Subscription;
 use App\Models\User;
 use Filament\Actions\ViewAction;
@@ -106,6 +107,7 @@ class StaffActivitiesTable
             Plan::class,
             Service::class,
             Subscription::class,
+            StaffLeave::class,
             User::class,
         ])->mapWithKeys(fn (string $model): array => [$model => str($model)->classBasename()->headline()->toString()])->all();
     }

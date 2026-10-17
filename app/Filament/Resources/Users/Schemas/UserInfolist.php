@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use App\Filament\Resources\Users\Pages\ViewUser;
 use App\Filament\Resources\Users\RelationManagers\StaffActivitiesRelationManager;
 use App\Filament\Resources\Users\RelationManagers\StaffAttendancesRelationManager;
+use App\Filament\Resources\Users\RelationManagers\StaffLeavesRelationManager;
 use App\Models\User;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -70,13 +71,29 @@ class UserInfolist
                                     ],
                                 )->key('staff_attendances_relation_manager'),
                             ]),
+                        Tab::make(__('app.resources.staff_leaves.plural'))
+                            ->key('leave_tab')
+                            ->icon('heroicon-o-calendar-days')
+                            ->visible(fn (User $record): bool => StaffLeavesRelationManager::canViewForRecord(
+                                $record,
+                                ViewUser::class,
+                            ))
+                            ->schema([
+                                LivewireComponent::make(
+                                    StaffLeavesRelationManager::class,
+                                    fn (User $record): array => [
+                                        'ownerRecord' => $record,
+                                        'pageClass' => ViewUser::class,
+                                    ],
+                                )->key('staff_leaves_relation_manager'),
+                            ]),
                     ]),
             ]);
     }
 
     private static function staffInformationSection(): Section
     {
-        return Section::make(__('app.ui.details'))
+        return Section::make(__('app.ui.staff_information'))
             ->schema([
                 ImageEntry::make('photo')
                     ->hiddenLabel()
@@ -89,9 +106,16 @@ class UserInfolist
                         TextEntry::make('name')->label(__('app.fields.name')),
                         TextEntry::make('email')->label(__('app.fields.email')),
                         TextEntry::make('contact')->label(__('app.fields.contact')),
+                        TextEntry::make('emergency_contact')
+                            ->label(__('app.fields.emergency_contact'))
+                            ->placeholder(__('app.placeholders.na')),
                         TextEntry::make('gender')->label(__('app.fields.gender')),
                         TextEntry::make('dob')
                             ->label(__('app.fields.dob'))
+                            ->date()
+                            ->placeholder(__('app.placeholders.na')),
+                        TextEntry::make('joining_date')
+                            ->label(__('app.fields.joining_date'))
                             ->date()
                             ->placeholder(__('app.placeholders.na')),
                         TextEntry::make('roles.name')

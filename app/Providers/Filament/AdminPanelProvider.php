@@ -14,6 +14,7 @@ use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Members\MemberResource;
 use App\Filament\Resources\Plans\PlanResource;
 use App\Filament\Resources\Services\ServiceResource;
+use App\Filament\Resources\StaffLeaves\StaffLeaveResource;
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Http\Middleware\SetAppLocale;
@@ -119,6 +120,7 @@ class AdminPanelProvider extends PanelProvider
         $administration = [
             ...Settings::getNavigationItems(),
             ...UserResource::getNavigationItems(),
+            ...StaffLeaveResource::getNavigationItems(),
             ...RoleResource::getNavigationItems(),
         ];
 

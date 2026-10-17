@@ -19,6 +19,8 @@ enum Status: string implements HasColor, HasLabel
     case Overdue = 'overdue';
     case Paid = 'paid';
     case Partial = 'partial';
+    case Approved = 'approved';
+    case Rejected = 'rejected';
     case Ongoing = 'ongoing';
     case Expiring = 'expiring';
     case Expired = 'expired';
@@ -40,6 +42,8 @@ enum Status: string implements HasColor, HasLabel
         self::Overdue->value => 'warning',
         self::Paid->value => 'success',
         self::Partial->value => 'info',
+        self::Approved->value => 'success',
+        self::Rejected->value => 'danger',
         self::Ongoing->value => 'info',
         self::Expiring->value => 'warning',
         self::Expired->value => 'danger',

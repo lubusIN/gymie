@@ -25,6 +25,10 @@
     @apply gap-y-1;
 }
 
+.fi-modal-footer.fi-align-center .fi-modal-footer-actions {
+    @apply grid w-full grid-cols-[repeat(auto-fit,minmax(0,1fr))];
+}
+
 .fi-ta-header-toolbar:has([data-table-tabs]) {
     @apply flex-col items-stretch sm:flex-row sm:items-center;
 

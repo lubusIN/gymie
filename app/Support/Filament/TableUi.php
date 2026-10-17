@@ -58,8 +58,10 @@ final class TableUi
         return $tabs;
     }
 
-    public static function dateRangeFilter(string $column = 'created_at'): Filter
+    public static function dateRangeFilter(string $column = 'created_at', ?string $endColumn = null): Filter
     {
+        $endColumn ??= $column;
+
         return Filter::make('date')
             ->schema([
                 DatePicker::make('date_from')->label(__('app.fields.date_from')),
@@ -68,7 +70,7 @@ final class TableUi
             ->query(fn (Builder $query, array $data): Builder => $query
                 ->when(
                     $data['date_from'] ?? null,
-                    fn (Builder $query, string $date): Builder => $query->whereDate($column, '>=', $date),
+                    fn (Builder $query, string $date): Builder => $query->whereDate($endColumn, '>=', $date),
                 )
                 ->when(
                     $data['date_to'] ?? null,

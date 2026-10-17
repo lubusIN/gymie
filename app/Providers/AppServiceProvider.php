@@ -14,6 +14,7 @@ use App\Models\Member;
 use App\Models\Plan;
 use App\Models\Service;
 use App\Models\StaffAttendance;
+use App\Models\StaffLeave;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Observers\StaffActivityObserver;
@@ -69,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
             Plan::class,
             Service::class,
             StaffAttendance::class,
+            StaffLeave::class,
             Subscription::class,
             User::class,
         ] as $model) {

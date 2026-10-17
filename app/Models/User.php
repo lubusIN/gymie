@@ -13,10 +13,15 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property string|null $emergency_contact
+ * @property Carbon|null $joining_date
+ */
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     /** @use HasFactory<UserFactory> */
@@ -34,7 +39,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'status',
         'password',
         'contact',
+        'emergency_contact',
         'dob',
+        'joining_date',
         'gender',
         'address',
         'country',
@@ -64,6 +71,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'dob' => 'date',
+            'joining_date' => 'date',
             'status' => Status::class,
         ];
     }
@@ -99,6 +107,14 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function staffAttendances(): HasMany
     {
         return $this->hasMany(StaffAttendance::class, 'staff_id');
+    }
+
+    /**
+     * Get leave requests submitted for this staff member.
+     */
+    public function staffLeaves(): HasMany
+    {
+        return $this->hasMany(StaffLeave::class, 'staff_id');
     }
 
     /**

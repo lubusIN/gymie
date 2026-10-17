@@ -31,8 +31,9 @@ class UserForm
                             ->label(__('app.fields.photo'))
                             ->imageEditor()
                             ->preserveFilenames()
-                            ->maxSize(1024 * 1024 * 10)
+                            ->maxSize(10240)
                             ->disk('public')
+                            ->visibility('public')
                             ->directory('images')
                             ->image()
                             ->placeholder(__('app.placeholders.upload_photo'))
@@ -64,8 +65,14 @@ class UserForm
                                     ->prefixIcon('heroicon-o-phone')
                                     ->tel()
                                     ->maxLength(20)
-                                    ->regex('/^\+?[0-9\s\-\(\)]+$/') // Allows +, digits, spaces, dashes, and parentheses
+                                    ->regex('/^\+?[0-9\s\-\(\)]+$/')
                                     ->required(),
+                                TextInput::make('emergency_contact')
+                                    ->label(__('app.fields.emergency_contact'))
+                                    ->prefixIcon('heroicon-o-phone')
+                                    ->tel()
+                                    ->maxLength(20)
+                                    ->regex('/^\+?[0-9\s\-\(\)]+$/'),
                                 Radio::make('gender')
                                     ->options([
                                         'male' => __('app.options.gender.male'),
@@ -80,6 +87,9 @@ class UserForm
                                 DatePicker::make('dob')
                                     ->required()
                                     ->label(__('app.fields.dob')),
+                                DatePicker::make('joining_date')
+                                    ->label(__('app.fields.joining_date'))
+                                    ->maxDate(now()),
                                 Select::make('role')
                                     ->label(__('app.fields.role'))
                                     ->relationship('roles', 'name')

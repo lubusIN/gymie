@@ -52,14 +52,19 @@ class UserTable
                         'female' => __('app.options.gender.female'),
                         'other' => __('app.options.gender.other'),
                         default => filled($state) ? ucfirst((string) $state) : __('app.placeholders.dash'),
-                    }),
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('roles.name')
                     ->label(__('app.fields.role'))
                     ->placeholder(__('app.placeholders.na'))
                     ->searchable()
                     ->formatStateUsing(
                         fn ($state): string => Str::headline($state)
-                    )
+                    ),
+                TextColumn::make('joining_date')
+                    ->label(__('app.fields.joining_date'))
+                    ->date()
+                    ->placeholder(__('app.placeholders.na'))
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')
                     ->label(__('app.fields.status'))

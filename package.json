@@ -2,7 +2,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build && php artisan filament:assets",
+        "build": "vite build",
         "dev": "vite"
     },
     "devDependencies": {

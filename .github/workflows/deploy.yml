@@ -1,0 +1,104 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - 3.x
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: '3.x'
+        type: string
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          TARGET_BRANCH: ${{ github.event.inputs.branch || github.ref_name }}
+          SITE_NAME: ${{ secrets.EE_SITE_NAME }}
+          SITE_DIR: ${{ secrets.EE_SITE_DIR }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
+          envs: TARGET_BRANCH,SITE_NAME,SITE_DIR
+          script_stop: true
+          script: |
+            set -e
+
+            if [ -z "$SITE_NAME" ]; then
+              echo "❌ Error: EE_SITE_NAME secret is not configured!"
+              exit 1
+            fi
+
+            # Default to standard EasyEngine v4 site root if EE_SITE_DIR is not set
+            SITE_DIR="${SITE_DIR:-/opt/easyengine/sites/${SITE_NAME}/app/htdocs}"
+
+            echo "🚀 Deploying branch '${TARGET_BRANCH}'..."
+
+            # 1. Load PATH and environment variables for non-interactive SSH
+            export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+            [ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
+            [ -s "$HOME/.bashrc" ] && source "$HOME/.bashrc" 2>/dev/null || true
+            [ -s "$HOME/.profile" ] && source "$HOME/.profile" 2>/dev/null || true
+
+            if [ ! -d "$SITE_DIR" ]; then
+              echo "❌ Error: Target site directory does not exist on server!"
+              exit 1
+            fi
+
+            cd "$SITE_DIR"
+
+            # Avoid git dubious ownership warning across different system users
+            git config --global --add safe.directory "$SITE_DIR" 2>/dev/null || true
+
+            # 2. Discard local git modifications and untracked files on host (preserving .env)
+            echo "🧹 Cleaning working tree..."
+            git reset --hard HEAD
+            git clean -fd -e .env
+
+            # 3. Fetch remote and switch to target branch
+            echo "📥 Fetching and pulling branch '${TARGET_BRANCH}'..."
+            git fetch origin "$TARGET_BRANCH"
+            git checkout "$TARGET_BRANCH"
+            git reset --hard "origin/$TARGET_BRANCH"
+
+            # 4. Install Node packages and build Vite assets on host
+            echo "⚡ Installing Node dependencies and building frontend assets on host..."
+            npm ci || npm install
+            npm run build
+
+            # 5. Set ownership so container www-data user can write to vendor and cache
+            chown -R www-data:www-data .
+
+            # 6. Install dependencies and run post-deploy tasks in a single EasyEngine container session
+            echo "📦 Running Composer install and deploy via EasyEngine shell..."
+            ee shell "${SITE_NAME}" --command="composer install --no-interaction --prefer-dist --optimize-autoloader && composer deploy-demo"
+
+            # 7. Repair and enforce permissions (ensures no permission issues post-deployment)
+            echo "🔒 Enforcing permissions for www-data..."
+            chown -R www-data:www-data .
+            chmod -R 775 storage bootstrap/cache
+
+            # 8. Reload PHP-FPM in EasyEngine to refresh OPcache
+            echo "🔄 Reloading application container (PHP-FPM / OPcache)..."
+            ee site reload "${SITE_NAME}" --php 2>/dev/null || ee site reload "${SITE_NAME}" 2>/dev/null || true
+
+            echo "✨ Deployment of branch '${TARGET_BRANCH}' completed successfully!"

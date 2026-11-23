@@ -61,6 +61,24 @@
             "@php artisan migrate --graceful --ansi"
         ],
         "dev": "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'",
+        "deploy": [
+            "@php artisan storage:link",
+            "@php artisan migrate --force --ansi",
+            "@php artisan shield:generate --all --panel=admin --ansi",
+            "@php artisan filament:upgrade",
+            "@php artisan livewire:publish --assets --ansi",
+            "@php artisan optimize:clear --ansi",
+            "@php artisan optimize --ansi"
+        ],
+        "deploy-demo": [
+            "@php artisan storage:link",
+            "@php artisan migrate:fresh --seed --force --ansi",
+            "@php artisan shield:generate --all --panel=admin --ansi",
+            "@php artisan filament:upgrade",
+            "@php artisan livewire:publish --assets --ansi",
+            "@php artisan optimize:clear --ansi",
+            "@php artisan optimize --ansi"
+        ],
         "prepare-env": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan config:clear",

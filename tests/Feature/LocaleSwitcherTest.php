@@ -44,10 +44,10 @@ it('persists the selected locale in settings', function (): void {
     Livewire::test(LocaleSwitcher::class)
         ->call('setLocale', 'fr')
         ->assertRedirect()
-        ->assertSet('locale', 'fr');
+        ->assertSet('locale', 'fr')
+        ->assertNotified('Langue mise à jour');
 
     expect(data_get($repository->lastPut, 'general.locale'))->toBe('fr');
-    expect(session('filament.notifications.0.title'))->toBe('Langue mise à jour');
 });
 
 it('ignores unsupported locales', function (): void {

@@ -80,17 +80,19 @@ jobs:
             git checkout "$TARGET_BRANCH"
             git reset --hard "origin/$TARGET_BRANCH"
 
-            # 4. Install Node packages and build Vite assets on host
+            # 4. Set ownership and install PHP dependencies via EasyEngine shell
+            echo "📦 Running Composer install via EasyEngine shell..."
+            chown -R www-data:www-data .
+            ee shell "${SITE_NAME}" --command="composer install --no-interaction --prefer-dist --optimize-autoloader"
+
+            # 5. Install Node packages and build Vite assets on host (with updated vendor packages)
             echo "⚡ Installing Node dependencies and building frontend assets on host..."
             npm ci || npm install
             npm run build
 
-            # 5. Set ownership so container www-data user can write to vendor and cache
-            chown -R www-data:www-data .
-
-            # 6. Install dependencies and run post-deploy tasks in a single EasyEngine container session
-            echo "📦 Running Composer install and deploy via EasyEngine shell..."
-            ee shell "${SITE_NAME}" --command="composer install --no-interaction --prefer-dist --optimize-autoloader && composer deploy-demo"
+            # 6. Run post-deploy tasks in EasyEngine container session
+            echo "🚀 Running post-deploy tasks via EasyEngine shell..."
+            ee shell "${SITE_NAME}" --command="composer deploy-demo"
 
             # 7. Repair and enforce permissions (ensures no permission issues post-deployment)
             echo "🔒 Enforcing permissions for www-data..."

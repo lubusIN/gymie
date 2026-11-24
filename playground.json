@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "name": "Gymie",
+  "description": "Open-source fitness management",
+  "runtime": {
+    "php": "8.4",
+    "extensions": ["intl", "pdo_sqlite"]
+  },
+  "environment": {
+    "APP_ENV": "local",
+    "DB_CONNECTION": "sqlite",
+    "DB_DATABASE": "/workspace/database/database.sqlite",
+    "SESSION_DRIVER": "database",
+    "MAIL_MAILER": "log",
+    "QUEUE_CONNECTION": "sync"
+  },
+  "setup": {
+    "steps": [
+      {
+        "type": "composer-install"
+      },
+      {
+        "type": "composer-script",
+        "script": "setup-demo"
+      },
+      {
+        "type": "npm-install"
+      },
+      {
+        "type": "npm-build"
+      }
+    ]
+  },
+  "login": {
+    "enabled": true,
+    "strategy": "session",
+    "guard": "web",
+    "user": {
+      "email": "test@example.com"
+    }
+  },
+  "preview": {
+    "path": "/dashboard"
+  }
+}

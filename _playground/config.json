@@ -6,6 +6,9 @@
     "php": "8.4",
     "extensions": ["intl", "pdo_sqlite"]
   },
+  "network": {
+  "mode": "public"
+  },
   "environment": {
     "APP_ENV": "local",
     "DB_CONNECTION": "sqlite",
